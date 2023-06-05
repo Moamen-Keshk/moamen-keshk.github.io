@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/widgets/featured_section.dart';
-import 'package:flutter_academy/widgets/header.dart';
-import 'package:flutter_academy/widgets/course_card.dart';
+import 'package:flutter_academy/res/assets.dart';
+import 'package:flutter_academy/res/responsive.dart';
 import 'package:flutter_academy/widgets/call_to_action.dart';
+import 'package:flutter_academy/widgets/course_card.dart';
+import 'package:flutter_academy/widgets/drawer_nav.dart';
+import 'package:flutter_academy/widgets/featured_section.dart';
 import 'package:flutter_academy/widgets/footer.dart';
-
-import '../res/assets.dart';
+import 'package:flutter_academy/widgets/header.dart';
+import 'package:flutter_academy/widgets/top_nav.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -14,16 +16,13 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
         children: <Widget>[
-          AppBar(
-            title: const Text('Flutter Academy'),
-          ),
+          const TopNav(),
           const Header(),
           const SizedBox(height: 40.0),
           Padding(
             padding: const EdgeInsets.only(left: 20.0),
-            child: Text("Recent Courses",
+            child: Text("Recent courses",
                 style: Theme.of(context).textTheme.displaySmall),
           ),
           const SizedBox(height: 10.0),
@@ -37,20 +36,21 @@ class HomePage extends StatelessWidget {
                   title: "Taking Flutter to Web",
                   image: Assets.course,
                   description:
-                      "Flutter web is stable. But there are no proper courses focused on Flutter web. So, in this course we will learn what Flutter web is good for and we will build a production grade application along the way.",
+                      "Flutter web is stable. But there are no proper course focused on Flutter web. So, In this course we will learn what Flutter web is good for and we will build a production grade application along the way.",
                   onActionPressed: () {},
                 ),
                 const SizedBox(width: 20.0),
                 CourseCard(
-                  title: "Flutter for Everyone",
+                  title: "Taking Flutter to Web",
                   image: Assets.course,
                   description:
-                      "Flutter beginners' course for everyone. For those who know basic programming, can easily start developing Flutter apps after taking this course.",
+                      "Flutter web is stable. But there are no proper course focused on Flutter web. So, In this course we will learn what Flutter web is good for and we will build a production grade application along the way.",
                   onActionPressed: () {},
                 ),
               ],
             ),
           ),
+          // Featured section
           Center(
             child: FeaturedSection(
               image: Assets.instructor,
@@ -84,9 +84,13 @@ class HomePage extends StatelessWidget {
               onActionPressed: () {},
             ),
           ),
+          //footer
           const Footer(),
         ],
       ),
+      drawer: MediaQuery.of(context).size.width > ScreenSizes.md
+          ? null
+          : const DrawerNav(),
     );
   }
 }

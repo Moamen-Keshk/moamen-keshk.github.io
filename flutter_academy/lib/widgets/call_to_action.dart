@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/res/responsive.dart';
 
 class CallToAction extends StatelessWidget {
   const CallToAction({Key? key}) : super(key: key);
@@ -17,11 +18,14 @@ class CallToAction extends StatelessWidget {
           Text(
             "Ready to Begin Learning",
             style: Theme.of(context).textTheme.displayMedium,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20.0),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              fixedSize: const Size(180, 70),
+              fixedSize: MediaQuery.of(context).size.width > ScreenSizes.md
+                  ? const Size(180, 50)
+                  : const Size(180, 70),
             ),
             onPressed: () {
               if (kDebugMode) {
