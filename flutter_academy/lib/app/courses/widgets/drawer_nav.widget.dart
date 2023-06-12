@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
 import 'package:flutter_academy/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DrawerNav extends StatelessWidget {
   const DrawerNav({Key? key}) : super(key: key);
@@ -39,11 +41,34 @@ class DrawerNav extends StatelessWidget {
             },
           ),
           ListTile(
+            title: const Text("Watchlist"),
+            onTap: () {
+              routerDelegate.go('/watchlist');
+            },
+          ),
+          ListTile(
+            title: const Text("Login"),
+            onTap: () {
+              routerDelegate.go('/login');
+            },
+          ),
+          ListTile(
             title: const Text("Contact"),
             onTap: () {
               routerDelegate.go('/contact');
             },
           ),
+          Consumer(builder: (context, ref, child) {
+            final themeModeVM = ref.watch(themeModeProvider);
+            return ListTile(
+              title: Text(themeModeVM.themeMode == ThemeMode.dark
+                  ? "Light Theme"
+                  : "Dark Theme"),
+              onTap: () {
+                themeModeVM.toggleThemeMode();
+              },
+            );
+          })
         ],
       ),
     );

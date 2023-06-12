@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/routes/app_route_parser.dart';
-import 'package:flutter_academy/routes/router_delegate.dart';
+import 'package:flutter_academy/app/courses/routes/app_route_parser.router.dart';
+import 'package:flutter_academy/app/courses/routes/router_delegate.router.dart';
+import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  runApp(ProviderScope(child: MyApp()));
 }
 
 final routerDelegate = AppRouterDelegate();
@@ -14,14 +19,25 @@ class MyApp extends StatelessWidget {
   MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      routerDelegate: routerDelegate,
-      routeInformationParser: _routeParser,
-    );
+    return Consumer(builder: (context, ref, child) {
+      final themeModeVM = ref.watch(themeModeProvider);
+      return AnimatedBuilder(
+          animation: themeModeVM,
+          builder: (context, child) {
+            return MaterialApp.router(
+              title: 'Flutter Demo',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                primarySwatch: Colors.blue,
+              ),
+              darkTheme: ThemeData.dark().copyWith(
+                primaryColor: Colors.blue,
+              ),
+              themeMode: themeModeVM.themeMode,
+              routerDelegate: routerDelegate,
+              routeInformationParser: _routeParser,
+            );
+          });
+    });
   }
 }

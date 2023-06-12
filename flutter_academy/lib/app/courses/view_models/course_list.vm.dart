@@ -1,0 +1,16 @@
+import 'package:flutter_academy/app/courses/view_models/course.vm.dart';
+import 'package:flutter_academy/infrastructure/courses/res/course.service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class CourseListVM extends StateNotifier<List<CourseVM>> {
+  CourseListVM() : super(const []) {
+    fetchCourses();
+  }
+  Future<void> fetchCourses() async {
+    final res = await CourseService().getCourses();
+    state = [...res.map((course) => CourseVM(course))];
+  }
+}
+
+final courseListVM = StateNotifierProvider<CourseListVM, List<CourseVM>>(
+    (ref) => CourseListVM());

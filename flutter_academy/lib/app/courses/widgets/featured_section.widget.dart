@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/res/responsive.dart';
+import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 
 class FeaturedSection extends StatelessWidget {
   const FeaturedSection({
