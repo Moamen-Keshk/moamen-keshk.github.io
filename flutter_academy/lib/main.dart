@@ -4,9 +4,14 @@ import 'package:flutter_academy/app/courses/routes/router_delegate.router.dart';
 import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await Hive.initFlutter();
   runApp(ProviderScope(child: MyApp()));
 }

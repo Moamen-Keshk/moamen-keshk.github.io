@@ -7,9 +7,9 @@ import 'package:flutter_academy/app/courses/pages/about.page.dart';
 import 'package:flutter_academy/app/courses/pages/contact.page.dart';
 import 'package:flutter_academy/app/courses/pages/course_details.page.dart';
 import 'package:flutter_academy/app/courses/pages/courses.page.dart';
-import 'package:flutter_academy/app/courses/pages/dashboard.page.dart';
 import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
+import 'package:flutter_academy/app/courses/pages/load.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -61,17 +61,17 @@ class AppRouterDelegate extends RouterDelegate<Uri>
 
   List<Page> _getRoutes(Uri path, AuthVM authVM) {
     final pages = <Page>[];
-    if (authVM.isLoggedIn) {
-      pages.add(
-          const MaterialPage(child: DashboardPage(), key: ValueKey('home')));
-    } else {
-      pages.add(const MaterialPage(child: HomePage(), key: ValueKey('home')));
-    }
-
+    pages.add(const MaterialPage(child: HomePage(), key: ValueKey('home')));
     if (path.pathSegments.isEmpty) {
       return pages;
     }
     switch (path.pathSegments[0]) {
+      case 'load_courses':
+        pages.add(const MaterialPage(
+          child: LoadCourses(),
+          key: ValueKey('load_courses'),
+        ));
+        break;
       case 'contacts':
         pages.add(const MaterialPage(
           key: ValueKey('contacts'),
