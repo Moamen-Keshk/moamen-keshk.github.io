@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/auth/pages/login.page.dart';
+import 'package:flutter_academy/app/auth/pages/register.page.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/pages/about.page.dart';
 import 'package:flutter_academy/app/courses/pages/contact.page.dart';
@@ -66,6 +67,12 @@ class AppRouterDelegate extends RouterDelegate<Uri>
       return pages;
     }
     switch (path.pathSegments[0]) {
+      case 'register':
+        pages.add(const MaterialPage(
+          child: RegisterPage(),
+          key: ValueKey('register'),
+        ));
+        break;
       case 'load_courses':
         pages.add(const MaterialPage(
           child: LoadCourses(),
