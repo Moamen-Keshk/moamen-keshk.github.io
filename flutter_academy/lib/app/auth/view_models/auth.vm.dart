@@ -11,6 +11,8 @@ class AuthVM extends ChangeNotifier {
   String error = '';
   UserVM? user;
   StreamSubscription<User?>? _subscription;
+  bool isEmailVerified = false;
+  Timer? timer;
 
   AuthVM() {
     subscribe();
@@ -18,7 +20,7 @@ class AuthVM extends ChangeNotifier {
 
   Future<bool> login({required String email, required String password}) async {
     try {
-      _auth.signInWithEmailAndPassword(email: email, password: password);
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
       return true;
     } on FirebaseAuthException catch (e) {
       isLoggedIn = false;
@@ -33,13 +35,34 @@ class AuthVM extends ChangeNotifier {
       required String email,
       required String password}) async {
     try {
-      _auth.createUserWithEmailAndPassword(email: email, password: password);
+      await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
+      verifyEmail();
       return true;
     } on FirebaseAuthException catch (e) {
       isLoggedIn = false;
       error = e.message ?? e.toString();
       notifyListeners();
       return false;
+    }
+  }
+
+  void verifyEmail() {
+    // TODo: implement initState
+    _auth.currentUser?.sendEmailVerification();
+    timer =
+        Timer.periodic(const Duration(seconds: 3), (_) => checkEmailVerified());
+  }
+
+  checkEmailVerified() async {
+    await _auth.currentUser?.reload();
+
+    isEmailVerified = _auth.currentUser!.emailVerified;
+
+    if (isEmailVerified) {
+      // TODo: implement your code after email verification
+      timer?.cancel();
+      notifyListeners();
     }
   }
 
@@ -93,6 +116,7 @@ class AuthVM extends ChangeNotifier {
   void dispose() {
     super.dispose();
     _subscription?.cancel();
+    timer?.cancel();
   }
 }
 

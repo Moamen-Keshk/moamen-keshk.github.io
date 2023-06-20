@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
+import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RegisterView extends StatefulWidget {
@@ -86,6 +87,7 @@ class _RegisterViewState extends State<RegisterView> {
                           email: _email.text,
                           password: _password.text)) {
                         //logged in
+                        routerDelegate.go('/email_verification');
                       } else {
                         // error
                         debugPrint(ref.read(authVM).error);

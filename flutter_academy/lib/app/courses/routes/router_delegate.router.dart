@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/app/auth/pages/email_verification.page.dart';
 import 'package:flutter_academy/app/auth/pages/login.page.dart';
 import 'package:flutter_academy/app/auth/pages/register.page.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
@@ -71,6 +72,12 @@ class AppRouterDelegate extends RouterDelegate<Uri>
         pages.add(const MaterialPage(
           child: RegisterPage(),
           key: ValueKey('register'),
+        ));
+        break;
+      case 'email_verification':
+        pages.add(const MaterialPage(
+          child: EmailVerificationPage(),
+          key: ValueKey('email_verification'),
         ));
         break;
       case 'load_courses':
