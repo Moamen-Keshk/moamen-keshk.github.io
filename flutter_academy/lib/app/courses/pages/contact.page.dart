@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
-import 'package:flutter_academy/app/courses/widgets/drawer_nav.widget.dart';
-import 'package:flutter_academy/app/courses/widgets/top_nav.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/home_drawer.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/home_nav.widget.dart';
 
 class ContactPage extends StatelessWidget {
   const ContactPage({super.key});

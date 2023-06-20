@@ -3,11 +3,11 @@ import 'package:flutter_academy/app/courses/res/assets.res.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 import 'package:flutter_academy/app/courses/views/courses.view.dart';
 import 'package:flutter_academy/app/courses/widgets/call_to_action.widget.dart';
-import 'package:flutter_academy/app/courses/widgets/drawer_nav.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/home_drawer.widget.dart';
 import 'package:flutter_academy/app/courses/widgets/featured_section.widget.dart';
 import 'package:flutter_academy/app/courses/widgets/footer.widget.dart';
 import 'package:flutter_academy/app/courses/widgets/header.widget.dart';
-import 'package:flutter_academy/app/courses/widgets/top_nav.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/home_nav.widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

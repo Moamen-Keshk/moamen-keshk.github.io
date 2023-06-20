@@ -5,8 +5,8 @@ import 'package:flutter_academy/app/courses/widgets/course_card.widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../res/responsive.res.dart';
-import '../widgets/drawer_nav.widget.dart';
-import '../widgets/top_nav.widget.dart';
+import '../widgets/home_drawer.widget.dart';
+import '../widgets/home_nav.widget.dart';
 
 class WatchlistPage extends StatelessWidget {
   const WatchlistPage({super.key});

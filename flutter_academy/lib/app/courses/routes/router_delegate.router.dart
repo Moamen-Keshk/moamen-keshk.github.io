@@ -9,6 +9,7 @@ import 'package:flutter_academy/app/courses/pages/about.page.dart';
 import 'package:flutter_academy/app/courses/pages/contact.page.dart';
 import 'package:flutter_academy/app/courses/pages/course_details.page.dart';
 import 'package:flutter_academy/app/courses/pages/courses.page.dart';
+import 'package:flutter_academy/app/courses/pages/dashboard.page.dart';
 import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
 import 'package:flutter_academy/app/courses/pages/load.page.dart';
@@ -86,6 +87,12 @@ class AppRouterDelegate extends RouterDelegate<Uri>
           key: ValueKey('load_courses'),
         ));
         break;
+      case 'dashboard':
+        pages.add(const MaterialPage(
+          key: ValueKey('dashboard'),
+          child: DashboardPage(),
+        ));
+        break;
       case 'contacts':
         pages.add(const MaterialPage(
           key: ValueKey('contacts'),
@@ -112,7 +119,7 @@ class AppRouterDelegate extends RouterDelegate<Uri>
         break;
       case 'login':
         if (authVM.isLoggedIn) {
-          go('/');
+          go('/dashboard');
           break;
         }
         pages.add(const MaterialPage(
