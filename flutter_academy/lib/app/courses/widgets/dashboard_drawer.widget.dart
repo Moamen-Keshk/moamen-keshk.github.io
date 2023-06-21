@@ -25,7 +25,7 @@ class DashboardDrawer extends StatelessWidget {
           ListTile(
             title: const Text("Dashboard"),
             onTap: () {
-              routerDelegate.go('/dashboard');
+              routerDelegate.go('/');
             },
           ),
           ListTile(

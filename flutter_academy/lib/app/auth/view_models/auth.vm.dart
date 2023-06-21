@@ -100,16 +100,22 @@ class AuthVM extends ChangeNotifier {
     });
   }
 
-  bool logout() {
+  Future<bool> logout() async {
     if (!isLoggedIn) {
       error = 'Not logged in';
       return false;
     }
-    error = '';
-    user = null;
-    isLoggedIn = false;
-    notifyListeners();
-    return true;
+    try {
+      await _auth.signOut();
+      error = '';
+      user = null;
+      isLoggedIn = false;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      error = e.message ?? e.toString();
+      return false;
+    }
   }
 
   @override

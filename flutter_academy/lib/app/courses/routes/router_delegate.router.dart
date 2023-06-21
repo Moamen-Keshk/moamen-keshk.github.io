@@ -64,7 +64,12 @@ class AppRouterDelegate extends RouterDelegate<Uri>
 
   List<Page> _getRoutes(Uri path, AuthVM authVM) {
     final pages = <Page>[];
-    pages.add(const MaterialPage(child: HomePage(), key: ValueKey('home')));
+    if (authVM.isLoggedIn) {
+      pages.add(const MaterialPage(
+          child: DashboardPage(), key: ValueKey('dashboard')));
+    } else {
+      pages.add(const MaterialPage(child: HomePage(), key: ValueKey('home')));
+    }
     if (path.pathSegments.isEmpty) {
       return pages;
     }
@@ -85,12 +90,6 @@ class AppRouterDelegate extends RouterDelegate<Uri>
         pages.add(const MaterialPage(
           child: LoadCourses(),
           key: ValueKey('load_courses'),
-        ));
-        break;
-      case 'dashboard':
-        pages.add(const MaterialPage(
-          key: ValueKey('dashboard'),
-          child: DashboardPage(),
         ));
         break;
       case 'contacts':

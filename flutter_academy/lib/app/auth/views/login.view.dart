@@ -56,7 +56,7 @@ class _LoginViewState extends State<LoginView> {
                     if (await ref
                         .read(authVM)
                         .login(email: _email.text, password: _password.text)) {
-                      routerDelegate.go('/dashboard');
+                      routerDelegate.go('/');
                       //logged in
                     } else {
                       // error

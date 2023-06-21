@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/course.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/watchlist.vm.dart';
 import 'package:flutter_academy/app/courses/widgets/course_card.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/dashboard_drawer.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/dashboard_nav.widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../res/responsive.res.dart';
-import '../widgets/home_drawer.widget.dart';
-import '../widgets/home_nav.widget.dart';
 
 class WatchlistPage extends StatelessWidget {
   const WatchlistPage({super.key});
@@ -16,7 +16,7 @@ class WatchlistPage extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: <Widget>[
-          const TopNav(),
+          const DashboardNav(),
           Expanded(
             child: Consumer(
               builder: ((context, ref, child) {
@@ -50,7 +50,7 @@ class WatchlistPage extends StatelessWidget {
       ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
-          : const DrawerNav(),
+          : const DashboardDrawer(),
     );
   }
 }

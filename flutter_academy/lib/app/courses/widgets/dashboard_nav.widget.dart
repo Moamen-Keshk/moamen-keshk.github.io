@@ -20,7 +20,10 @@ class DashboardNav extends StatelessWidget {
               Consumer(builder: (context, ref, child) {
                 return IconButton(
                     icon: const Icon(Icons.exit_to_app),
-                    onPressed: () => ref.read(authVM).logout());
+                    onPressed: () async => {
+                          if (await ref.read(authVM).logout())
+                            routerDelegate.go('/')
+                        });
               })
             ]
           : [
@@ -29,7 +32,7 @@ class DashboardNav extends StatelessWidget {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/dashboard');
+                  routerDelegate.go('/');
                 },
                 child: const Text("Dashboard"),
               ),
@@ -68,7 +71,10 @@ class DashboardNav extends StatelessWidget {
               Consumer(builder: (context, ref, child) {
                 return IconButton(
                     icon: const Icon(Icons.exit_to_app),
-                    onPressed: () => ref.read(authVM).logout());
+                    onPressed: () async => {
+                          if (await ref.read(authVM).logout())
+                            routerDelegate.go('/')
+                        });
               })
             ],
     );
