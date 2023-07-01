@@ -37,4 +37,4 @@ jobs:
       - uses: bluefireteam/flutter-gh-pages@v7
         with:
           workingDir: flutter_academy
-          baseHref: /flutter_academy
+          baseHref: /flutter_academy/
