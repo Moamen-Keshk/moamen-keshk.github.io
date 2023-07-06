@@ -32,9 +32,9 @@ jobs:
           channel: "stable"
       - run: flutter config --enable-web
       - name: Dependencies
-        working-directory: flutter_academy
+        working-directory: flutter_academy/web
         run: flutter pub get
       - uses: bluefireteam/flutter-gh-pages@v7
         with:
-          workingDir: flutter_academy
+          workingDir: flutter_academy/web
           baseHref: /flutter_academy/
