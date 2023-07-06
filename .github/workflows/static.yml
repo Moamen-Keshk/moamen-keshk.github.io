@@ -4,7 +4,7 @@ name: Deploy static content to Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   # Single deploy job since we're just deploying
@@ -22,4 +22,4 @@ jobs:
       - uses: bluefireteam/flutter-gh-pages@v7
         with:
           workingDir: flutter_academy
-          baseHref: /flutter_academy/web/
+          baseHref: /flutter_academy/
