@@ -23,4 +23,4 @@ RUN flutter build web
 # Stage 2
 FROM nginx:1.21.1-alpine
 COPY --from=build-env /app/build/web /usr/share/nginx/html
-LABEL org.opencontainers.image.source=https://github.com/Moamen-Keshk/LotelApp
+LABEL org.opencontainers.image.source=https://github.com/Moamen-Keshk/lotelapp
