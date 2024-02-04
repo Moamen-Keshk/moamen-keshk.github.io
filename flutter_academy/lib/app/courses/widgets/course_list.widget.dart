@@ -5,7 +5,7 @@ import 'package:flutter_academy/app/courses/widgets/course_card.widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CourseList extends ConsumerWidget {
-  const CourseList({Key? key}) : super(key: key);
+  const CourseList({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

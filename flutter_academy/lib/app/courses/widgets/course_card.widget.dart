@@ -6,13 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CourseCard extends StatelessWidget {
   const CourseCard({
-    Key? key,
+    super.key,
     required this.id,
     required this.image,
     required this.title,
     required this.onActionPressed,
     required this.description,
-  }) : super(key: key);
+  });
 
   final String id;
   final String image;

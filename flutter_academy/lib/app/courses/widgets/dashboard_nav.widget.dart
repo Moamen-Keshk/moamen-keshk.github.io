@@ -7,7 +7,7 @@ import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardNav extends StatelessWidget {
-  const DashboardNav({Key? key}) : super(key: key);
+  const DashboardNav({super.key});
 
   @override
   Widget build(BuildContext context) {

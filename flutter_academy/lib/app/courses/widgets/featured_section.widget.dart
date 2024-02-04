@@ -3,14 +3,14 @@ import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 
 class FeaturedSection extends StatelessWidget {
   const FeaturedSection({
-    Key? key,
+    super.key,
     required this.image,
     required this.title,
     required this.description,
     required this.buttonLabel,
     required this.onActionPressed,
     this.imageLeft = true,
-  }) : super(key: key);
+  });
 
   final bool imageLeft;
   final String image;

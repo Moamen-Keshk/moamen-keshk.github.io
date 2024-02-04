@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login.view.dart';
 
 class AuthHomeView extends StatelessWidget {
-  const AuthHomeView({Key? key}) : super(key: key);
+  const AuthHomeView({super.key});
 
   @override
   Widget build(BuildContext context) {

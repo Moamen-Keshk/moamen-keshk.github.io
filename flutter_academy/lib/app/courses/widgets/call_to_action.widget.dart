@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 
 class CallToAction extends StatelessWidget {
-  const CallToAction({Key? key}) : super(key: key);
+  const CallToAction({super.key});
 
   @override
   Widget build(BuildContext context) {

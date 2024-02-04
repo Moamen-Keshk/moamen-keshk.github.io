@@ -3,9 +3,9 @@ import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 
 class ResponsiveGap extends StatelessWidget {
   const ResponsiveGap({
-    Key? key,
+    super.key,
     required this.gap,
-  }) : super(key: key);
+  });
 
   final double gap;
 

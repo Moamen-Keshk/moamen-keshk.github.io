@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 
 class Footer extends StatelessWidget {
-  const Footer({Key? key}) : super(key: key);
+  const Footer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +88,7 @@ class Footer extends StatelessWidget {
 }
 
 class FooterLink extends StatelessWidget {
-  const FooterLink(this.text, {Key? key}) : super(key: key);
+  const FooterLink(this.text, {super.key});
   final String text;
   @override
   Widget build(BuildContext context) {

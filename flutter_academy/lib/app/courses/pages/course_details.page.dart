@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class CourseDetailsPage extends StatelessWidget {
   final int courseId;
 
-  const CourseDetailsPage({Key? key, required this.courseId}) : super(key: key);
+  const CourseDetailsPage({super.key, required this.courseId});
 
   @override
   Widget build(BuildContext context) {

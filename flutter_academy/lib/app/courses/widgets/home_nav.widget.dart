@@ -4,7 +4,7 @@ import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 import 'package:flutter_academy/main.dart';
 
 class TopNav extends StatelessWidget {
-  const TopNav({Key? key}) : super(key: key);
+  const TopNav({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -5,7 +5,7 @@ import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class EmailVerificationView extends StatefulWidget {
-  const EmailVerificationView({Key? key}) : super(key: key);
+  const EmailVerificationView({super.key});
 
   @override
   State<EmailVerificationView> createState() => _EmailVerificationViewState();
