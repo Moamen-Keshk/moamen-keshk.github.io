@@ -17,7 +17,7 @@ class TopNav extends StatelessWidget {
           : [
               TextButton(
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
+                  foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
                   routerDelegate.go('/about');
@@ -26,7 +26,7 @@ class TopNav extends StatelessWidget {
               ),
               TextButton(
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
+                  foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
                   routerDelegate.go('/login');
@@ -35,7 +35,7 @@ class TopNav extends StatelessWidget {
               ),
               TextButton(
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
+                  foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
                   routerDelegate.go('/contact');
