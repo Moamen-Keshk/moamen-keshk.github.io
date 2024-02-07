@@ -56,7 +56,13 @@ class _LoginViewState extends State<LoginView> {
                     if (await ref
                         .read(authVM)
                         .login(email: _email.text, password: _password.text)) {
-                      routerDelegate.go('/');
+                      if (ref.read(authVM).isEmailVerified) {
+                        routerDelegate.go('/');
+                      } else {
+                        ref.read(authVM).verifyEmailVerfication();
+                        routerDelegate.go('email_verification');
+                      }
+
                       //logged in
                     } else {
                       // error

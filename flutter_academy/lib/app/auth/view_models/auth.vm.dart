@@ -22,6 +22,9 @@ class AuthVM extends ChangeNotifier {
   Future<bool> login({required String email, required String password}) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
+      if (_auth.currentUser!.emailVerified) {
+        isEmailVerified = true;
+      }
       return true;
     } on FirebaseAuthException catch (e) {
       isLoggedIn = false;
@@ -60,6 +63,12 @@ class AuthVM extends ChangeNotifier {
   void verifyEmail() {
     // TODo: implement initState
     _auth.currentUser?.sendEmailVerification();
+    timer =
+        Timer.periodic(const Duration(seconds: 3), (_) => checkEmailVerified());
+  }
+
+  void verifyEmailVerfication() {
+    // TODo: implement initState
     timer =
         Timer.periodic(const Duration(seconds: 3), (_) => checkEmailVerified());
   }
