@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class AuthVM extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool isLoggedIn = false;
+  bool isReset = false;
   String error = '';
   UserVM? user;
   StreamSubscription<User?>? _subscription;
@@ -57,6 +58,16 @@ class AuthVM extends ChangeNotifier {
       error = e.message ?? e.toString();
       notifyListeners();
       return false;
+    }
+  }
+
+  void resetPassword({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      isReset = true;
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      error = e.message ?? e.toString();
     }
   }
 

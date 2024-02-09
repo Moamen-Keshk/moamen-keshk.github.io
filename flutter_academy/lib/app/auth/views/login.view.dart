@@ -88,19 +88,31 @@ class _LoginViewState extends State<LoginView> {
               );
             }),
             const SizedBox(height: 20.0),
-            Wrap(
-              children: <Widget>[
-                const Text('New User? '),
-                InkWell(
-                  onTap: () => {routerDelegate.go('/register')},
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(color: Colors.blue),
-                  ),
+            Wrap(children: <Widget>[
+              InkWell(
+                onTap: () => {routerDelegate.go('/reset_password')},
+                child: const Text(
+                  'Forgot password?',
+                  style: TextStyle(color: Colors.blue),
                 ),
-                const Text('.'),
-              ],
-            )
+              ),
+            ]),
+            Align(
+              alignment: Alignment.topRight,
+              child: Wrap(
+                children: <Widget>[
+                  const Text('New User? '),
+                  InkWell(
+                    onTap: () => {routerDelegate.go('/register')},
+                    child: const Text(
+                      'Register',
+                      style: TextStyle(color: Colors.blue),
+                    ),
+                  ),
+                  const Text('.'),
+                ],
+              ),
+            ),
           ],
         ),
       ),
