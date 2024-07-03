@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
           animation: themeModeVM,
           builder: (context, child) {
             return MaterialApp.router(
-              title: 'Flutter Demo',
+              title: 'Lotel',
               debugShowCheckedModeBanner: false,
               theme: ThemeData(
                 primarySwatch: Colors.blue,

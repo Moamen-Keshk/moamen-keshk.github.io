@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/notification_list.vm.dart';
 import 'package:flutter_academy/app/courses/widgets/notification_card.widget.dart';
+import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:badges/badges.dart' as badges;
 
@@ -13,14 +14,18 @@ class NotificationsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
       final notifications = ref.watch(notificationListVM);
+      final Color color =
+          notifications.isNotEmpty ? Colors.blue : Colors.transparent;
+      final String count =
+          notifications.isNotEmpty ? notifications.length.toString() : '';
       return MenuAnchor(
         style: MenuStyle(
-          backgroundColor: MaterialStateProperty.resolveWith<Color?>(
-              (Set<MaterialState> states) {
+          backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+              (Set<WidgetState> states) {
             return Colors.transparent;
           }),
-          shadowColor: MaterialStateProperty.resolveWith<Color?>(
-              (Set<MaterialState> states) {
+          shadowColor: WidgetStateProperty.resolveWith<Color?>(
+              (Set<WidgetState> states) {
             return Colors.transparent;
           }),
         ),
@@ -35,27 +40,40 @@ class NotificationsView extends StatelessWidget {
               }
             },
             icon: badges.Badge(
-              badgeContent: Text(notifications.length.toString(),
+              badgeContent: Text(count,
                   style: const TextStyle(fontSize: 12.0, color: Colors.white)),
-              badgeStyle: const badges.BadgeStyle(
-                badgeColor: Colors.blue,
+              badgeStyle: badges.BadgeStyle(
+                badgeColor: color,
               ),
               child: const Icon(Icons.notifications_outlined),
             ),
           );
         },
         menuChildren: List<MenuItemButton>.generate(
-          notifications.length,
-          (int index) => MenuItemButton(
-            child: NotificationCard(
-              id: notifications[index].notification.id,
-              title: notifications[index].title,
-              body: notifications[index].body,
-              fireDate: notifications[index].fireDate,
-              onActionPressed: () {},
-            ),
-          ),
-        ),
+              notifications.length,
+              (int index) => MenuItemButton(
+                child: NotificationCard(
+                  id: notifications[index].notification.id,
+                  title: notifications[index].title,
+                  body: notifications[index].body,
+                  fireDate: notifications[index].fireDate,
+                  onActionPressed: () {},
+                ),
+              ),
+            ) +
+            [
+              MenuItemButton(
+                child: InkWell(
+                  onTap: () {
+                    routerDelegate.go('/all_notifications');
+                  },
+                  child: const Text(
+                    'See all',
+                    style: TextStyle(color: Colors.blue),
+                  ),
+                ),
+              )
+            ],
       );
     });
   }

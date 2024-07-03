@@ -17,7 +17,7 @@ class DashboardNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Flutter Academy'),
+      title: const Text('Lotel'),
       elevation: kIsWeb ? 0 : null,
       centerTitle: kIsWeb ? false : null,
       backgroundColor: const Color.fromARGB(255, 241, 236, 245),

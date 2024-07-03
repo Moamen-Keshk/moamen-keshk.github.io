@@ -24,7 +24,7 @@ class Header extends StatelessWidget {
         children: [
           const SizedBox(height: 40.0),
           Text(
-            "Welcome to Flutter Academy",
+            "Welcome to Lotel",
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
                   color: Colors.white,
                 ),

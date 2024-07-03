@@ -11,4 +11,12 @@ class NotificationService {
         .map((e) => Notification.fromResMap(e))
         .toList();
   }
+
+  Future<List<Notification>> getAllNotifications() async {
+    final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(), "/api/v1/all-notifications");
+    return (query['data'] as List)
+        .map((e) => Notification.fromResMap(e))
+        .toList();
+  }
 }

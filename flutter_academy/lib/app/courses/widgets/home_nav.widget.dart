@@ -9,7 +9,7 @@ class TopNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Flutter Academy'),
+      title: const Text('Lotel'),
       elevation: kIsWeb ? 0 : null,
       centerTitle: kIsWeb ? false : null,
       actions: (MediaQuery.of(context).size.width <= ScreenSizes.md)

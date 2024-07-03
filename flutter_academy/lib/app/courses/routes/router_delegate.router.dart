@@ -7,6 +7,7 @@ import 'package:flutter_academy/app/auth/pages/login.page.dart';
 import 'package:flutter_academy/app/auth/pages/register.page.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/pages/about.page.dart';
+import 'package:flutter_academy/app/courses/pages/all_notifications.page.dart';
 import 'package:flutter_academy/app/courses/pages/contact.page.dart';
 import 'package:flutter_academy/app/courses/pages/course_details.page.dart';
 import 'package:flutter_academy/app/courses/pages/courses.page.dart';
@@ -99,6 +100,11 @@ class AppRouterDelegate extends RouterDelegate<Uri>
           key: ValueKey('load_courses'),
         ));
         break;
+      case 'all_notifications':
+        pages.add(const MaterialPage(
+          child: AllNotificationsPage(),
+          key: ValueKey('all_notifications'),
+        ));
       case 'contacts':
         pages.add(const MaterialPage(
           key: ValueKey('contacts'),
