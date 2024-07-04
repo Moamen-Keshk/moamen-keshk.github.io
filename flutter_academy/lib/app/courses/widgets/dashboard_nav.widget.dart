@@ -11,6 +11,20 @@ enum SampleItem { itemOne, itemTwo, itemThree }
 
 SampleItem? selectedMenu;
 
+enum Property {
+  savoy('Savoy'),
+  wembar('Wembar'),
+  dolphin('Dolphin'),
+  fjaerland('Fjaerland'),
+  villarose('Villa Rose');
+
+  const Property(this.name);
+  final String name;
+}
+
+final TextEditingController propertyController = TextEditingController();
+Property? selectedProperty;
+
 class DashboardNav extends StatelessWidget {
   const DashboardNav({super.key});
 
@@ -35,6 +49,40 @@ class DashboardNav extends StatelessWidget {
           : [
               TextButton(
                 style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color.fromARGB(255, 109, 106, 106)),
+                onPressed: () {
+                  routerDelegate.go('/');
+                },
+                child: const Text("New booking"),
+              ),
+              const SizedBox(width: 10.0),
+              DropdownMenu<Property>(
+                initialSelection: Property.savoy,
+                controller: propertyController,
+                // requestFocusOnTap is enabled/disabled by platforms when it is null.
+                // On mobile platforms, this is false by default. Setting this to true will
+                // trigger focus request on the text field and virtual keyboard will appear
+                // afterward. On desktop platforms however, this defaults to true.
+                requestFocusOnTap: true,
+                label: const Text('Property'),
+                onSelected: (Property? property) {
+                  setState(() {
+                    selectedProperty = property;
+                    return null;
+                  });
+                },
+                dropdownMenuEntries: Property.values
+                    .map<DropdownMenuEntry<Property>>((Property property) {
+                  return DropdownMenuEntry<Property>(
+                    value: property,
+                    label: property.name,
+                    style: MenuItemButton.styleFrom(),
+                  );
+                }).toList(),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
@@ -49,16 +97,7 @@ class DashboardNav extends StatelessWidget {
                 onPressed: () {
                   routerDelegate.go('/courses');
                 },
-                child: const Text("Courses"),
-              ),
-              TextButton(
-                onPressed: () {
-                  routerDelegate.go('/watchlist');
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                ),
-                child: const Text("Watchlist"),
+                child: const Text("Today's"),
               ),
               Consumer(builder: (context, ref, child) {
                 final themeModeVM = ref.watch(themeModeProvider);
@@ -87,5 +126,5 @@ class DashboardNav extends StatelessWidget {
     );
   }
 
-  setState(SampleItem Function() param0) {}
+  setState(Property? Function() param0) {}
 }
