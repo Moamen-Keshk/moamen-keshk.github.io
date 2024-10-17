@@ -79,7 +79,21 @@ class DashboardNav extends StatelessWidget {
                     label: property.name,
                     style: MenuItemButton.styleFrom(),
                   );
-                }).toList(),
+                }).toList() + [DropdownMenuEntry(
+                    value: Property.savoy,
+                    label: '',
+                    style: MenuItemButton.styleFrom(overlayColor: Colors.transparent),
+                    labelWidget: FloatingActionButton.small(
+                  onPressed: () {
+                    // Add your onPressed code here!
+                  },
+                  elevation: 0,
+                  hoverElevation: 0,
+                  focusElevation: 0,
+                  highlightElevation: 0,
+                  child: const Icon(Icons.add),
+                )
+                  )]
               ),
               TextButton(
                 style: TextButton.styleFrom(

@@ -43,7 +43,7 @@ Future<void> createWatchlistCollection() async {
     size: 36,
     xrequired: true,
   );
-  await Future.delayed(Duration(seconds: 5));
+  await Future.delayed(const Duration(seconds: 5));
   await db.createIndex(
     databaseId: 'flutter_academy_db',
     collectionId: 'watchlist',
@@ -140,7 +140,7 @@ Future<void> createCollection() async {
       collectionId: 'courses',
       key: 'published_date',
       xrequired: true);
-  await Future.delayed(Duration(seconds: 5));
+  await Future.delayed(const Duration(seconds: 5));
   await db.createIndex(
       databaseId: 'flutter_academy_db',
       collectionId: 'courses',

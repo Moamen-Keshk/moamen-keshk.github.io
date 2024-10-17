@@ -37,19 +37,8 @@ class AppRouterDelegate extends RouterDelegate<Uri>
       return Navigator(
         key: navigatorKey,
         pages: pages,
-        onPopPage: (route, result) {
-          if (!route.didPop(result)) {
-            return false;
-          }
-
-          if (pages.isNotEmpty) {
-            _path = _path.replace(
-                pathSegments: _path.pathSegments
-                    .getRange(0, _path.pathSegments.length - 1));
-            _safeNotifyListeners();
-            return true;
-          }
-          return false;
+        onDidRemovePage: (Page<Object?> page) {
+          pages.remove(page);
         },
       );
     });
