@@ -15,6 +15,7 @@ import 'package:flutter_academy/app/courses/pages/dashboard.page.dart';
 import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
 import 'package:flutter_academy/app/courses/pages/load.page.dart';
+import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -94,6 +95,12 @@ class AppRouterDelegate extends RouterDelegate<Uri>
           child: AllNotificationsPage(),
           key: ValueKey('all_notifications'),
         ));
+      case 'new_property':
+        pages.add(const MaterialPage(
+          key: ValueKey('new_property'),
+          child: NewPropertyPage(),
+        ));
+        break;
       case 'contacts':
         pages.add(const MaterialPage(
           key: ValueKey('contacts'),

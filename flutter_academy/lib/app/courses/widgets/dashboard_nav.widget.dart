@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
+import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/property_list.vm.dart';
 import 'package:flutter_academy/app/courses/views/notifications.view.dart';
 import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
 import 'package:flutter_academy/main.dart';
@@ -22,8 +24,8 @@ enum Property {
   final String name;
 }
 
-final TextEditingController propertyController = TextEditingController();
-Property? selectedProperty;
+String? selectedProperty;
+String? initialSelection;
 
 class DashboardNav extends StatelessWidget {
   const DashboardNav({super.key});
@@ -57,44 +59,51 @@ class DashboardNav extends StatelessWidget {
                 child: const Text("New booking"),
               ),
               const SizedBox(width: 10.0),
-              DropdownMenu<Property>(
-                initialSelection: Property.savoy,
-                controller: propertyController,
+              Consumer(builder: (context, ref, child) {
+                final properties = ref.watch(propertyListVM);
+                if (properties.isEmpty) {
+                  initialSelection = '';
+                }
+                else {
+                  initialSelection = properties[0].name;
+                }
+              return DropdownMenu<String>(
+                initialSelection: initialSelection,
                 // requestFocusOnTap is enabled/disabled by platforms when it is null.
                 // On mobile platforms, this is false by default. Setting this to true will
                 // trigger focus request on the text field and virtual keyboard will appear
                 // afterward. On desktop platforms however, this defaults to true.
                 requestFocusOnTap: true,
                 label: const Text('Property'),
-                onSelected: (Property? property) {
+                onSelected: (String? property) {
                   setState(() {
                     selectedProperty = property;
                     return null;
                   });
                 },
-                dropdownMenuEntries: Property.values
-                    .map<DropdownMenuEntry<Property>>((Property property) {
-                  return DropdownMenuEntry<Property>(
-                    value: property,
+                dropdownMenuEntries: properties.map<DropdownMenuEntry<String>>((PropertyVM property) {
+                  return DropdownMenuEntry<String>(
+                    value: property.name,
                     label: property.name,
                     style: MenuItemButton.styleFrom(),
                   );
                 }).toList() + [DropdownMenuEntry(
-                    value: Property.savoy,
+                    value: '',
                     label: '',
                     style: MenuItemButton.styleFrom(overlayColor: Colors.transparent),
                     labelWidget: FloatingActionButton.small(
-                  onPressed: () {
-                    // Add your onPressed code here!
-                  },
-                  elevation: 0,
-                  hoverElevation: 0,
-                  focusElevation: 0,
-                  highlightElevation: 0,
-                  child: const Icon(Icons.add),
-                )
-                  )]
-              ),
+                    onPressed: () {
+                      routerDelegate.go('new_property');
+                    },
+                    elevation: 0,
+                    hoverElevation: 0,
+                    focusElevation: 0,
+                    highlightElevation: 0,
+                    child: const Icon(Icons.add),
+                  )
+                    )]
+                );
+                }),
               TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,

@@ -7,7 +7,7 @@ class SnackBarTunnel extends StatelessWidget {
   final String message;
   final String path;
 
-  SnackBarTunnel({super.key, required this.message, required this.path});
+  SnackBarTunnel(String s, {super.key, required this.message, required this.path});
 
   @override
   Widget build(BuildContext context) {
