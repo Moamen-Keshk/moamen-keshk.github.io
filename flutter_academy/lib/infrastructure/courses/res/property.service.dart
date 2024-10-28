@@ -6,7 +6,7 @@ class PropertyService {
   final _auth = FirebaseAuth.instance;
   Future<List<Property>> getProperty() async {
     final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/notifications");
+        await _auth.currentUser?.getIdToken(), "/api/v1/properties");
     return (query['data'] as List)
         .map((e) => Property.fromResMap(e))
         .toList();
