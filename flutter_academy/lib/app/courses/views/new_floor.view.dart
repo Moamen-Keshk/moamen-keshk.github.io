@@ -27,7 +27,7 @@ class _NewFloorViewState extends State<NewFloorView> {
       DropdownData(8, '8'),
       DropdownData(9, '9')
     ];
-      List<DropdownData> roomsDropdownItems = [
+  List<DropdownData> roomsDropdownItems = [
       DropdownData(1, '1'),
       DropdownData(2, '2'),
       DropdownData(3, '3'),
@@ -39,10 +39,19 @@ class _NewFloorViewState extends State<NewFloorView> {
       DropdownData(9, '9'),
       DropdownData(0, 'None')
     ];
-int? floorSelectedValue;
-int? floorInitialSelection;
-int? roomsSelectedValue = 0;
-int? roomsInitialSelection;
+  List<DropdownData> categoryDropdownItems = [
+      DropdownData(1, 'Single'),
+      DropdownData(2, 'Double'),
+      DropdownData(3, 'Triple'),
+      DropdownData(4, 'Quadruple'),
+      DropdownData(5, 'Family')
+    ];
+  int? floorSelectedValue;
+  int? floorInitialSelection;
+  int? roomsSelectedValue = 0;
+  int? roomsInitialSelection;
+  int? categorySelectedValue;
+  int? categoryInitialSelection;
 
   @override
   void dispose() {
@@ -69,7 +78,7 @@ int? roomsInitialSelection;
                 DropdownMenu<int>(
                   initialSelection: floorInitialSelection,
                   requestFocusOnTap: true,
-                label: const Text('Floor No.'),
+                label: const Text('Floor No.', style: TextStyle(fontSize: 13)),
                 onSelected: (int? value) {
                   setState(() {
                     floorSelectedValue = value;
@@ -89,7 +98,7 @@ int? roomsInitialSelection;
     DropdownMenu<int>(
                   initialSelection: roomsInitialSelection,
                   requestFocusOnTap: true,
-                label: const Text('No. of Rooms'),
+                label: const Text('No. of Rooms', style: TextStyle(fontSize: 13)),
                 onSelected: (int? value) {
                   setState(() {
                     roomsSelectedValue = value;
@@ -108,16 +117,41 @@ int? roomsInitialSelection;
               const SizedBox(height: 20.0),
               Container(child: 
               roomsSelectedValue == 0 ? null : Table(
-      border: TableBorder.all(), // Optional border around the table
       columnWidths: {
         0: FixedColumnWidth(100.0), // Width of the first column
         1: FlexColumnWidth(), // Remaining space split equally
       },
-      children: List.generate(roomsSelectedValue!, (i) => i).map((int roomsSelectedValue) {
+      children: 
+        List.generate(roomsSelectedValue!, (i) => i).map((int roomsSelectedValue) {
                   return TableRow(
           children: [
-            Text('Row 1, Column 1', style: TextStyle(fontSize: 16)),
-            Icon(Icons.star, color: Colors.orange, size: 24),
+            Padding(padding: EdgeInsets.only(right:7, bottom:7),
+            child: TextFormField(
+  decoration: const InputDecoration(
+    border: OutlineInputBorder(),
+    labelText: 'Room No.',
+    labelStyle: TextStyle(fontSize: 13)
+  ),
+)),
+Padding(padding: EdgeInsets.only(bottom:7),
+child: DropdownMenu<int>(
+                  initialSelection: categoryInitialSelection,
+                  requestFocusOnTap: true,
+                label: const Text('Category', style: TextStyle(fontSize: 13)),
+                onSelected: (int? value) {
+                  setState(() {
+                    categorySelectedValue = value;
+                    return;
+                  });
+                },
+                  dropdownMenuEntries: categoryDropdownItems.map<DropdownMenuEntry<int>>((DropdownData data) {
+                  return DropdownMenuEntry<int>(
+                    value: data.value,
+                    label: data.label,
+                    style: MenuItemButton.styleFrom(),
+                  );
+                }).toList()
+    ))
           ],
         );
                 }).toList(),
