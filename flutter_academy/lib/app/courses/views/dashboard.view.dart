@@ -11,6 +11,9 @@ class DashboardView extends StatelessWidget {
       children: [
         FloorCard(),
         const SizedBox(height: 10.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
         ElevatedButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,
@@ -19,8 +22,18 @@ class DashboardView extends StatelessWidget {
                   routerDelegate.go('/new_floor');
                 },
                 child: const Text("New Floor"),
+              ),
+        const SizedBox(width: 10.0),
+        ElevatedButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                ),
+                onPressed: () {
+                  routerDelegate.go('/new_category');
+                },
+                child: const Text("New Category")
               )
-        ]);
+        ])]);
   }
 }
 

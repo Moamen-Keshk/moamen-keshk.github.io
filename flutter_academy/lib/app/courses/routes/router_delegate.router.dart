@@ -15,6 +15,7 @@ import 'package:flutter_academy/app/courses/pages/dashboard.page.dart';
 import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
 import 'package:flutter_academy/app/courses/pages/load.page.dart';
+import 'package:flutter_academy/app/courses/pages/new_category.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
@@ -100,6 +101,12 @@ class AppRouterDelegate extends RouterDelegate<Uri>
         pages.add(const MaterialPage(
           key: ValueKey('new_property'),
           child: NewPropertyPage(),
+        ));
+        break;
+      case 'new_category':
+        pages.add(const MaterialPage(
+          key: ValueKey('new_category'),
+          child: NewCategoryPage(),
         ));
         break;
       case 'new_floor':
