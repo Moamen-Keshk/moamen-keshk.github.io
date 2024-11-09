@@ -24,6 +24,6 @@ class CategoryService {
       return await sendPostRequest(
           {"name": name, "description": description},
           await _auth.currentUser?.getIdToken(),
-          "/api/v1/new_category");
+          "/api/v1/new-category");
   }
 }

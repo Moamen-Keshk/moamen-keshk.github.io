@@ -8,23 +8,19 @@ class FloorService {
   Future<List<Floor>> getFloor() async {
     final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(), "/api/v1/floors");
-    return (query['data'] as List)
-        .map((e) => Floor.fromResMap(e))
-        .toList();
+    return (query['data'] as List).map((e) => Floor.fromResMap(e)).toList();
   }
 
   Future<List<Floor>> getAllFloors() async {
     final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(), "/api/v1/all-floors");
-    return (query['data'] as List)
-        .map((e) => Floor.fromResMap(e))
-        .toList();
+    return (query['data'] as List).map((e) => Floor.fromResMap(e)).toList();
   }
 
-    Future<bool> addFloor(int number, int propertyId, List<Room>? rooms) async {
-      return await sendPostRequest(
-          {"floor_number": number, "property_id": propertyId, "rooms": rooms},
-          await _auth.currentUser?.getIdToken(),
-          "/api/v1/new_floor");
+  Future<bool> addFloor(int number, int propertyId, List<Room>? rooms) async {
+    return await sendPostRequest(
+        {"floor_number": number, "property_id": propertyId, "rooms": rooms},
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/new-floor");
   }
 }

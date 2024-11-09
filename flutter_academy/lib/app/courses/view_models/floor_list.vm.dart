@@ -12,7 +12,8 @@ class FloorListVM extends StateNotifier<List<FloorVM>> {
     state = [...res.map((floor) => FloorVM(floor))];
   }
 
-  Future<bool> addToFloors({required int number, required int propertyId, List<Room>? rooms}) async {
+  Future<bool> addToFloors(
+      {required int number, required int propertyId, List<Room>? rooms}) async {
     if (await FloorService().addFloor(number, propertyId, rooms)) {
       await fetchFloors();
       return true;
@@ -22,5 +23,4 @@ class FloorListVM extends StateNotifier<List<FloorVM>> {
 }
 
 final floorListVM =
-    StateNotifierProvider<FloorListVM, List<FloorVM>>(
-        (ref) => FloorListVM());
+    StateNotifierProvider<FloorListVM, List<FloorVM>>((ref) => FloorListVM());

@@ -4,31 +4,23 @@ import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/property_list.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/views/notifications.view.dart';
 import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum SampleItem { itemOne, itemTwo, itemThree }
+class DashboardNav extends StatefulWidget {
+  const DashboardNav({super.key});
 
-SampleItem? selectedMenu;
-
-enum Property {
-  savoy('Savoy'),
-  wembar('Wembar'),
-  dolphin('Dolphin'),
-  fjaerland('Fjaerland'),
-  villarose('Villa Rose');
-
-  const Property(this.name);
-  final String name;
+  @override
+  State<DashboardNav> createState() => _DashboardNavState();
 }
 
-String? selectedProperty;
-String? initialSelection;
+class _DashboardNavState extends State<DashboardNav> {
+  Map<String, String> propertiesMapping = {};
 
-class DashboardNav extends StatelessWidget {
-  const DashboardNav({super.key});
+  String? selectedProperty;
 
   @override
   Widget build(BuildContext context) {
@@ -61,49 +53,54 @@ class DashboardNav extends StatelessWidget {
               const SizedBox(width: 10.0),
               Consumer(builder: (context, ref, child) {
                 final properties = ref.watch(propertyListVM);
-                if (properties.isEmpty) {
-                  initialSelection = '';
-                }
-                else {
-                  initialSelection = properties[0].name;
-                }
-              return DropdownMenu<String>(
-                initialSelection: initialSelection,
-                // requestFocusOnTap is enabled/disabled by platforms when it is null.
-                // On mobile platforms, this is false by default. Setting this to true will
-                // trigger focus request on the text field and virtual keyboard will appear
-                // afterward. On desktop platforms however, this defaults to true.
-                requestFocusOnTap: true,
-                label: const Text('Property'),
-                onSelected: (String? property) {
-                  setState(() {
-                    selectedProperty = property;
-                    return null;
-                  });
-                },
-                dropdownMenuEntries: properties.map<DropdownMenuEntry<String>>((PropertyVM property) {
-                  return DropdownMenuEntry<String>(
-                    value: property.name,
-                    label: property.name,
-                    style: MenuItemButton.styleFrom(),
-                  );
-                }).toList() + [DropdownMenuEntry(
-                    value: '',
-                    label: '',
-                    style: MenuItemButton.styleFrom(overlayColor: Colors.transparent),
-                    labelWidget: FloatingActionButton.small(
-                    onPressed: () {
-                      routerDelegate.go('new_property');
-                    },
-                    elevation: 0,
-                    hoverElevation: 0,
-                    focusElevation: 0,
-                    highlightElevation: 0,
-                    child: const Icon(Icons.add),
-                  )
-                    )]
-                );
-                }),
+                propertiesMapping = propertyMapping(properties);
+                return Container(
+                    width: 130,
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey, width: 1)),
+                    child: DropdownButton<String>(
+                      value: selectedProperty,
+                      hint: Text("Property"),
+                      isExpanded: true,
+                      underline: SizedBox(),
+                      // requestFocusOnTap is enabled/disabled by platforms when it is null.
+                      // On mobile platforms, this is false by default. Setting this to true will
+                      // trigger focus request on the text field and virtual keyboard will appear
+                      // afterward. On desktop platforms however, this defaults to true.
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedProperty = newValue;
+                          ref.read(selectedPropertyVM.notifier).state =
+                              int.parse(newValue!);
+                        });
+                      },
+                      items: properties.map<DropdownMenuItem<String>>(
+                              (PropertyVM property) {
+                            return DropdownMenuItem<String>(
+                              value: property.id,
+                              child: Text(property.name),
+                            );
+                          }).toList() +
+                          [
+                            DropdownMenuItem(
+                                value: '',
+                                child: FloatingActionButton.small(
+                                  onPressed: () {
+                                    routerDelegate.go('new_property');
+                                  },
+                                  elevation: 0,
+                                  hoverElevation: 0,
+                                  focusElevation: 0,
+                                  highlightElevation: 0,
+                                  child: const Icon(Icons.add),
+                                ))
+                          ],
+                      icon: Icon(Icons.arrow_drop_down, color: Colors.black),
+                    ));
+              }),
               TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,
@@ -149,5 +146,11 @@ class DashboardNav extends StatelessWidget {
     );
   }
 
-  setState(Property? Function() param0) {}
+  Map<String, String> propertyMapping(List<PropertyVM> propertyVMList) {
+    Map<String, String> propertyMap = {};
+    for (var property in propertyVMList) {
+      propertyMap[property.id] = property.name;
+    }
+    return propertyMap;
+  }
 }

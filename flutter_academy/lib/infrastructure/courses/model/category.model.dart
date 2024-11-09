@@ -4,46 +4,31 @@ class Category {
   final String id;
   final String name;
   final String description;
-  Category({
-    required this.id,
-    required this.name,
-    required this.description
-  });
+  Category({required this.id, required this.name, required this.description});
 
-  Category copyWith({
-    String? id,
-    String? name,
-    String? description
-  }) {
+  Category copyWith({String? id, String? name, String? description}) {
     return Category(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description
-    );
+        id: id ?? this.id,
+        name: name ?? this.name,
+        description: description ?? this.description);
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'description': description
-    };
+    return {'id': id, 'name': name, 'description': description};
   }
 
   factory Category.fromMap(String id, Map<String, dynamic> map) {
     return Category(
-      id: map['\$id'] ?? '',
-      name: map['name'] ?? '',
-      description: map['description'] ?? ''
-    );
+        id: map['id'].toString(),
+        name: map['name'] ?? '',
+        description: map['description'] ?? '');
   }
 
   factory Category.fromResMap(Map<String, dynamic> map) {
     return Category(
-      id: map['\$id'] ?? '',
-      name: map['name'] ?? '',
-      description: map['description'] ?? ''
-    );
+        id: map['id'].toString(),
+        name: map['name'] ?? '',
+        description: map['description'] ?? '');
   }
 
   String toJson() => json.encode(toMap());
@@ -68,8 +53,6 @@ class Category {
 
   @override
   int get hashCode {
-    return id.hashCode ^
-        name.hashCode ^
-        description.hashCode;
+    return id.hashCode ^ name.hashCode ^ description.hashCode;
   }
 }

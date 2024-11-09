@@ -5,6 +5,6 @@ class RoomVM {
   RoomVM(this.room);
   int get roomNumber => room.roomNumber;
   int get categoryId => room.categoryId;
-  int get floorId => room.floorId;
-  int get statusId => room.statusId;
+  int? get floorId => room.floorId;
+  int? get statusId => room.statusId;
 }

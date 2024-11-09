@@ -1,18 +1,19 @@
 import 'dart:convert';
 
 class Room {
-  final String id;
+  String? id;
   final int roomNumber;
   final int categoryId;
-  final int floorId;
-  final int statusId;
-  Room({
-    required this.id,
-    required this.roomNumber,
-    required this.categoryId,
-    required this.floorId,
-    required this.statusId
-  });
+  int? floorId;
+  int? statusId;
+  Room(
+      {this.id,
+      required this.roomNumber,
+      required this.categoryId,
+      this.floorId,
+      this.statusId});
+
+  Room.newFloor({required this.roomNumber, required this.categoryId});
 
   Room copyWith({
     String? id,
@@ -42,22 +43,20 @@ class Room {
 
   factory Room.fromMap(String id, Map<String, dynamic> map) {
     return Room(
-      id: map['\$id'] ?? '',
-      roomNumber: map['room_number'] ?? '',
-      categoryId: map['category_id'] ?? '',
-      floorId: map['floor_id'] ?? '',
-      statusId: map['status_id'] ?? ''
-    );
+        id: map['\$id'] ?? '',
+        roomNumber: map['room_number'] ?? '',
+        categoryId: map['category_id'] ?? '',
+        floorId: map['floor_id'] ?? '',
+        statusId: map['status_id'] ?? '');
   }
 
   factory Room.fromResMap(Map<String, dynamic> map) {
     return Room(
-      id: map['\$id'] ?? '',
-      roomNumber: map['room_number'] ?? '',
-      categoryId: map['category_id'] ?? '',
-      floorId: map['floor_id'] ?? '',
-      statusId: map['status_id'] ?? ''
-    );
+        id: map['\$id'] ?? '',
+        roomNumber: map['room_number'] ?? '',
+        categoryId: map['category_id'] ?? '',
+        floorId: map['floor_id'] ?? '',
+        statusId: map['status_id'] ?? '');
   }
 
   String toJson() => json.encode(toMap());

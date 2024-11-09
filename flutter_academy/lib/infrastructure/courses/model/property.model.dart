@@ -45,7 +45,7 @@ class Property {
 
   factory Property.fromMap(String id, Map<String, dynamic> map) {
     return Property(
-      id: map['\$id'] ?? '',
+      id: map['id'].toString(),
       name: map['name'] ?? '',
       address: map['address'] ?? '',
       status: map['status'] ?? '',
@@ -55,7 +55,7 @@ class Property {
 
   factory Property.fromResMap(Map<String, dynamic> map) {
     return Property(
-      id: map['\$id'] ?? '',
+      id: map['id'].toString(),
       name: map['name'] ?? '',
       address: map['address'] ?? '',
       status: map['status'] ?? '',

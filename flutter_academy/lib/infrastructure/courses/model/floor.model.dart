@@ -6,25 +6,19 @@ class Floor {
   final int number;
   final int propertyId;
   final List<Room> rooms;
-  Floor({
-    required this.id,
-    required this.number,
-    required this.propertyId,
-    required this.rooms
-  });
+  Floor(
+      {required this.id,
+      required this.number,
+      required this.propertyId,
+      required this.rooms});
 
-  Floor copyWith({
-    String? id,
-    int? number,
-    int? propertyId,
-    List<Room>? rooms
-  }) {
+  Floor copyWith(
+      {String? id, int? number, int? propertyId, List<Room>? rooms}) {
     return Floor(
-      id: id ?? this.id,
-      number: number ?? this.number,
-      propertyId: propertyId ?? this.propertyId,
-      rooms: rooms ?? this.rooms
-    );
+        id: id ?? this.id,
+        number: number ?? this.number,
+        propertyId: propertyId ?? this.propertyId,
+        rooms: rooms ?? this.rooms);
   }
 
   Map<String, dynamic> toMap() {
@@ -38,20 +32,21 @@ class Floor {
 
   factory Floor.fromMap(String id, Map<String, dynamic> map) {
     return Floor(
-      id: map['\$id'] ?? '',
-      number: map['floor_number'] ?? '',
-      propertyId: map['property_id'] ?? '',
-      rooms: map['rooms'] ?? ''
-    );
+        id: map['\$id'] ?? '',
+        number: map['floor_number'] ?? '',
+        propertyId: map['property_id'] ?? '',
+        rooms: map['rooms'] ?? '');
   }
 
   factory Floor.fromResMap(Map<String, dynamic> map) {
     return Floor(
-      id: map['\$id'] ?? '',
-      number: map['floor_number'] ?? '',
-      propertyId: map['property_id'] ?? '',
-      rooms: map['rooms'] ?? ''
-    );
+        id: map['\$id'] ?? '',
+        number: map['floor_number'] ?? '',
+        propertyId: map['property_id'] ?? '',
+        rooms: map['rooms'].map<Room>((dynamic map) {
+              return Room.fromResMap(map);
+            }).toList() ??
+            []);
   }
 
   String toJson() => json.encode(toMap());
@@ -77,9 +72,6 @@ class Floor {
 
   @override
   int get hashCode {
-    return id.hashCode ^
-        number.hashCode ^
-        propertyId.hashCode ^
-        rooms.hashCode;
+    return id.hashCode ^ number.hashCode ^ propertyId.hashCode ^ rooms.hashCode;
   }
 }
