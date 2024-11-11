@@ -10,6 +10,8 @@ import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+String? selectedProperty;
+
 class DashboardNav extends StatefulWidget {
   const DashboardNav({super.key});
 
@@ -19,8 +21,6 @@ class DashboardNav extends StatefulWidget {
 
 class _DashboardNavState extends State<DashboardNav> {
   Map<String, String> propertiesMapping = {};
-
-  String? selectedProperty;
 
   @override
   Widget build(BuildContext context) {
@@ -86,17 +86,11 @@ class _DashboardNavState extends State<DashboardNav> {
                           }).toList() +
                           [
                             DropdownMenuItem(
-                                value: '',
-                                child: FloatingActionButton.small(
-                                  onPressed: () {
-                                    routerDelegate.go('new_property');
-                                  },
-                                  elevation: 0,
-                                  hoverElevation: 0,
-                                  focusElevation: 0,
-                                  highlightElevation: 0,
-                                  child: const Icon(Icons.add),
-                                ))
+                                value: null,
+                                onTap: () {
+                                  routerDelegate.go('new_property');
+                                },
+                                child: const Icon(Icons.add))
                           ],
                       icon: Icon(Icons.arrow_drop_down, color: Colors.black),
                     ));
