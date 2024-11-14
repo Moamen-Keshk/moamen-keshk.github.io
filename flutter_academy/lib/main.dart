@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +40,19 @@ class MyApp extends StatelessWidget {
               darkTheme: ThemeData.dark().copyWith(
                 primaryColor: Colors.blue,
               ),
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+                MonthYearPickerLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en', ''), // English
+                Locale('es', ''), // Spanish
+                Locale('fr', ''), // French
+                Locale('de', ''), // German
+                // Add more locales as needed
+              ],
               themeMode: themeModeVM.themeMode,
               routerDelegate: routerDelegate,
               routeInformationParser: _routeParser,
