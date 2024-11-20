@@ -11,9 +11,9 @@ class FloorService {
     return (query['data'] as List).map((e) => Floor.fromResMap(e)).toList();
   }
 
-  Future<List<Floor>> getAllFloors() async {
-    final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/all-floors");
+  Future<List<Floor>> getAllFloors(int propertyId) async {
+    final query = await sendGetRequest(await _auth.currentUser?.getIdToken(),
+        "/api/v1/all-floors/$propertyId");
     return (query['data'] as List).map((e) => Floor.fromResMap(e)).toList();
   }
 

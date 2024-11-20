@@ -11,7 +11,7 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        children:  const <Widget>[DashboardNav(), DashboardView()],
+        children: const <Widget>[DashboardNav(), DashboardView()],
       ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null

@@ -11,7 +11,10 @@ class NewFloorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        children: const <Widget>[DashboardNav(), Center(heightFactor: 2.0, child: NewFloorView())],
+        children: const <Widget>[
+          DashboardNav(),
+          Center(heightFactor: 2.0, child: NewFloorView())
+        ],
       ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null

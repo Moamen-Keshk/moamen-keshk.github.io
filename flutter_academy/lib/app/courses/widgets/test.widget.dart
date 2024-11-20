@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/app/courses/widgets/floor_with_rooms.widget.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
-
-final formatter = DateFormat('MMM');
 
 class SingleRowMonthCalendar extends ConsumerStatefulWidget {
   const SingleRowMonthCalendar({super.key});
@@ -38,35 +37,47 @@ class _SingleRowMonthCalendarState
     _daysInMonth = _getDaysInMonth(selectedMonth.year, selectedMonth.month);
     return Column(children: [
       Row(children: [
-        Column(children: [
-          Center(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  shape: BeveledRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              )),
-              onPressed: () async {
-                ref.read(selectedMonthVM.notifier).state =
-                    (await showMonthYearPicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(20),
-                  lastDate: DateTime(2027),
-                ))!;
-                setState(() {});
-              },
-              child: Text(
-                DateFormat('MMMM yyyy').format(selectedMonth).toString(),
-                style: TextStyle(fontSize: 15),
+        Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Column(children: [
+              SizedBox(
+                width: 160,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      shape: BeveledRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  )),
+                  onPressed: () async {
+                    ref.read(selectedMonthVM.notifier).state =
+                        (await showMonthYearPicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(20),
+                      lastDate: DateTime(2027),
+                    ))!;
+                    setState(() {});
+                  },
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(selectedMonth).toString(),
+                    style: TextStyle(fontSize: 15),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Text('Rooms',
-              style: TextStyle(
-                fontSize: 16.0, // Font size
-                color: Colors.grey, // Text color
-              )),
-        ]),
+              SizedBox(height: 10),
+              Container(
+                  alignment: Alignment.center,
+                  width: 160,
+                  height: 35,
+                  padding: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Rooms',
+                      style: TextStyle(
+                        fontSize: 15,
+                      ))),
+            ])),
         Expanded(
             child: Column(children: [
           Padding(
@@ -120,6 +131,9 @@ class _SingleRowMonthCalendarState
                 )),
           ),
         ]))
+      ]),
+      Row(children: [
+        Expanded(child: FloorRooms()),
       ])
     ]);
   }
