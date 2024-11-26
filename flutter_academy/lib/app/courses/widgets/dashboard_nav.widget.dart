@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
+import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/property_list.vm.dart';
+import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/views/notifications.view.dart';
 import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
@@ -41,15 +43,19 @@ class _DashboardNavState extends State<DashboardNav> {
               })
             ]
           : [
-              TextButton(
-                style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: const Color.fromARGB(255, 109, 106, 106)),
-                onPressed: () {
-                  routerDelegate.go('/');
-                },
-                child: const Text("New booking"),
-              ),
+              Consumer(builder: (context, ref, child) {
+                return TextButton(
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor:
+                          const Color.fromARGB(255, 109, 106, 106)),
+                  onPressed: () {
+                    showBookingDialog(context, ref);
+                    routerDelegate.go('/');
+                  },
+                  child: const Text("New booking"),
+                );
+              }),
               const SizedBox(width: 10.0),
               Consumer(builder: (context, ref, child) {
                 final properties = ref.watch(propertyListVM);
@@ -137,6 +143,26 @@ class _DashboardNavState extends State<DashboardNav> {
                         });
               })
             ],
+    );
+  }
+
+  void showBookingDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('New Booking'),
+          content: BookingForm(
+            onSubmit: (bookingData) async {
+              return BookingListVM(
+                      ref.watch(selectedPropertyVM),
+                      ref.watch(selectedMonthVM).year,
+                      ref.watch(selectedMonthVM).month)
+                  .addToBookings(bookingData);
+            },
+          ),
+        );
+      },
     );
   }
 

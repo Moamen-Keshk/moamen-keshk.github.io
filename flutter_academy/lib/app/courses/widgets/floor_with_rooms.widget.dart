@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
@@ -18,6 +19,16 @@ class Booking {
   });
 }
 
+class TabIndexNotifier extends StateNotifier<int> {
+  TabIndexNotifier() : super(0);
+
+  void setIndex(int index) => state = index;
+}
+
+final tabIndexProvider = StateNotifierProvider<TabIndexNotifier, int>((ref) {
+  return TabIndexNotifier();
+});
+
 class FloorRooms extends StatefulWidget {
   const FloorRooms({super.key});
 
@@ -27,58 +38,15 @@ class FloorRooms extends StatefulWidget {
   State<FloorRooms> createState() => _FloorRoomsState();
 }
 
-class _FloorRoomsState extends State<FloorRooms>
-    with SingleTickerProviderStateMixin {
+class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
   late TabController _tabController;
 
   // Sample data: list of bookings
-  final List<Booking> bookings = [
-    Booking(
-        guestName: 'John Doe',
-        room: '101',
-        checkIn: '2024-11-16',
-        checkOut: '2024-11-20'),
-    Booking(
-        guestName: 'Alice Smith',
-        room: '102',
-        checkIn: '2024-11-18',
-        checkOut: '2024-11-22'),
-    Booking(
-        guestName: 'Bob Johnson',
-        room: '103',
-        checkIn: '2024-11-19',
-        checkOut: '2024-11-23'),
-    Booking(
-        guestName: 'John Doe',
-        room: '101',
-        checkIn: '2024-11-16',
-        checkOut: '2024-11-20'),
-    Booking(
-        guestName: 'Alice Smith',
-        room: '102',
-        checkIn: '2024-11-18',
-        checkOut: '2024-11-22'),
-    Booking(
-        guestName: 'Bob Johnson',
-        room: '103',
-        checkIn: '2024-11-19',
-        checkOut: '2024-11-23'),
-    Booking(
-        guestName: 'John Doe',
-        room: '101',
-        checkIn: '2024-11-16',
-        checkOut: '2024-11-20'),
-    Booking(
-        guestName: 'Alice Smith',
-        room: '102',
-        checkIn: '2024-11-18',
-        checkOut: '2024-11-22'),
-  ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: bookings.length, vsync: this);
+    _tabController = TabController(length: 0, vsync: this);
   }
 
   @override
@@ -91,6 +59,9 @@ class _FloorRoomsState extends State<FloorRooms>
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
       final floors = ref.watch(floorListVM);
+      final bookings = ref.watch(bookingListVM);
+      _tabController.dispose();
+      _tabController = TabController(length: bookings.length, vsync: this);
       return Padding(
           padding: EdgeInsets.symmetric(vertical: 6, horizontal: 10),
           child: Column(
@@ -143,17 +114,19 @@ class _FloorRoomsState extends State<FloorRooms>
                                   bookings.length,
                                   (index) => ElevatedButton(
                                     onPressed: () {
-                                      setState(() {
-                                        _tabController.animateTo(index);
-                                      });
+                                      ref
+                                          .read(tabIndexProvider.notifier)
+                                          .setIndex(index);
+                                      _tabController.animateTo(index);
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor:
-                                          _tabController.index == index
+                                          ref.watch(tabIndexProvider) == index
                                               ? Colors.blue
                                               : Colors.grey,
                                     ),
-                                    child: Text(bookings[index].guestName),
+                                    child: Text(
+                                        '${bookings[index].firstName} ${bookings[index].lastName}'),
                                   ),
                                 ),
                               )),

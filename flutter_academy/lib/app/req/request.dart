@@ -43,3 +43,27 @@ Future<dynamic> sendGetRequest(idToken, String apiURL) async {
     return null;
   }
 }
+
+Future<dynamic> sendGetWithParamsRequest(
+    idToken, String apiURL, Map<String, String?> queryParams) async {
+  try {
+    final url = Uri.parse(baseURL + apiURL);
+    final uriWithParams = url.replace(queryParameters: queryParams);
+    final query = await http.get(
+      uriWithParams,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $idToken"
+      },
+    );
+
+    if (query.statusCode == 201) {
+      var data = jsonDecode(query.body);
+      return data;
+    } else {
+      return null;
+    }
+  } on Exception {
+    return null;
+  }
+}

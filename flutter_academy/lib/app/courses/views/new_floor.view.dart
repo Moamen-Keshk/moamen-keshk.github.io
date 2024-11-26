@@ -214,12 +214,14 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
   }
 
   List<Room> createRooms() {
+    final selectedPropertyID = ref.read(selectedPropertyVM);
     final List<Room> roomsList = [];
     int i = -1;
     _roomsNumbers.forEach((key, value) {
       i++;
-      roomsList.add(Room.newFloor(
+      roomsList.add(Room(
           roomNumber: int.parse(key),
+          propertyId: selectedPropertyID,
           categoryId: int.parse(selectedValues[i]!)));
     });
     return roomsList;

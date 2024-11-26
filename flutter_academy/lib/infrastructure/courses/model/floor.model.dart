@@ -32,7 +32,7 @@ class Floor {
 
   factory Floor.fromMap(String id, Map<String, dynamic> map) {
     return Floor(
-        id: map['\$id'] ?? '',
+        id: map['id'].toString(),
         number: map['floor_number'] ?? '',
         propertyId: map['property_id'] ?? '',
         rooms: map['rooms'] ?? '');
@@ -40,7 +40,7 @@ class Floor {
 
   factory Floor.fromResMap(Map<String, dynamic> map) {
     return Floor(
-        id: map['\$id'] ?? '',
+        id: map['id'].toString(),
         number: map['floor_number'] ?? '',
         propertyId: map['property_id'] ?? '',
         rooms: map['rooms'].map<Room>((dynamic map) {

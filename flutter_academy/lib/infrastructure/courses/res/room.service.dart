@@ -7,23 +7,22 @@ class RoomService {
   Future<List<Room>> getRoom() async {
     final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(), "/api/v1/rooms");
-    return (query['data'] as List)
-        .map((e) => Room.fromResMap(e))
-        .toList();
+    return (query['data'] as List).map((e) => Room.fromResMap(e)).toList();
   }
 
-  Future<List<Room>> getAllRooms() async {
+  Future<List<Room>> getAllRooms(int propertyId) async {
     final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/all-rooms");
-    return (query['data'] as List)
-        .map((e) => Room.fromResMap(e))
-        .toList();
+        await _auth.currentUser?.getIdToken(), "/api/v1/all-rooms/$propertyId");
+    return (query['data'] as List).map((e) => Room.fromResMap(e)).toList();
   }
 
-    Future<bool> addRoom(int roomNumber, int categoryId, int floorId) async {
-      return await sendPostRequest(
-          {"room_number": roomNumber, "category_id": categoryId, "floor_id": floorId},
-          await _auth.currentUser?.getIdToken(),
-          "/api/v1/new_room");
+  Future<bool> addRoom(
+      int roomNumber, int propertyId, int categoryId, int floorId) async {
+    return await sendPostRequest({
+      "room_number": roomNumber,
+      "property_id": propertyId,
+      "category_id": categoryId,
+      "floor_id": floorId
+    }, await _auth.currentUser?.getIdToken(), "/api/v1/new_room");
   }
 }

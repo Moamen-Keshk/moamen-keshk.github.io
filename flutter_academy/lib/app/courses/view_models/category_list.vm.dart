@@ -11,7 +11,8 @@ class CategoryListVM extends StateNotifier<List<CategoryVM>> {
     state = [...res.map((category) => CategoryVM(category))];
   }
 
-  Future<bool> addToCategories({required String name, required String description}) async {
+  Future<bool> addToCategories(
+      {required String name, required String description}) async {
     if (await CategoryService().addCategory(name, description)) {
       await fetchCategories();
       return true;
@@ -20,6 +21,5 @@ class CategoryListVM extends StateNotifier<List<CategoryVM>> {
   }
 }
 
-final categoryListVM =
-    StateNotifierProvider<CategoryListVM, List<CategoryVM>>(
-        (ref) => CategoryListVM());
+final categoryListVM = StateNotifierProvider<CategoryListVM, List<CategoryVM>>(
+    (ref) => CategoryListVM());
