@@ -212,6 +212,7 @@ class _BookingFormState extends State<BookingForm> {
               return SizedBox(
                   width: 160,
                   child: DropdownButtonFormField<String>(
+                    hint: Text('Room'),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -233,6 +234,7 @@ class _BookingFormState extends State<BookingForm> {
               return SizedBox(
                   width: 160,
                   child: DropdownButtonFormField<String>(
+                    hint: Text('Payment'),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -255,19 +257,24 @@ class _BookingFormState extends State<BookingForm> {
             decoration: InputDecoration(labelText: 'Note'),
           ),
           TextFormField(
+            maxLines: 2,
             controller: specialRequestController,
             decoration: InputDecoration(labelText: 'Special request'),
           ),
-          TextFormField(
-            controller: rateController,
-            decoration: InputDecoration(labelText: 'Rate'),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a rate';
-              }
-              return null;
-            },
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+            SizedBox(
+                width: 50,
+                child: TextFormField(
+                  controller: rateController,
+                  decoration: InputDecoration(labelText: 'Rate'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a rate';
+                    }
+                    return null;
+                  },
+                ))
+          ]),
           SizedBox(height: 20),
           Consumer(builder: (context, ref, child) {
             return ElevatedButton(
