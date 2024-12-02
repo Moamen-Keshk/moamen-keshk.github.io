@@ -21,6 +21,7 @@ class Booking {
   final int checkInYear;
   final int checkOutDay;
   final int checkOutMonth;
+  final int checkOutYear;
   final int numberOfNights;
   final double rate;
   final int propertyID;
@@ -43,6 +44,7 @@ class Booking {
       required this.checkInYear,
       required this.checkOutDay,
       required this.checkOutMonth,
+      required this.checkOutYear,
       required this.numberOfNights,
       required this.rate,
       required this.propertyID,
@@ -66,6 +68,7 @@ class Booking {
       int? checkInYear,
       int? checkOutDay,
       int? checkOutMonth,
+      int? checkOutYear,
       int? numberOfNights,
       double? rate,
       int? propertyID,
@@ -88,6 +91,7 @@ class Booking {
         checkInYear: checkInYear ?? this.checkInYear,
         checkOutDay: checkOutDay ?? this.checkOutDay,
         checkOutMonth: checkOutMonth ?? this.checkOutMonth,
+        checkOutYear: checkOutYear ?? this.checkOutYear,
         numberOfNights: numberOfNights ?? this.numberOfNights,
         rate: rate ?? this.rate,
         propertyID: propertyID ?? this.propertyID,
@@ -113,6 +117,7 @@ class Booking {
       'check_in_year': checkInYear,
       'check_out_day': checkOutDay,
       'check_out_month': checkOutMonth,
+      'check_out_year': checkOutYear,
       'number_of_nights': numberOfNights,
       'rate': rate,
       'property_id': propertyID,
@@ -139,6 +144,7 @@ class Booking {
         checkInYear: map['check_in_year'],
         checkOutDay: map['check_out_day'],
         checkOutMonth: map['check_out_month'],
+        checkOutYear: map['check_out_year'],
         numberOfNights: map['number_of_days'],
         rate: map['rate'],
         propertyID: map['property_id'],
@@ -164,6 +170,7 @@ class Booking {
         checkInYear: map['check_in_year'] ?? 0,
         checkOutDay: map['check_out_day'] ?? 0,
         checkOutMonth: map['check_out_month'] ?? 0,
+        checkOutYear: map['check_out_year'] ?? 0,
         numberOfNights: map['number_of_days'] ?? 0,
         rate: map['rate'] ?? 0,
         propertyID: map['property_id'] ?? 0,
@@ -183,7 +190,7 @@ class Booking {
     note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate,
     checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay,
     checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay,
-    checkOutMonth: $checkOutMonth, numberOfNights: $numberOfNights,
+    checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights,
     rate: $rate, propertyID: $propertyID, roomID: $roomID)''';
   }
 
@@ -209,6 +216,7 @@ class Booking {
         other.checkInYear == checkInYear &&
         other.checkOutDay == checkOutDay &&
         other.checkOutMonth == checkOutMonth &&
+        other.checkOutYear == checkOutYear &&
         other.numberOfNights == numberOfNights &&
         other.rate == rate &&
         other.propertyID == propertyID &&
@@ -234,6 +242,7 @@ class Booking {
         checkInYear.hashCode ^
         checkOutDay.hashCode ^
         checkOutMonth.hashCode ^
+        checkOutYear.hashCode ^
         numberOfNights.hashCode ^
         rate.hashCode ^
         propertyID.hashCode ^

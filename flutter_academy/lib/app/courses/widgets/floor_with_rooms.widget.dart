@@ -114,13 +114,13 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
   }
 
   void tabBarControllerLength(List<FloorVM> floors, List<BookingVM> bookings,
-      int numberOfDays, int currentMonth) {
+      int numberOfDays, int currentMonth, int currentYear) {
     int totalTabs = 0;
     for (var floor in floors) {
       for (var room in floor.rooms) {
         final bookingsPerRoom = isRoomHasBooking(bookings, int.parse(room.id!));
-        final tabSizes =
-            isDayHasBooking(bookingsPerRoom, numberOfDays, currentMonth);
+        final tabSizes = isDayHasBooking(
+            bookingsPerRoom, numberOfDays, currentMonth, currentYear);
         totalTabs += tabSizes.keys.length;
       }
     }
@@ -140,10 +140,13 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
       bookingsForTabBarView = [];
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
-      final selectedMonth = ref.watch(selectedMonthVM).month;
+      final selectedDate = ref.watch(selectedMonthVM);
+      final selectedMonth = selectedDate.month;
+      final selectedYear = selectedDate.year;
       final numberOfDays = ref.watch(numberOfDaysVM);
       int i = 0;
-      tabBarControllerLength(floors, bookings, numberOfDays, selectedMonth);
+      tabBarControllerLength(
+          floors, bookings, numberOfDays, selectedMonth, selectedYear);
       return Padding(
         padding: EdgeInsets.only(left: 6, right: 4),
         child: Column(
@@ -221,44 +224,51 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                   final tabSizes = isDayHasBooking(
                                       bookingsPerRoom,
                                       numberOfDays,
-                                      selectedMonth);
+                                      selectedMonth,
+                                      selectedYear);
                                   final tabPositions = tabSizes.keys.toList();
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: () {
                                       List<Widget> rowChildren = [];
                                       int currentDay = 1;
+
                                       while (currentDay <= numberOfDays) {
                                         if (tabPositions.contains(currentDay)) {
                                           final tabIndex = i;
                                           int tabSize =
                                               tabSizes[currentDay]?.tabSize ??
                                                   1;
-                                          if ((tabSizes[currentDay]!.tabSize +
-                                                  currentDay) >
+
+                                          // Handle case where tabSize spans beyond the end of the current month
+                                          if (tabSize + currentDay - 1 >
                                               numberOfDays) {
-                                            tabSize =
-                                                tabSizes[currentDay]!.tabSize +
-                                                    currentDay -
-                                                    numberOfDays;
+                                            tabSize = numberOfDays -
+                                                currentDay +
+                                                1; // Adjust to fit remaining days
                                           }
+
                                           rowChildren.add(
                                             Flexible(
                                               flex: tabSize,
                                               fit: FlexFit.loose,
                                               child: TabBarViewContainer(
-                                                  tabIndex: tabIndex,
-                                                  tabController: _tabController,
-                                                  tabSize: tabSize,
-                                                  booking: tabSizes[currentDay]!
-                                                      .bookingVM),
+                                                tabIndex: tabIndex,
+                                                tabController: _tabController,
+                                                tabSize: tabSize,
+                                                booking: tabSizes[currentDay]!
+                                                    .bookingVM,
+                                              ),
                                             ),
                                           );
+
                                           bookingsForTabBarView.add(
                                               tabSizes[currentDay]!.bookingVM);
-                                          currentDay += tabSize;
+                                          currentDay +=
+                                              tabSize; // Skip days covered by this booking
                                           i++;
                                         } else {
+                                          // No booking on this day; add a blank slot
                                           rowChildren.add(
                                             SizedBox(
                                               height: 35,
@@ -269,10 +279,10 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                               ),
                                             ),
                                           );
-
                                           currentDay++;
                                         }
                                       }
+
                                       return rowChildren;
                                     }(),
                                   );
@@ -296,6 +306,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                       ),
                       child: TabBarView(
                         controller: _tabController,
+                        physics: NeverScrollableScrollPhysics(),
                         children: bookingsForTabBarView.map((bookingWithTab) {
                           return Center(
                             child: Text(
@@ -316,8 +327,8 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     return bookings.where((booking) => booking.roomID == roomId).toList();
   }
 
-  Map<int, BookingWithTab> isDayHasBooking(
-      List<BookingVM> bookingPerRoom, int numberOfDays, int currentMonth) {
+  Map<int, BookingWithTab> isDayHasBooking(List<BookingVM> bookingPerRoom,
+      int numberOfDays, int currentMonth, int currentYear) {
     Map<int, BookingWithTab> bookingsMap = {};
     for (BookingVM booking in bookingPerRoom) {
       int checkInDay = booking.checkInDay;
@@ -332,8 +343,12 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
         numberOfNights = numberOfDays - checkInDay + 1;
       }
       // Adjust check-out day if it spills into the next month
-      bookingsMap[checkInDay] =
-          BookingWithTab(tabSize: numberOfNights, bookingVM: booking);
+      if (booking.checkOutYear == currentYear ||
+          (booking.checkOutYear != currentYear &&
+              booking.checkInMonth == currentMonth)) {
+        bookingsMap[checkInDay] =
+            BookingWithTab(tabSize: numberOfNights, bookingVM: booking);
+      }
     }
     return Map.fromEntries(
       bookingsMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),

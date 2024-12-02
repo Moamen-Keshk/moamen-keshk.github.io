@@ -20,6 +20,7 @@ class BookingVM {
   int get checkInYear => booking.checkInYear;
   int get checkOutDay => booking.checkOutDay;
   int get checkOutMonth => booking.checkOutMonth;
+  int get checkOutYear => booking.checkOutYear;
   int get numberOfNights => booking.numberOfNights;
   double get rate => booking.rate;
   int get propertyID => booking.propertyID;
