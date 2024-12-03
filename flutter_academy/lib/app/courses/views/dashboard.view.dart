@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/courses/widgets/test.widget.dart';
+import 'package:flutter_academy/app/courses/widgets/floor_with_rooms.widget.dart';
 import 'package:flutter_academy/main.dart';
 
 class DashboardView extends StatefulWidget {
@@ -13,7 +13,7 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      SingleRowMonthCalendar(),
+      FloorRooms(),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         ElevatedButton(
           style: TextButton.styleFrom(

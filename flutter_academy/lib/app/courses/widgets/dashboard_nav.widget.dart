@@ -77,11 +77,16 @@ class _DashboardNavState extends State<DashboardNav> {
                       // trigger focus request on the text field and virtual keyboard will appear
                       // afterward. On desktop platforms however, this defaults to true.
                       onChanged: (newValue) {
-                        setState(() {
-                          selectedProperty = newValue;
-                          ref.read(selectedPropertyVM.notifier).state =
-                              int.parse(newValue!);
-                        });
+                        if (newValue == 'add') {
+                          // Handle the "Add" case
+                          routerDelegate.go('new_property');
+                        } else {
+                          setState(() {
+                            selectedProperty = newValue;
+                            ref.read(selectedPropertyVM.notifier).state =
+                                int.parse(newValue!);
+                          });
+                        }
                       },
                       items: properties.map<DropdownMenuItem<String>>(
                               (PropertyVM property) {
@@ -92,11 +97,14 @@ class _DashboardNavState extends State<DashboardNav> {
                           }).toList() +
                           [
                             DropdownMenuItem(
-                                value: null,
-                                onTap: () {
-                                  routerDelegate.go('new_property');
-                                },
-                                child: const Icon(Icons.add))
+                              value: 'add', // Use a unique value
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.add),
+                                  SizedBox(width: 8)
+                                ],
+                              ),
+                            ),
                           ],
                       icon: Icon(Icons.arrow_drop_down, color: Colors.black),
                     ));

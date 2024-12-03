@@ -6,6 +6,8 @@ import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 
 class TabBarViewContainer extends StatefulWidget {
   final int tabIndex;
@@ -45,11 +47,6 @@ class _TabBarViewContainerState extends State<TabBarViewContainer> {
   @override
   void initState() {
     super.initState();
-    scrollController1.addListener(() {
-      if (scrollController2.hasClients) {
-        scrollController2.jumpTo(scrollController1.offset);
-      }
-    });
     _focusNode.addListener(() {
       setState(() {
         _isFocused = _focusNode.hasFocus;
@@ -98,18 +95,28 @@ class FloorRooms extends StatefulWidget {
 }
 
 class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
+  final ScrollController scrollController1 = ScrollController();
+  final ScrollController scrollController2 = ScrollController();
   late TabController _tabController;
+  late List<DateTime> _daysInMonth;
   List<BookingVM> bookingsForTabBarView = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 0, vsync: this, initialIndex: 0);
+    scrollController2.addListener(() {
+      if (scrollController1.hasClients) {
+        scrollController1.jumpTo(scrollController2.offset);
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    scrollController1.dispose();
+    scrollController2.dispose();
     super.dispose();
   }
 
@@ -134,6 +141,37 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     }
   }
 
+  List<DateTime> _getDaysInMonth(int year, int month) {
+    int daysCount = DateTime(year, month + 1, 0).day;
+    return List<DateTime>.generate(
+      daysCount,
+      (index) => DateTime(year, month, index + 1),
+    );
+  }
+
+  void _scrollToToday() {
+    DateTime today = DateTime.now();
+    int todayIndex = _daysInMonth.indexWhere((day) =>
+        day.day == today.day &&
+        day.month == today.month &&
+        day.year == today.year);
+
+    if (todayIndex != -1 && scrollController1.hasClients) {
+      double targetScrollOffset =
+          todayIndex * 39.9; // Adjust this factor based on item width.
+      scrollController2.animateTo(
+        targetScrollOffset,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      scrollController1.animateTo(
+        targetScrollOffset,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
@@ -144,13 +182,125 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
       final selectedMonth = selectedDate.month;
       final selectedYear = selectedDate.year;
       final numberOfDays = ref.watch(numberOfDaysVM);
+      _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
       int i = 0;
       tabBarControllerLength(
           floors, bookings, numberOfDays, selectedMonth, selectedYear);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToToday());
       return Padding(
         padding: EdgeInsets.only(left: 6, right: 4),
         child: Column(
           children: [
+            Row(children: [
+              Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Column(children: [
+                    SizedBox(
+                      width: 160,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            shape: BeveledRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        )),
+                        onPressed: () async {
+                          final localSelectedMonth = ref
+                              .read(selectedMonthVM.notifier)
+                              .state = (await showMonthYearPicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(20),
+                            lastDate: DateTime(2027),
+                          ))!;
+                          ref.read(numberOfDaysVM.notifier).state = DateTime(
+                                  localSelectedMonth.year,
+                                  localSelectedMonth.month + 1,
+                                  0)
+                              .day;
+                        },
+                        child: Text(
+                          DateFormat('MMMM yyyy')
+                              .format(selectedDate)
+                              .toString(),
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                        alignment: Alignment.center,
+                        width: 160,
+                        height: 35,
+                        padding:
+                            EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('Rooms',
+                            style: TextStyle(
+                              fontSize: 15,
+                            ))),
+                  ])),
+              Expanded(
+                  child: Column(children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: SizedBox(
+                      height: 70,
+                      child: ListView.builder(
+                        controller: scrollController1,
+                        physics: ClampingScrollPhysics(),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _daysInMonth.length,
+                        itemBuilder: (context, index) {
+                          DateTime day = _daysInMonth[index];
+                          DateTime today = DateTime.now();
+                          bool isToday = day.day == today.day &&
+                              day.month == today.month &&
+                              day.year == today.year;
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 26.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  DateFormat.E().format(
+                                      day), // Short weekday name (e.g., Mon, Tue)
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  height: 42,
+                                  width: 42,
+                                  decoration: BoxDecoration(
+                                    color: isToday
+                                        ? Colors.blue
+                                        : Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  padding: const EdgeInsets.all(12),
+                                  child: Center(
+                                      child: Text(
+                                    '${day.day}',
+                                    style: TextStyle(
+                                      color:
+                                          isToday ? Colors.white : Colors.black,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  )),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )),
+                ),
+              ]))
+            ]),
             SizedBox(
                 height: 530,
                 child: SingleChildScrollView(
