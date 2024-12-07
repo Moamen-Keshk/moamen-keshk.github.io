@@ -9,6 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 
+class BookingWithTab {
+  final int tabSize;
+  final BookingVM bookingVM;
+  BookingWithTab({required this.tabSize, required this.bookingVM});
+}
+
 class TabBarViewContainer extends StatefulWidget {
   final int tabIndex;
   final TabController tabController;
@@ -25,12 +31,6 @@ class TabBarViewContainer extends StatefulWidget {
 
   @override
   State<TabBarViewContainer> createState() => _TabBarViewContainerState();
-}
-
-class BookingWithTab {
-  final int tabSize;
-  final BookingVM bookingVM;
-  BookingWithTab({required this.tabSize, required this.bookingVM});
 }
 
 class _TabBarViewContainerState extends State<TabBarViewContainer> {
@@ -73,7 +73,11 @@ class _TabBarViewContainerState extends State<TabBarViewContainer> {
             height: 35,
             width: 93.9 * widget.tabSize,
             decoration: BoxDecoration(
-              color: _isFocused ? Colors.blue[600] : Colors.blue[300],
+              color: _isFocused
+                  ? Colors.brown[300]
+                  : widget.booking.paymentStatusID == 1
+                      ? Colors.blue[300]
+                      : Colors.red[300],
               borderRadius: BorderRadius.circular(18),
             ),
             child: Center(
