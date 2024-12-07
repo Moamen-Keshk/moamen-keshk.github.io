@@ -305,7 +305,7 @@ class _BookingFormState extends State<BookingForm> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Booking added successfully.')),
                       );
-                      Navigator.pop(context);
+                      Navigator.of(context).pop();
                     }
                   } else {
                     if (context.mounted) {

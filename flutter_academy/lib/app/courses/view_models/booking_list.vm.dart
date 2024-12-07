@@ -10,6 +10,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   BookingListVM(this.propertyId, this.year, this.month) : super(const []) {
     fetchBookings();
   }
+
   Future<void> fetchBookings() async {
     final res = await BookingService().getAllBookings(propertyId, year, month);
     state = [...res.map((booking) => BookingVM(booking))];

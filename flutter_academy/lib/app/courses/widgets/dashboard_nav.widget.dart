@@ -83,8 +83,9 @@ class _DashboardNavState extends State<DashboardNav> {
                         } else {
                           setState(() {
                             selectedProperty = newValue;
-                            ref.read(selectedPropertyVM.notifier).state =
-                                int.parse(newValue!);
+                            ref
+                                .read(selectedPropertyVM.notifier)
+                                .updateProperty(int.parse(newValue!));
                           });
                         }
                       },
@@ -162,10 +163,8 @@ class _DashboardNavState extends State<DashboardNav> {
           title: Text('New Booking'),
           content: BookingForm(
             onSubmit: (bookingData) async {
-              return BookingListVM(
-                      ref.watch(selectedPropertyVM),
-                      ref.watch(selectedMonthVM).year,
-                      ref.watch(selectedMonthVM).month)
+              return ref
+                  .read(bookingListVM.notifier)
                   .addToBookings(bookingData);
             },
           ),

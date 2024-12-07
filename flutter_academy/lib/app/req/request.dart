@@ -29,7 +29,7 @@ Future<dynamic> sendGetRequest(idToken, String apiURL) async {
       Uri.parse(baseURL + apiURL),
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer $idToken"
+        "Authorization": "Bearer $idToken",
       },
     );
 
