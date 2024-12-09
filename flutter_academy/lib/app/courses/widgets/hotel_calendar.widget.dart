@@ -3,6 +3,7 @@ import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
+import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,6 +88,54 @@ class _TabBarViewContainerState extends State<TabBarViewContainer> {
                   style: TextStyle(color: Colors.white)),
             ),
           )),
+    );
+  }
+}
+
+class AvailableTabContainer extends StatelessWidget {
+  final int tabDay;
+  final String tabRoom;
+  final WidgetRef ref;
+  const AvailableTabContainer(
+      {super.key,
+      required this.tabDay,
+      required this.tabRoom,
+      required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        showBookingDialog(context, ref);
+      },
+      child: SizedBox(
+        height: 35,
+        width: 93.9,
+        child: Container(
+          color: Colors.grey[200],
+          margin: EdgeInsets.all(2),
+        ),
+      ),
+    );
+  }
+
+  void showBookingDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('New Booking'),
+          content: BookingForm(
+              tabDay: tabDay,
+              tabRoom: tabRoom,
+              onSubmit: (bookingData) async {
+                return ref
+                    .read(bookingListVM.notifier)
+                    .addToBookings(bookingData);
+              },
+              ref: ref),
+        );
+      },
     );
   }
 }
@@ -432,15 +481,10 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                                 } else {
                                                   // No booking on this day; add a blank slot
                                                   rowChildren.add(
-                                                    SizedBox(
-                                                      height: 35,
-                                                      width: 93.9,
-                                                      child: Container(
-                                                        color: Colors.grey[200],
-                                                        margin:
-                                                            EdgeInsets.all(2),
-                                                      ),
-                                                    ),
+                                                    AvailableTabContainer(
+                                                        tabDay: currentDay,
+                                                        tabRoom: room.id!,
+                                                        ref: ref),
                                                   );
                                                   currentDay++;
                                                 }

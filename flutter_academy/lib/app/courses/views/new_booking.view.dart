@@ -8,8 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BookingForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
+  final int? tabDay;
+  final String? tabRoom;
+  final WidgetRef? ref;
 
-  const BookingForm({super.key, required this.onSubmit});
+  const BookingForm(
+      {super.key, required this.onSubmit, this.tabDay, this.tabRoom, this.ref});
 
   @override
   State<BookingForm> createState() => _BookingFormState();
@@ -19,20 +23,32 @@ class _BookingFormState extends State<BookingForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
-  int? _numberOfAdults;
-  int? _numberOfChildren;
-  int? _paymentStatusID;
-  int? _roomID;
   final TextEditingController noteController = TextEditingController();
   final TextEditingController specialRequestController =
       TextEditingController();
+  final TextEditingController rateController = TextEditingController();
+  final TextEditingController dateRangeController = TextEditingController();
   final TextEditingController checkInController = TextEditingController();
   final TextEditingController checkOutController = TextEditingController();
-  final TextEditingController rateController = TextEditingController();
 
   DateTime? checkInDate;
   DateTime? checkOutDate;
   int? _numberOfNights;
+  int? _numberOfAdults;
+  int? _numberOfChildren;
+  int? _paymentStatusID;
+  int? _roomID;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tabDay != null) {
+      checkInDate = DateTime(widget.ref!.read(selectedMonthVM).year,
+          widget.ref!.read(selectedMonthVM).month, widget.tabDay!);
+      checkInController.text =
+          "${checkInDate?.year}-${checkInDate?.month}-${checkInDate?.day}";
+    }
+  }
 
   @override
   void dispose() {
@@ -40,10 +56,19 @@ class _BookingFormState extends State<BookingForm> {
     lastNameController.dispose();
     noteController.dispose();
     specialRequestController.dispose();
+    rateController.dispose();
+    dateRangeController.dispose();
     checkInController.dispose();
     checkOutController.dispose();
-    rateController.dispose();
     super.dispose();
+  }
+
+  void calculateNumberOfNights() {
+    if (checkInDate != null && checkOutDate != null) {
+      _numberOfNights = checkOutDate!.difference(checkInDate!).inDays;
+    } else {
+      _numberOfNights = null;
+    }
   }
 
   @override
@@ -53,93 +78,152 @@ class _BookingFormState extends State<BookingForm> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(children: [
-            Expanded(
+          // Name Fields
+          Row(
+            children: [
+              Expanded(
                 child: TextFormField(
-              controller: firstNameController,
-              decoration: InputDecoration(labelText: 'First name'),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a name';
-                }
-                return null;
-              },
-            )),
-            Expanded(
-                child: TextFormField(
-              controller: lastNameController,
-              decoration: InputDecoration(labelText: 'Last name'),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a name';
-                }
-                return null;
-              },
-            ))
-          ]),
-          Row(children: [
-            SizedBox(
-                width: 160,
-                child: TextFormField(
-                  controller: checkInController,
-                  decoration: InputDecoration(labelText: 'Check in'),
-                  readOnly: true,
-                  onTap: () async {
-                    checkInDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(2100),
-                    );
-                    if (checkInDate != null) {
-                      setState(() {
-                        checkInController.text =
-                            "${checkInDate?.year}-${checkInDate?.month}-${checkInDate?.day}";
-                      });
-                      calculateNumberofNights();
-                    }
-                  },
+                  controller: firstNameController,
+                  decoration: InputDecoration(labelText: 'First Name'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please select a date';
+                      return 'Please enter a first name';
                     }
                     return null;
                   },
-                )),
-            SizedBox(
-                width: 160,
+                ),
+              ),
+              Expanded(
                 child: TextFormField(
-                  controller: checkOutController,
-                  decoration: InputDecoration(labelText: 'Check out'),
-                  readOnly: true,
-                  onTap: () async {
-                    checkOutDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(2100),
-                    );
-                    if (checkOutDate != null) {
-                      setState(() {
-                        checkOutController.text =
-                            "${checkOutDate?.year}-${checkOutDate?.month}-${checkOutDate?.day}";
-                      });
-                      calculateNumberofNights();
-                    }
-                  },
+                  controller: lastNameController,
+                  decoration: InputDecoration(labelText: 'Last Name'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please select a date';
+                      return 'Please enter a last name';
                     }
                     return null;
                   },
-                )),
-            _numberOfNights != null
-                ? Expanded(
-                    child: Text('$_numberOfNights Nights',
-                        style: TextStyle(fontSize: 10)))
-                : Expanded(child: Text(''))
-          ]),
+                ),
+              ),
+            ],
+          ),
+          widget.tabDay == null
+              ?
+              // Date Range Picker
+              Row(children: [
+                  Expanded(
+                      child: TextFormField(
+                    controller: dateRangeController,
+                    decoration: InputDecoration(labelText: 'Select Dates'),
+                    readOnly: true,
+                    onTap: () async {
+                      final DateTimeRange? pickedDateRange =
+                          await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2027),
+                        initialDateRange:
+                            checkInDate != null && checkOutDate != null
+                                ? DateTimeRange(
+                                    start: checkInDate!, end: checkOutDate!)
+                                : null,
+                      );
+
+                      if (pickedDateRange != null) {
+                        setState(() {
+                          checkInDate = pickedDateRange.start;
+                          checkOutDate = pickedDateRange.end;
+                          dateRangeController.text =
+                              "${checkInDate?.year}-${checkInDate?.month}-${checkInDate?.day} to "
+                              "${checkOutDate?.year}-${checkOutDate?.month}-${checkOutDate?.day}";
+                          calculateNumberOfNights();
+                        });
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a date range';
+                      }
+                      return null;
+                    },
+                  )),
+                  if (_numberOfNights != null)
+                    SizedBox(
+                        width: 60,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            '$_numberOfNights Nights',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ))
+                ])
+              : Row(children: [
+                  SizedBox(
+                      width: 160,
+                      child: TextFormField(
+                        controller: checkInController,
+                        decoration: InputDecoration(labelText: 'Check in'),
+                        readOnly: true,
+                        onTap: () async {
+                          checkInDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2100),
+                          );
+                          if (checkInDate != null) {
+                            setState(() {
+                              checkInController.text =
+                                  "${checkInDate?.year}-${checkInDate?.month}-${checkInDate?.day}";
+                            });
+                            calculateNumberOfNights();
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select a date';
+                          }
+                          return null;
+                        },
+                      )),
+                  SizedBox(
+                      width: 160,
+                      child: TextFormField(
+                        controller: checkOutController,
+                        decoration: InputDecoration(labelText: 'Check out'),
+                        readOnly: true,
+                        onTap: () async {
+                          checkOutDate = await showDatePicker(
+                              context: context,
+                              initialDate: checkInDate?.add(Duration(days: 1)),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2100),
+                              selectableDayPredicate: (date) {
+                                // Disable dates before the specified `firstSelectableDate`
+                                return date.isAfter(checkInDate!);
+                              });
+                          if (checkOutDate != null) {
+                            setState(() {
+                              checkOutController.text =
+                                  "${checkOutDate?.year}-${checkOutDate?.month}-${checkOutDate?.day}";
+                            });
+                            calculateNumberOfNights();
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select a date';
+                          }
+                          return null;
+                        },
+                      )),
+                  _numberOfNights != null
+                      ? Expanded(
+                          child: Text('$_numberOfNights Nights',
+                              style: TextStyle(fontSize: 10)))
+                      : Expanded(child: Text(''))
+                ]),
           Row(children: [
             Center(
                 child: Padding(
@@ -216,7 +300,7 @@ class _BookingFormState extends State<BookingForm> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
-                    value: _roomID?.toString(),
+                    value: widget.tabRoom?.toString() ?? _roomID?.toString(),
                     items:
                         roomsList.map<DropdownMenuItem<String>>((RoomVM room) {
                       return DropdownMenuItem<String>(
@@ -275,7 +359,11 @@ class _BookingFormState extends State<BookingForm> {
                   },
                 ))
           ]),
+
+          // Additional Fields (Adults, Children, Room, Payment Status)
+          // Similar structure to the original code...
           SizedBox(height: 20),
+          // Submit Button
           Consumer(builder: (context, ref, child) {
             return ElevatedButton(
               onPressed: () async {
@@ -283,13 +371,14 @@ class _BookingFormState extends State<BookingForm> {
                   if (await widget.onSubmit({
                     'first_name': firstNameController.text,
                     'last_name': lastNameController.text,
+                    'check_in': checkInDate?.toIso8601String(),
+                    'check_out': checkOutDate?.toIso8601String(),
+                    'number_of_nights': _numberOfNights,
                     'number_of_adults': _numberOfAdults,
-                    'number_of_children': _numberOfChildren ?? 0,
+                    'number_of_children': _numberOfChildren,
                     'payment_status_id': _paymentStatusID,
                     'note': noteController.text,
                     'special_request': specialRequestController.text,
-                    'check_in': checkInController.text,
-                    'check_out': checkOutController.text,
                     'check_in_day': checkInDate!.day,
                     'check_in_month': checkInDate!.month,
                     'check_in_year': checkInDate!.year,
@@ -300,6 +389,7 @@ class _BookingFormState extends State<BookingForm> {
                     'rate': rateController.text,
                     'property_id': ref.read(selectedPropertyVM),
                     'room_id': _roomID,
+                    // Other fields...
                   })) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -310,7 +400,9 @@ class _BookingFormState extends State<BookingForm> {
                   } else {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('An error occured, try again!')),
+                        SnackBar(
+                            content:
+                                Text('An error occurred. Please try again.')),
                       );
                     }
                   }
@@ -322,13 +414,5 @@ class _BookingFormState extends State<BookingForm> {
         ],
       ),
     );
-  }
-
-  void calculateNumberofNights() {
-    if (checkInDate != null && checkOutDate != null) {
-      _numberOfNights = checkOutDate!.difference(checkInDate!).inDays;
-    } else {
-      _numberOfNights = null;
-    }
   }
 }
