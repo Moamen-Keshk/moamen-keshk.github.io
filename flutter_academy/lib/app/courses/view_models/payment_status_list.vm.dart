@@ -19,6 +19,15 @@ class PaymentStatusListVM extends StateNotifier<List<PaymentStatusVM>> {
     }
     return false;
   }
+
+  Future<Map<int, String>> paymentStatusMapping() async {
+    Map<int, String> statusMap = {};
+    final res = await PaymentStatusService().getAllPaymentStatus();
+    for (var status in res) {
+      statusMap[int.parse(status.id)] = status.name;
+    }
+    return statusMap;
+  }
 }
 
 final paymentStatusListVM =

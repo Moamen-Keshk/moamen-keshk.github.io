@@ -25,4 +25,18 @@ class BookingService {
     return await sendPostRequest(
         booking, await _auth.currentUser?.getIdToken(), "/api/v1/new_booking");
   }
+
+  Future<bool> editBooking(
+      int bookingId, Map<String, dynamic> updatedBookingData) async {
+    try {
+      final response = await sendPutRequest(
+        updatedBookingData,
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/edit_booking/$bookingId",
+      );
+      return response; // Assuming the API returns a 'success' key
+    } catch (e) {
+      return false;
+    }
+  }
 }

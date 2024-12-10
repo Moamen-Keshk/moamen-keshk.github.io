@@ -47,6 +47,7 @@ class _BookingFormState extends State<BookingForm> {
           widget.ref!.read(selectedMonthVM).month, widget.tabDay!);
       checkInController.text =
           "${checkInDate?.year}-${checkInDate?.month}-${checkInDate?.day}";
+      _roomID = int.parse(widget.tabRoom!);
     }
   }
 
@@ -300,7 +301,7 @@ class _BookingFormState extends State<BookingForm> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
-                    value: widget.tabRoom?.toString() ?? _roomID?.toString(),
+                    value: _roomID?.toString(),
                     items:
                         roomsList.map<DropdownMenuItem<String>>((RoomVM room) {
                       return DropdownMenuItem<String>(

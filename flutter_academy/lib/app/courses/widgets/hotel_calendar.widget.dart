@@ -3,12 +3,15 @@ import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/payment_status_list.vm.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
+
+DateFormat format = DateFormat('EEE, dd MMMM');
 
 class BookingWithTab {
   final int tabSize;
@@ -153,6 +156,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
   late TabController _tabController;
   late List<DateTime> _daysInMonth;
   List<BookingVM> bookingsForTabBarView = [];
+  late Map<int, String> paymentStatusMapping;
 
   @override
   void initState() {
@@ -162,6 +166,9 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
       if (scrollController1.hasClients) {
         scrollController1.jumpTo(scrollController2.offset);
       }
+    });
+    PaymentStatusListVM().paymentStatusMapping().then((result) {
+      paymentStatusMapping = result;
     });
   }
 
@@ -175,13 +182,12 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
 
   void tabBarControllerLength(List<FloorVM> floors, List<BookingVM> bookings,
       int numberOfDays, int currentMonth, int currentYear) {
+    bookingsForTabBarView = [];
     int totalTabs = 0;
     for (var floor in floors) {
       for (var room in floor.rooms) {
         final bookingsPerRoom = isRoomHasBooking(bookings, int.parse(room.id!));
-        final tabSizes = isDayHasBooking(
-            bookingsPerRoom, numberOfDays, currentMonth, currentYear);
-        totalTabs += tabSizes.keys.length;
+        totalTabs += bookingsPerRoom.length;
         bookingsForTabBarView.addAll(bookingsPerRoom);
       }
     }
@@ -229,7 +235,6 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
-      bookingsForTabBarView = [];
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
       final selectedDate = ref.watch(selectedMonthVM);
@@ -568,12 +573,64 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                         controller: _tabController,
                         physics: NeverScrollableScrollPhysics(),
                         children: bookingsForTabBarView.map((bookingWithTab) {
-                          return Center(
-                            child: Text(
-                              'Details for Booking ID: ${bookingWithTab.id}',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          );
+                          return Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Center(
+                                child: Column(children: [
+                                  Row(children: [
+                                    Expanded(
+                                        child: Text(
+                                      '${bookingWithTab.firstName} ${bookingWithTab.lastName}',
+                                      style: TextStyle(fontSize: 16),
+                                    )),
+                                    Expanded(
+                                        child: Text(
+                                      '${bookingWithTab.numberOfNights} nights',
+                                      style: TextStyle(fontSize: 16),
+                                    )),
+                                    Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '(${format.format(bookingWithTab.checkIn)}) to (${format.format(bookingWithTab.checkOut)})',
+                                          style: TextStyle(fontSize: 16),
+                                        )),
+                                    Expanded(
+                                        child: Text(
+                                      'Adults: ${bookingWithTab.numberOfAdults}',
+                                      style: TextStyle(fontSize: 16),
+                                    )),
+                                    Expanded(
+                                        child: Text(
+                                      'Children: ${bookingWithTab.numberOfChildren}',
+                                      style: TextStyle(fontSize: 16),
+                                    ))
+                                  ]),
+                                  SizedBox(height: 10),
+                                  Row(children: [
+                                    Expanded(
+                                        child: Text(
+                                      '${paymentStatusMapping[bookingWithTab.paymentStatusID]}',
+                                      style: TextStyle(fontSize: 16),
+                                    )),
+                                    Expanded(
+                                        child: Text(
+                                      'created: ${format.format(bookingWithTab.bookingDate)}',
+                                      style: TextStyle(fontSize: 16),
+                                    )),
+                                    Expanded(
+                                        child: Text(
+                                      'price: ${bookingWithTab.rate}',
+                                      style: TextStyle(fontSize: 16),
+                                    )),
+                                    Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          'note: ${bookingWithTab.note}',
+                                          style: TextStyle(fontSize: 16),
+                                        ))
+                                  ])
+                                ]),
+                              ));
                         }).toList(),
                       ))),
             ),
