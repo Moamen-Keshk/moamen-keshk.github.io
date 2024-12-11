@@ -4,9 +4,11 @@ import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/payment_status_list.vm.dart';
+import 'package:flutter_academy/app/courses/views/edit_booking.view.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
+import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
@@ -576,7 +578,9 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                           return Padding(
                               padding: EdgeInsets.all(8),
                               child: Center(
-                                child: Column(children: [
+                                  child: Row(children: [
+                                Expanded(
+                                    child: Column(children: [
                                   Row(children: [
                                     Expanded(
                                         child: Text(
@@ -603,15 +607,16 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                         child: Text(
                                       'Children: ${bookingWithTab.numberOfChildren}',
                                       style: TextStyle(fontSize: 16),
-                                    ))
+                                    )),
                                   ]),
                                   SizedBox(height: 10),
                                   Row(children: [
-                                    Expanded(
+                                    SizedBox(
+                                        width: 130,
                                         child: Text(
-                                      '${paymentStatusMapping[bookingWithTab.paymentStatusID]}',
-                                      style: TextStyle(fontSize: 16),
-                                    )),
+                                          '${paymentStatusMapping[bookingWithTab.paymentStatusID]}',
+                                          style: TextStyle(fontSize: 16),
+                                        )),
                                     Expanded(
                                         child: Text(
                                       'created: ${format.format(bookingWithTab.bookingDate)}',
@@ -629,8 +634,15 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                           style: TextStyle(fontSize: 16),
                                         ))
                                   ])
-                                ]),
-                              ));
+                                ])),
+                                IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () {
+                                      showBookingDialog(
+                                          context, bookingWithTab, ref);
+                                      routerDelegate.go('/');
+                                    })
+                              ])));
                         }).toList(),
                       ))),
             ),
@@ -669,6 +681,26 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     }
     return Map.fromEntries(
       bookingsMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+  }
+
+  void showBookingDialog(
+      BuildContext context, BookingVM booking, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Edit Booking'),
+          content: EditBookingForm(
+              booking: booking,
+              onSubmit: (bookingData) async {
+                return ref
+                    .read(bookingListVM.notifier)
+                    .editBooking(int.parse(booking.id), bookingData);
+              },
+              ref: ref),
+        );
+      },
     );
   }
 }
