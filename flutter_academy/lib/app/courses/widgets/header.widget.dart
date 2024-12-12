@@ -14,7 +14,7 @@ class Header extends StatelessWidget {
           image: const AssetImage(Assets.instructor),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.7),
+            Colors.black.withValues(alpha: 0.7),
             BlendMode.srcATop,
           ),
         ),

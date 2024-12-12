@@ -4,6 +4,8 @@ import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/payment_status_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
 import 'package:flutter_academy/app/courses/views/edit_booking.view.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
@@ -14,6 +16,8 @@ import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 
 DateFormat format = DateFormat('EEE, dd MMMM');
+
+Map<int, int> categoryMapping = {};
 
 class BookingWithTab {
   final int tabSize;
@@ -69,31 +73,70 @@ class _TabBarViewContainerState extends State<TabBarViewContainer> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        widget.tabController.animateTo(widget.tabIndex);
-        _focusNode.requestFocus();
-      },
-      child: Focus(
-          focusNode: _focusNode,
-          child: Container(
-            height: 35,
-            width: 93.9 * widget.tabSize,
-            decoration: BoxDecoration(
-              color: _isFocused
-                  ? Colors.brown[300]
-                  : widget.booking.paymentStatusID == 1
-                      ? Colors.blue[300]
-                      : Colors.red[300],
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Center(
-              child: Text(
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+          widget.tabController.animateTo(widget.tabIndex);
+          _focusNode.requestFocus();
+        },
+        child: Draggable<BookingVM>(
+          data: widget.booking,
+          feedback: Material(
+            color: Colors.transparent,
+            child: Container(
+              height: 35,
+              width: 93.9 * widget.tabSize,
+              decoration: BoxDecoration(
+                color: Colors.blue[300],
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Center(
+                child: Text(
                   "${widget.booking.firstName} ${widget.booking.lastName}",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white)),
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ),
-          )),
-    );
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.5,
+            child: Container(
+              height: 35,
+              width: 93.9 * widget.tabSize,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Center(
+                child: Text(
+                  "${widget.booking.firstName} ${widget.booking.lastName}",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+          child: Focus(
+              focusNode: _focusNode,
+              child: Container(
+                height: 35,
+                width: 93.9 * widget.tabSize,
+                decoration: BoxDecoration(
+                  color: _isFocused
+                      ? Colors.brown[300]
+                      : widget.booking.paymentStatusID == 1
+                          ? Colors.blue[300]
+                          : Colors.red[300],
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Center(
+                  child: Text(
+                      "${widget.booking.firstName} ${widget.booking.lastName}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white)),
+                ),
+              )),
+        ));
   }
 }
 
@@ -110,18 +153,48 @@ class AvailableTabContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        showBookingDialog(context, ref);
-      },
-      child: SizedBox(
-        height: 35,
-        width: 93.9,
-        child: Container(
-          color: Colors.grey[200],
-          margin: EdgeInsets.all(2),
-        ),
-      ),
-    );
+        onTap: () {
+          showBookingDialog(context, ref);
+        },
+        child: DragTarget<BookingVM>(onWillAcceptWithDetails: (details) {
+          // Validate the room category
+          return categoryMapping[details.data.roomID] ==
+              categoryMapping[int.parse(tabRoom)];
+        }, onAcceptWithDetails: (details) async {
+          int numberOfNights = details.data.numberOfNights;
+          int checkInYear = details.data.checkInYear;
+          int checkInMonth = details.data.checkInMonth;
+          // Update booking details
+          if (await ref
+              .read(bookingListVM.notifier)
+              .editBooking(int.parse(details.data.id), {
+            'room_id': tabRoom,
+            'chech_in':
+                DateTime(checkInYear, checkInMonth, tabDay).toIso8601String(),
+            'chech_out':
+                DateTime(checkInYear, checkInMonth, tabDay + numberOfNights)
+                    .toIso8601String(),
+            'check_in_day': tabDay,
+            'check_out_day': tabDay + numberOfNights
+          })) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Booking edited successfully.')),
+              );
+            }
+          }
+        }, builder: (context, candidateData, rejectedData) {
+          return SizedBox(
+            height: 35,
+            width: 93.9,
+            child: Container(
+              color: candidateData.isNotEmpty
+                  ? Colors.green[200]
+                  : Colors.grey[200],
+              margin: EdgeInsets.all(2),
+            ),
+          );
+        }));
   }
 
   void showBookingDialog(BuildContext context, WidgetRef ref) {
@@ -180,6 +253,14 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     scrollController1.dispose();
     scrollController2.dispose();
     super.dispose();
+  }
+
+  Map<int, int> setRoomCategory(List<RoomVM> rooms) {
+    Map<int, int> categoryMap = {};
+    for (var room in rooms) {
+      categoryMap[int.parse(room.id!)] = room.categoryId;
+    }
+    return categoryMap;
   }
 
   void tabBarControllerLength(List<FloorVM> floors, List<BookingVM> bookings,
@@ -244,6 +325,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
       final selectedYear = selectedDate.year;
       final numberOfDays = ref.watch(numberOfDaysVM);
       _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
+      categoryMapping = setRoomCategory(ref.read(roomListVM));
       int i = 0;
       tabBarControllerLength(
           floors, bookings, numberOfDays, selectedMonth, selectedYear);
@@ -693,7 +775,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
           title: Text('Edit Booking'),
           content: EditBookingForm(
               booking: booking,
-              onSubmit: (bookingData) async {
+              onSubmit: (bookingData) {
                 return ref
                     .read(bookingListVM.notifier)
                     .editBooking(int.parse(booking.id), bookingData);
