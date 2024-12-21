@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/property_list.vm.dart';
 import 'package:flutter_academy/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NewPropertyView extends StatefulWidget {
   const NewPropertyView({super.key});
@@ -46,31 +47,30 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                 decoration: const InputDecoration(labelText: "enter address"),
               ),
               const SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: () async {
-                    if (await PropertyListVM().addToProperties(
-                          name: _name.text,
-                          address: _address.text)) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Property added successfully.')
-                        ),
-                      );
-                            }
+              Consumer(builder: (context, ref, child) {
+                return ElevatedButton(
+                  onPressed: () async {
+                    if (await ref.read(propertyListVM.notifier).addToProperties(
+                        name: _name.text, address: _address.text)) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Property added successfully.')),
+                        );
+                      }
                       routerDelegate.go('/');
                     } else {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('An error occured, try again!')
-                        ),
-                      );
+                          SnackBar(
+                              content: Text('An error occured, try again!')),
+                        );
                       }
                     }
-                },
-                child: const Text("Add Property"),
-              )
+                  },
+                  child: const Text("Add Property"),
+                );
+              })
             ],
           ),
         ));

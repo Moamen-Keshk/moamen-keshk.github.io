@@ -192,7 +192,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final selectedPropertyID = ref.read(selectedPropertyVM);
-      if (await FloorListVM(selectedPropertyID).addToFloors(
+      if (await ref.read(floorListVM.notifier).addToFloors(
           number: floorSelectedValue!,
           propertyId: selectedPropertyID,
           rooms: createRooms())) {

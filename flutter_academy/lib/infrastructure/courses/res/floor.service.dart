@@ -23,4 +23,18 @@ class FloorService {
         await _auth.currentUser?.getIdToken(),
         "/api/v1/new-floor");
   }
+
+  Future<bool> editFloor(
+      int floorId, Map<String, dynamic> updatedFloorData) async {
+    try {
+      final response = await sendPutRequest(
+        updatedFloorData,
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/edit_floor/$floorId",
+      );
+      return response; // Assuming the API returns a 'success' key
+    } catch (e) {
+      return false;
+    }
+  }
 }

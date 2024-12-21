@@ -19,6 +19,9 @@ DateFormat format = DateFormat('EEE, dd MMMM');
 
 Map<int, int> categoryMapping = {};
 
+int? highlightedDay;
+int? highlightedRoom;
+
 class BookingWithTab {
   final int tabSize;
   final BookingVM bookingVM;
@@ -156,45 +159,56 @@ class AvailableTabContainer extends StatelessWidget {
         onTap: () {
           showBookingDialog(context, ref);
         },
-        child: DragTarget<BookingVM>(onWillAcceptWithDetails: (details) {
-          // Validate the room category
-          return categoryMapping[details.data.roomID] ==
-              categoryMapping[int.parse(tabRoom)];
-        }, onAcceptWithDetails: (details) async {
-          int numberOfNights = details.data.numberOfNights;
-          int checkInYear = details.data.checkInYear;
-          int checkInMonth = details.data.checkInMonth;
-          // Update booking details
-          if (await ref
-              .read(bookingListVM.notifier)
-              .editBooking(int.parse(details.data.id), {
-            'room_id': tabRoom,
-            'chech_in':
-                DateTime(checkInYear, checkInMonth, tabDay).toIso8601String(),
-            'chech_out':
-                DateTime(checkInYear, checkInMonth, tabDay + numberOfNights)
+        child: MouseRegion(
+            onEnter: (_) {
+              ref.read(highlightedDayVM.notifier).updateDay(tabDay);
+              ref.read(highlightedRoomVM.notifier).updateRoom(
+                  int.parse(tabRoom)); // Assuming this is the row number
+// Assuming this is the column number
+            },
+            onExit: (_) {
+              ref.read(highlightedDayVM.notifier).updateDay(0);
+              ref.read(highlightedRoomVM.notifier).updateRoom(0);
+            },
+            child: DragTarget<BookingVM>(onWillAcceptWithDetails: (details) {
+              // Validate the room category
+              return categoryMapping[details.data.roomID] ==
+                  categoryMapping[int.parse(tabRoom)];
+            }, onAcceptWithDetails: (details) async {
+              int numberOfNights = details.data.numberOfNights;
+              int checkInYear = details.data.checkInYear;
+              int checkInMonth = details.data.checkInMonth;
+              // Update booking details
+              if (await ref
+                  .read(bookingListVM.notifier)
+                  .editBooking(int.parse(details.data.id), {
+                'room_id': tabRoom,
+                'chech_in': DateTime(checkInYear, checkInMonth, tabDay)
                     .toIso8601String(),
-            'check_in_day': tabDay,
-            'check_out_day': tabDay + numberOfNights
-          })) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Booking edited successfully.')),
+                'chech_out':
+                    DateTime(checkInYear, checkInMonth, tabDay + numberOfNights)
+                        .toIso8601String(),
+                'check_in_day': tabDay,
+                'check_out_day': tabDay + numberOfNights
+              })) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Booking edited successfully.')),
+                  );
+                }
+              }
+            }, builder: (context, candidateData, rejectedData) {
+              return SizedBox(
+                height: 35,
+                width: 93.9,
+                child: Container(
+                  color: candidateData.isNotEmpty
+                      ? Colors.green[200]
+                      : Colors.grey[200],
+                  margin: EdgeInsets.all(2),
+                ),
               );
-            }
-          }
-        }, builder: (context, candidateData, rejectedData) {
-          return SizedBox(
-            height: 35,
-            width: 93.9,
-            child: Container(
-              color: candidateData.isNotEmpty
-                  ? Colors.green[200]
-                  : Colors.grey[200],
-              margin: EdgeInsets.all(2),
-            ),
-          );
-        }));
+            })));
   }
 
   void showBookingDialog(BuildContext context, WidgetRef ref) {
@@ -390,8 +404,10 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                         controller: scrollController1,
                         physics: NeverScrollableScrollPhysics(),
                         scrollDirection: Axis.horizontal,
-                        child: Row(children: [
-                          Row(
+                        child: Consumer(builder: (context, ref, child) {
+                          final int highlightedDay =
+                              ref.watch(highlightedDayVM);
+                          return Row(
                               children:
                                   _daysInMonth.map<Padding>((DateTime dayIn) {
                             DateTime day = dayIn;
@@ -420,7 +436,9 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                     decoration: BoxDecoration(
                                       color: isToday
                                           ? Colors.blue
-                                          : Colors.grey[200],
+                                          : (day.day == highlightedDay)
+                                              ? Colors.green[200]
+                                              : Colors.grey[200],
                                       shape: BoxShape.circle,
                                     ),
                                     padding: const EdgeInsets.all(12),
@@ -438,9 +456,8 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                 ],
                               ),
                             );
-                          }).toList()),
-                          SizedBox(width: 160)
-                        ]),
+                          }).toList());
+                        }),
                       )),
                 ),
               ]))
@@ -452,56 +469,63 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                   scrollDirection: Axis.vertical,
                   child: Row(
                     children: [
-                      Column(
-                        children: floors.map<Column>((FloorVM floor) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 100,
-                                height: 25,
-                                alignment: Alignment.center,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 4, horizontal: 20),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[300],
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                  'Floor ${floor.number.toString()}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
+                      Consumer(builder: (context, ref, child) {
+                        final int highlightedRoom =
+                            ref.watch(highlightedRoomVM);
+                        return Column(
+                          children: floors.map<Column>((FloorVM floor) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 25,
+                                  alignment: Alignment.center,
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 4, horizontal: 20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[300],
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    'Floor ${floor.number.toString()}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children:
-                                    floor.rooms.map<Container>((Room room) {
-                                  return Container(
-                                    alignment: Alignment.center,
-                                    width: 160,
-                                    height: 35,
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 7, horizontal: 20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange[100],
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      'Room ${room.roomNumber.toString()}',
-                                      style: TextStyle(
-                                        fontSize: 15,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children:
+                                      floor.rooms.map<Container>((Room room) {
+                                    return Container(
+                                      alignment: Alignment.center,
+                                      width: 160,
+                                      height: 35,
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 7, horizontal: 20),
+                                      decoration: BoxDecoration(
+                                        color: (int.parse(room.id!) ==
+                                                highlightedRoom)
+                                            ? Colors.green[200]
+                                            : Colors.orange[100],
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
+                                      child: Text(
+                                        'Room ${room.roomNumber.toString()}',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        );
+                      }),
                       Expanded(
                           child: SingleChildScrollView(
                               controller: scrollController2,
@@ -585,61 +609,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                       ),
                                     );
                                   }).toList(),
-                                ),
-                                Column(
-                                  children: floors.map<Column>((FloorVM floor) {
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 100,
-                                          height: 25,
-                                          alignment: Alignment.center,
-                                          padding: EdgeInsets.symmetric(
-                                              vertical: 4, horizontal: 20),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue[300],
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                          child: Text(
-                                            'Floor ${floor.number.toString()}',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: floor.rooms
-                                              .map<Container>((Room room) {
-                                            return Container(
-                                              alignment: Alignment.center,
-                                              width: 160,
-                                              height: 35,
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 7, horizontal: 20),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange[100],
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                'Room ${room.roomNumber.toString()}',
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList(),
-                                ),
+                                )
                               ]))),
                     ],
                   ),

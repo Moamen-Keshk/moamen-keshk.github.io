@@ -36,3 +36,25 @@ class NumberOfDaysVM extends StateNotifier<int> {
 
 final numberOfDaysVM =
     StateNotifierProvider<NumberOfDaysVM, int>((ref) => NumberOfDaysVM());
+
+class HighlightedDayVM extends StateNotifier<int> {
+  HighlightedDayVM() : super(0);
+
+  void updateDay(int newDay) {
+    state = newDay;
+  }
+}
+
+final highlightedDayVM =
+    StateNotifierProvider<HighlightedDayVM, int>((ref) => HighlightedDayVM());
+
+class HighlightedRoomVM extends StateNotifier<int> {
+  HighlightedRoomVM() : super(0);
+
+  void updateRoom(int newRoom) {
+    state = newRoom;
+  }
+}
+
+final highlightedRoomVM =
+    StateNotifierProvider<HighlightedRoomVM, int>((ref) => HighlightedRoomVM());
