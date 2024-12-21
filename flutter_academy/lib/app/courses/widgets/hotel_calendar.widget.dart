@@ -274,18 +274,18 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
 
   Map<int, int> setRoomCategory(
       List<RoomVM> rooms, List<CategoryVM> categories) {
-    Map<int, String> categoriesNaming = {};
-    Map<int, String> roomNumbering = {};
+    categoryMapping = {
+      for (var category in categories) int.parse(category.id): category.name
+    };
+
     Map<int, int> categoryMap = {};
-    for (var category in categories) {
-      categoriesNaming[int.parse(category.id)] = category.name;
-    }
+    roomMapping = {
+      for (var room in rooms) int.parse(room.id!): room.roomNumber.toString()
+    };
     for (var room in rooms) {
       categoryMap[int.parse(room.id!)] = room.categoryId;
-      roomNumbering[int.parse(room.id!)] = room.roomNumber.toString();
     }
-    roomMapping = roomNumbering;
-    categoryMapping = categoriesNaming;
+
     return categoryMap;
   }
 
@@ -516,8 +516,8 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                       alignment: Alignment.center,
                                       width: 160,
                                       height: 35,
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 7, horizontal: 20),
+                                      padding: EdgeInsets.only(
+                                          bottom: 2, top: 6, left: 6, right: 6),
                                       decoration: BoxDecoration(
                                         color: (int.parse(room.id!) ==
                                                 highlightedRoom)
@@ -525,12 +525,24 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                             : Colors.orange[100],
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Text(
-                                        'Room ${room.roomNumber.toString()}',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                        ),
-                                      ),
+                                      child: Column(children: [
+                                        Padding(
+                                            padding: EdgeInsets.all(0),
+                                            child: Text(
+                                              'Room ${room.roomNumber.toString()}',
+                                              style: TextStyle(
+                                                  fontSize: 16, height: 1.0),
+                                            )),
+                                        Padding(
+                                            padding: EdgeInsets.all(0),
+                                            child: Text(
+                                              categoryMapping[
+                                                  roomsCategoryMapping[
+                                                      int.parse(room.id!)]]!,
+                                              style: TextStyle(
+                                                  fontSize: 11, height: 1.0),
+                                            ))
+                                      ]),
                                     );
                                   }).toList(),
                                 ),

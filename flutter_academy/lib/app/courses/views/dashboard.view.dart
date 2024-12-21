@@ -14,26 +14,28 @@ class _DashboardViewState extends State<DashboardView> {
   Widget build(BuildContext context) {
     return Column(children: [
       FloorRooms(),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        ElevatedButton(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.grey,
-          ),
-          onPressed: () {
-            routerDelegate.go('/new_floor');
-          },
-          child: const Text("New Floor"),
-        ),
-        const SizedBox(width: 10.0),
-        ElevatedButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey,
+      Padding(
+          padding: EdgeInsets.all(6),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            ElevatedButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+              onPressed: () {
+                routerDelegate.go('/new_floor');
+              },
+              child: const Text("New Floor"),
             ),
-            onPressed: () {
-              routerDelegate.go('/new_category');
-            },
-            child: const Text("New Category")),
-      ]),
+            const SizedBox(width: 10.0),
+            ElevatedButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                ),
+                onPressed: () {
+                  routerDelegate.go('/new_category');
+                },
+                child: const Text("New Category")),
+          ])),
     ]);
   }
 }
