@@ -123,7 +123,7 @@ class _BookingFormState extends State<EditBookingForm> {
                 final DateTimeRange? pickedDateRange =
                     await showDateRangePicker(
                   context: context,
-                  firstDate: DateTime.now(),
+                  firstDate: checkInDate!,
                   lastDate: DateTime(2027),
                   initialDateRange: checkInDate != null && checkOutDate != null
                       ? DateTimeRange(start: checkInDate!, end: checkOutDate!)

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/payment_status_list.vm.dart';
@@ -17,10 +19,11 @@ import 'package:month_year_picker/month_year_picker.dart';
 
 DateFormat format = DateFormat('EEE, dd MMMM');
 
-Map<int, int> categoryMapping = {};
+Map<int, int> roomsCategoryMapping = {};
 
-int? highlightedDay;
-int? highlightedRoom;
+Map<int, String> roomMapping = {};
+
+Map<int, String> categoryMapping = {};
 
 class BookingWithTab {
   final int tabSize;
@@ -172,8 +175,8 @@ class AvailableTabContainer extends StatelessWidget {
             },
             child: DragTarget<BookingVM>(onWillAcceptWithDetails: (details) {
               // Validate the room category
-              return categoryMapping[details.data.roomID] ==
-                  categoryMapping[int.parse(tabRoom)];
+              return roomsCategoryMapping[details.data.roomID] ==
+                  roomsCategoryMapping[int.parse(tabRoom)];
             }, onAcceptWithDetails: (details) async {
               int numberOfNights = details.data.numberOfNights;
               int checkInYear = details.data.checkInYear;
@@ -269,11 +272,20 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Map<int, int> setRoomCategory(List<RoomVM> rooms) {
+  Map<int, int> setRoomCategory(
+      List<RoomVM> rooms, List<CategoryVM> categories) {
+    Map<int, String> categoriesNaming = {};
+    Map<int, String> roomNumbering = {};
     Map<int, int> categoryMap = {};
+    for (var category in categories) {
+      categoriesNaming[int.parse(category.id)] = category.name;
+    }
     for (var room in rooms) {
       categoryMap[int.parse(room.id!)] = room.categoryId;
+      roomNumbering[int.parse(room.id!)] = room.roomNumber.toString();
     }
+    roomMapping = roomNumbering;
+    categoryMapping = categoriesNaming;
     return categoryMap;
   }
 
@@ -339,7 +351,8 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
       final selectedYear = selectedDate.year;
       final numberOfDays = ref.watch(numberOfDaysVM);
       _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
-      categoryMapping = setRoomCategory(ref.read(roomListVM));
+      final categories = ref.watch(categoryListVM);
+      roomsCategoryMapping = setRoomCategory(ref.read(roomListVM), categories);
       int i = 0;
       tabBarControllerLength(
           floors, bookings, numberOfDays, selectedMonth, selectedYear);
@@ -637,28 +650,33 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                     Expanded(
                                         child: Text(
                                       '${bookingWithTab.firstName} ${bookingWithTab.lastName}',
-                                      style: TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 14),
                                     )),
                                     Expanded(
                                         child: Text(
                                       '${bookingWithTab.numberOfNights} nights',
-                                      style: TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 14),
+                                    )),
+                                    Expanded(
+                                        child: Text(
+                                      'Room: ${roomMapping[bookingWithTab.roomID]}',
+                                      style: TextStyle(fontSize: 14),
                                     )),
                                     Expanded(
                                         flex: 2,
                                         child: Text(
                                           '(${format.format(bookingWithTab.checkIn)}) to (${format.format(bookingWithTab.checkOut)})',
-                                          style: TextStyle(fontSize: 16),
+                                          style: TextStyle(fontSize: 14),
                                         )),
                                     Expanded(
                                         child: Text(
                                       'Adults: ${bookingWithTab.numberOfAdults}',
-                                      style: TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 14),
                                     )),
                                     Expanded(
                                         child: Text(
                                       'Children: ${bookingWithTab.numberOfChildren}',
-                                      style: TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 14),
                                     )),
                                   ]),
                                   SizedBox(height: 10),
@@ -667,30 +685,35 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                         width: 130,
                                         child: Text(
                                           '${paymentStatusMapping[bookingWithTab.paymentStatusID]}',
-                                          style: TextStyle(fontSize: 16),
+                                          style: TextStyle(fontSize: 14),
                                         )),
                                     Expanded(
                                         child: Text(
+                                      'Category: ${categoryMapping[roomsCategoryMapping[bookingWithTab.roomID]]}',
+                                      style: TextStyle(fontSize: 14),
+                                    )),
+                                    Expanded(
+                                        child: Text(
                                       'created: ${format.format(bookingWithTab.bookingDate)}',
-                                      style: TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 14),
                                     )),
                                     Expanded(
                                         child: Text(
                                       'price: ${bookingWithTab.rate}',
-                                      style: TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 14),
                                     )),
                                     Expanded(
                                         flex: 2,
                                         child: Text(
                                           'note: ${bookingWithTab.note}',
-                                          style: TextStyle(fontSize: 16),
+                                          style: TextStyle(fontSize: 14),
                                         ))
                                   ])
                                 ])),
                                 IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () {
-                                      showBookingDialog(
+                                      showEditBookingDialog(
                                           context, bookingWithTab, ref);
                                       routerDelegate.go('/');
                                     })
@@ -736,7 +759,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     );
   }
 
-  void showBookingDialog(
+  void showEditBookingDialog(
       BuildContext context, BookingVM booking, WidgetRef ref) {
     showDialog(
       context: context,
