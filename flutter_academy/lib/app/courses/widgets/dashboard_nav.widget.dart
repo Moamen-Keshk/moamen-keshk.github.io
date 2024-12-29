@@ -14,9 +14,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 String? selectedProperty;
 
-class DashboardNav extends StatefulWidget {
+class DashboardNav extends StatefulWidget implements PreferredSizeWidget {
   const DashboardNav({super.key});
 
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
   State<DashboardNav> createState() => _DashboardNavState();
 }

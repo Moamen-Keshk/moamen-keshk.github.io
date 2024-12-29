@@ -248,7 +248,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
   late TabController _tabController;
   late List<DateTime> _daysInMonth;
   List<BookingVM> bookingsForTabBarView = [];
-  late Map<int, String> paymentStatusMapping;
+  late Map<int, String> paymentStatusMapping = {};
 
   @override
   void initState() {
@@ -351,7 +351,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
       final selectedYear = selectedDate.year;
       final numberOfDays = ref.watch(numberOfDaysVM);
       _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
-      final categories = ref.watch(categoryListVM);
+      final categories = ref.read(categoryListVM);
       roomsCategoryMapping = setRoomCategory(ref.read(roomListVM), categories);
       int i = 0;
       tabBarControllerLength(
@@ -379,7 +379,6 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                             firstDate: DateTime(20),
                             lastDate: DateTime(2027),
                           ))!);
-
                       ref.read(numberOfDaysVM.notifier).updateDays(DateTime(
                               localSelectedMonth!.year,
                               localSelectedMonth.month + 1,

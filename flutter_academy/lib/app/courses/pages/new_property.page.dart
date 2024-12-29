@@ -10,9 +10,9 @@ class NewPropertyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView(
-        children: const <Widget>[DashboardNav(), Center(heightFactor: 2.0, child: NewPropertyView())],
-      ),
+      appBar: DashboardNav(),
+      body: SingleChildScrollView(
+          child: Center(heightFactor: 2.0, child: NewPropertyView())),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

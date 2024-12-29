@@ -22,9 +22,9 @@ class _DashboardViewState extends State<DashboardView> {
                 foregroundColor: Colors.grey,
               ),
               onPressed: () {
-                routerDelegate.go('/new_floor');
+                routerDelegate.go('/edit_property');
               },
-              child: const Text("New Floor"),
+              child: const Text("Edit Property"),
             ),
             const SizedBox(width: 10.0),
             ElevatedButton(
