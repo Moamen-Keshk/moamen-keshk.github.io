@@ -87,7 +87,7 @@ class _DashboardNavState extends State<DashboardNav> {
                             selectedProperty = newValue;
                             ref
                                 .read(selectedPropertyVM.notifier)
-                                .updateProperty(int.parse(newValue!));
+                                .updateProperty(int.parse(selectedProperty!));
                           });
                         }
                       },

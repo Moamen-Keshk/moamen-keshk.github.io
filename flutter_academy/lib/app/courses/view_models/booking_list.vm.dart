@@ -43,7 +43,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
 
 final bookingListVM =
     StateNotifierProvider<BookingListVM, List<BookingVM>>((ref) {
-  final selectedProperty = ref.watch(selectedPropertyVM);
+  final selectedProperty = ref.watch(selectedPropertyVM) ?? 0;
   final selectedMonth = ref.watch(selectedMonthVM);
   return BookingListVM(selectedProperty, selectedMonth.year,
       selectedMonth.month, BookingService());

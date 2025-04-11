@@ -4,6 +4,7 @@ import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,12 @@ class _EditPropertyViewState extends State<EditPropertyView> {
                     child: Padding(
                         padding: const EdgeInsets.all(6.0),
                         child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            ref
+                                .read(floorToEditVM.notifier)
+                                .updateFloor(floors[index]);
+                            routerDelegate.go('edit_floor');
+                          },
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -112,9 +118,10 @@ class _EditPropertyViewState extends State<EditPropertyView> {
                                                           ),
                                                           child: Text(
                                                             categoryMapping[
-                                                                roomsCategoryMapping[
-                                                                    int.parse(room
-                                                                        .id!)]]!,
+                                                                    roomsCategoryMapping[
+                                                                            int.parse(room.id)] ??
+                                                                        -1] ??
+                                                                'Undefined Category',
                                                             style: TextStyle(
                                                                 fontSize: 13,
                                                                 height: 1.0),
@@ -153,16 +160,23 @@ class _EditPropertyViewState extends State<EditPropertyView> {
 
   Map<int, int> setRoomCategory(
       List<RoomVM> rooms, List<CategoryVM> categories) {
+    // Only include categories with a non-null id.
     categoryMapping = {
       for (var category in categories) int.parse(category.id): category.name
     };
 
     Map<int, int> categoryMap = {};
+    // Only include rooms with a non-null id.
     roomMapping = {
-      for (var room in rooms) int.parse(room.id!): room.roomNumber.toString()
+      for (var room in rooms) int.parse(room.id): room.roomNumber.toString()
     };
+
+    // Build the mapping only for rooms with non-null id,
+    // and provide a default value or handle the possibility of a null categoryId.
     for (var room in rooms) {
-      categoryMap[int.parse(room.id!)] = room.categoryId;
+      // If room.categoryId might be null, you can decide on a default,
+      // or skip this room.
+      categoryMap[int.parse(room.id)] = room.categoryId;
     }
 
     return categoryMap;

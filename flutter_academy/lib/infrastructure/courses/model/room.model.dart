@@ -1,14 +1,14 @@
 import 'dart:convert';
 
 class Room {
-  final String? id;
-  final int roomNumber;
+  final String id;
+  int roomNumber;
   final int propertyId;
   final int categoryId;
   final int? floorId;
   final int? statusId;
   Room(
-      {this.id,
+      {required this.id,
       required this.roomNumber,
       required this.propertyId,
       required this.categoryId,

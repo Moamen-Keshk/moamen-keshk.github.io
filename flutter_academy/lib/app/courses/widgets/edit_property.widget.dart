@@ -109,7 +109,7 @@ class EditProperty extends StatelessWidget {
                                                             categoryMapping[
                                                                 roomsCategoryMapping[
                                                                     int.parse(room
-                                                                        .id!)]]!,
+                                                                        .id)]]!,
                                                             style: TextStyle(
                                                                 fontSize: 13,
                                                                 height: 1.0),
@@ -154,10 +154,10 @@ class EditProperty extends StatelessWidget {
 
     Map<int, int> categoryMap = {};
     roomMapping = {
-      for (var room in rooms) int.parse(room.id!): room.roomNumber.toString()
+      for (var room in rooms) int.parse(room.id): room.roomNumber.toString()
     };
     for (var room in rooms) {
-      categoryMap[int.parse(room.id!)] = room.categoryId;
+      categoryMap[int.parse(room.id)] = room.categoryId;
     }
 
     return categoryMap;

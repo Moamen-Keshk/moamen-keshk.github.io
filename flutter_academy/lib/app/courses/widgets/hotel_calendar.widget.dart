@@ -280,10 +280,13 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
 
     Map<int, int> categoryMap = {};
     roomMapping = {
-      for (var room in rooms) int.parse(room.id!): room.roomNumber.toString()
+      for (var room in rooms)
+        if (room.id case var id when int.tryParse(id) != null)
+          int.parse(id): room.roomNumber.toString()
     };
     for (var room in rooms) {
-      categoryMap[int.parse(room.id!)] = room.categoryId;
+      final roomId = int.tryParse(room.id) ?? 0;
+      categoryMap[roomId] = room.categoryId;
     }
 
     return categoryMap;
@@ -295,7 +298,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
     int totalTabs = 0;
     for (var floor in floors) {
       for (var room in floor.rooms) {
-        final bookingsPerRoom = isRoomHasBooking(bookings, int.parse(room.id!));
+        final bookingsPerRoom = isRoomHasBooking(bookings, int.parse(room.id));
         totalTabs += bookingsPerRoom.length;
         bookingsForTabBarView.addAll(bookingsPerRoom);
       }
@@ -380,7 +383,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                             lastDate: DateTime(2027),
                           ))!);
                       ref.read(numberOfDaysVM.notifier).updateDays(DateTime(
-                              localSelectedMonth!.year,
+                              localSelectedMonth.year,
                               localSelectedMonth.month + 1,
                               0)
                           .day);
@@ -417,8 +420,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                         physics: NeverScrollableScrollPhysics(),
                         scrollDirection: Axis.horizontal,
                         child: Consumer(builder: (context, ref, child) {
-                          final int highlightedDay =
-                              ref.watch(highlightedDayVM);
+                          final highlightedDay = ref.watch(highlightedDayVM);
                           return Row(
                               children:
                                   _daysInMonth.map<Padding>((DateTime dayIn) {
@@ -482,8 +484,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                   child: Row(
                     children: [
                       Consumer(builder: (context, ref, child) {
-                        final int highlightedRoom =
-                            ref.watch(highlightedRoomVM);
+                        final highlightedRoom = ref.watch(highlightedRoomVM);
                         return Column(
                           children: floors.map<Column>((FloorVM floor) {
                             return Column(
@@ -518,7 +519,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                       padding: EdgeInsets.only(
                                           bottom: 2, top: 6, left: 6, right: 6),
                                       decoration: BoxDecoration(
-                                        color: (int.parse(room.id!) ==
+                                        color: (int.parse(room.id) ==
                                                 highlightedRoom)
                                             ? Colors.green[200]
                                             : Colors.orange[100],
@@ -537,7 +538,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                             child: Text(
                                               categoryMapping[
                                                   roomsCategoryMapping[
-                                                      int.parse(room.id!)]]!,
+                                                      int.parse(room.id)]]!,
                                               style: TextStyle(
                                                   fontSize: 11, height: 1.0),
                                             ))
@@ -565,8 +566,8 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                         children:
                                             floor.rooms.map<Row>((Room room) {
                                           final bookingsPerRoom =
-                                              isRoomHasBooking(bookings,
-                                                  int.parse(room.id!));
+                                              isRoomHasBooking(
+                                                  bookings, int.parse(room.id));
                                           final tabSizes = isDayHasBooking(
                                               bookingsPerRoom,
                                               numberOfDays,
@@ -620,7 +621,7 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                                   rowChildren.add(
                                                     AvailableTabContainer(
                                                         tabDay: currentDay,
-                                                        tabRoom: room.id!,
+                                                        tabRoom: room.id,
                                                         ref: ref),
                                                   );
                                                   currentDay++;

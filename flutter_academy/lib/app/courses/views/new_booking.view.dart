@@ -388,7 +388,7 @@ class _BookingFormState extends State<BookingForm> {
                     'check_out_year': checkOutDate!.year,
                     'number_of_days': _numberOfNights,
                     'rate': rateController.text,
-                    'property_id': ref.read(selectedPropertyVM),
+                    'property_id': ref.read(selectedPropertyVM) ?? 0,
                     'room_id': _roomID,
                     // Other fields...
                   })) {

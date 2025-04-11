@@ -17,8 +17,6 @@ class NewFloorView extends ConsumerStatefulWidget {
 class _NewFloorViewState extends ConsumerState<NewFloorView> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _address = TextEditingController();
   List<DropdownData> floorDropdownItems = [
     DropdownData(-1, 'B'),
     DropdownData(0, 'G'),
@@ -59,8 +57,6 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
 
   @override
   void dispose() {
-    _name.dispose();
-    _address.dispose();
     super.dispose();
   }
 
@@ -191,7 +187,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
   void _submitForm(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final selectedPropertyID = ref.read(selectedPropertyVM);
+      final selectedPropertyID = ref.read(selectedPropertyVM) ?? 0;
       if (await ref.read(floorListVM.notifier).addToFloors(
           number: floorSelectedValue!,
           propertyId: selectedPropertyID,
@@ -201,7 +197,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
             SnackBar(content: Text('Floor added successfully.')),
           );
         }
-        routerDelegate.go('/');
+        routerDelegate.go('edit_property');
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -214,7 +210,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
   }
 
   List<Room> createRooms() {
-    final selectedPropertyID = ref.read(selectedPropertyVM);
+    final selectedPropertyID = ref.read(selectedPropertyVM) ?? 0;
     final List<Room> roomsList = [];
     int i = -1;
     _roomsNumbers.forEach((key, value) {
@@ -222,7 +218,8 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
       roomsList.add(Room(
           roomNumber: int.parse(key),
           propertyId: selectedPropertyID,
-          categoryId: int.parse(selectedValues[i]!)));
+          categoryId: int.parse(selectedValues[i]!),
+          id: ''));
     });
     return roomsList;
   }

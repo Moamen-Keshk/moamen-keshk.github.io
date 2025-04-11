@@ -1,60 +1,77 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 
-final now = DateTime.now(); // Get the current date
-final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+final ScrollController scrollController1 = ScrollController();
+final ScrollController scrollController2 = ScrollController();
 
+/// Utility method to get the number of days in a month
+int getDaysInMonth(DateTime date) => DateTime(date.year, date.month + 1, 0).day;
+
+/// Selected Month State Management
 class SelectedMonthVM extends StateNotifier<DateTime> {
   SelectedMonthVM() : super(DateTime.now());
 
-  DateTime? updateMonth(DateTime newMonth) {
-    state = newMonth;
-    return newMonth;
-  }
+  DateTime updateMonth(DateTime newMonth) => state = newMonth;
+  void reset() => state = DateTime.now();
 }
 
-final selectedMonthVM = StateNotifierProvider<SelectedMonthVM, DateTime>(
-    (ref) => SelectedMonthVM());
-
+/// Selected Property State Management
 class SelectedPropertyVM extends StateNotifier<int> {
   SelectedPropertyVM() : super(0);
 
-  void updateProperty(int newProperty) {
-    state = newProperty;
-  }
+  void updateProperty(int newProperty) => state = newProperty;
+  void clear() => state = 0;
 }
 
-final selectedPropertyVM = StateNotifierProvider<SelectedPropertyVM, int>(
+/// Number of Days in Selected Month
+class NumberOfDaysVM extends StateNotifier<int> {
+  NumberOfDaysVM(DateTime selectedMonth) : super(getDaysInMonth(selectedMonth));
+
+  void updateDays(int newDays) => state = newDays;
+}
+
+/// Highlighted Day State Management
+class HighlightedDayVM extends StateNotifier<int?> {
+  HighlightedDayVM() : super(null);
+
+  void updateDay(int? newDay) => state = newDay;
+  void clear() => state = null;
+}
+
+/// Highlighted Room State Management
+class HighlightedRoomVM extends StateNotifier<int?> {
+  HighlightedRoomVM() : super(null);
+
+  void updateRoom(int? newRoom) => state = newRoom;
+  void clear() => state = null;
+}
+
+/// Floor to Edit State Management
+class FloorToEditVM extends StateNotifier<FloorVM?> {
+  FloorToEditVM() : super(null);
+
+  void updateFloor(FloorVM floor) => state = floor;
+  void clear() => state = null;
+}
+
+/// Providers
+final selectedMonthVM = StateNotifierProvider<SelectedMonthVM, DateTime>(
+    (ref) => SelectedMonthVM());
+
+final selectedPropertyVM = StateNotifierProvider<SelectedPropertyVM, int?>(
     (ref) => SelectedPropertyVM());
 
-class NumberOfDaysVM extends StateNotifier<int> {
-  NumberOfDaysVM() : super(daysInMonth);
-
-  void updateDays(int newDays) {
-    state = newDays;
-  }
-}
-
-final numberOfDaysVM =
-    StateNotifierProvider<NumberOfDaysVM, int>((ref) => NumberOfDaysVM());
-
-class HighlightedDayVM extends StateNotifier<int> {
-  HighlightedDayVM() : super(0);
-
-  void updateDay(int newDay) {
-    state = newDay;
-  }
-}
+final numberOfDaysVM = StateNotifierProvider<NumberOfDaysVM, int>((ref) {
+  final selectedMonth = ref.watch(selectedMonthVM);
+  return NumberOfDaysVM(selectedMonth);
+});
 
 final highlightedDayVM =
-    StateNotifierProvider<HighlightedDayVM, int>((ref) => HighlightedDayVM());
+    StateNotifierProvider<HighlightedDayVM, int?>((ref) => HighlightedDayVM());
 
-class HighlightedRoomVM extends StateNotifier<int> {
-  HighlightedRoomVM() : super(0);
+final highlightedRoomVM = StateNotifierProvider<HighlightedRoomVM, int?>(
+    (ref) => HighlightedRoomVM());
 
-  void updateRoom(int newRoom) {
-    state = newRoom;
-  }
-}
-
-final highlightedRoomVM =
-    StateNotifierProvider<HighlightedRoomVM, int>((ref) => HighlightedRoomVM());
+final floorToEditVM =
+    StateNotifierProvider<FloorToEditVM, FloorVM?>((ref) => FloorToEditVM());
