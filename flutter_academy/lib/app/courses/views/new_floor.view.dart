@@ -194,6 +194,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
           propertyId: selectedPropertyID,
           rooms: createRooms())) {
         await ref.read(roomListVM.notifier).fetchRooms();
+        await ref.read(floorListVM.notifier).fetchFloors();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Floor added successfully.')),

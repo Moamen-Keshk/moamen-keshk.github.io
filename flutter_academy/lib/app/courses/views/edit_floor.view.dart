@@ -162,6 +162,7 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
     );
 
     await ref.read(roomListVM.notifier).fetchRooms();
+    await ref.read(floorListVM.notifier).fetchFloors();
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
