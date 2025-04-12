@@ -132,7 +132,31 @@ class _EditPropertyViewState extends State<EditPropertyView> {
                                       ))),
                               Center(
                                 child: IconButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    final confirmed =
+                                        await showDeleteConfirmationDialog(
+                                            context);
+                                    if (!confirmed) return;
+
+                                    final floorId =
+                                        int.tryParse(floors[index].id);
+                                    if (floorId == null) return;
+
+// Trigger UI change
+
+                                    final success = await ref
+                                        .read(floorListVM.notifier)
+                                        .deleteFloor(floorId);
+// Reset UI state
+
+                                    if (success && context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text("Floor deleted.")),
+                                      );
+                                    }
+                                  },
                                   icon: const Icon(Icons.clear),
                                 ),
                               ),
@@ -180,5 +204,26 @@ class _EditPropertyViewState extends State<EditPropertyView> {
     }
 
     return categoryMap;
+  }
+
+  Future<bool> showDeleteConfirmationDialog(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Delete Floor"),
+            content: const Text("Are you sure you want to delete this floor?"),
+            actions: [
+              TextButton(
+                child: const Text("Cancel"),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              TextButton(
+                child: const Text("Delete"),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }

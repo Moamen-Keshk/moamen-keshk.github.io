@@ -1,28 +1,13 @@
-// Refactored EditFloorView with null safety, validation, and improved state handling
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
+import 'package:flutter_academy/app/courses/widgets/room_form.widget.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-final Map<String, String> _roomsNumbers = {};
-final List<DropdownData> _roomsDropdownItems = List.generate(
-  10,
-  (index) => DropdownData(index, index == 0 ? 'None' : '$index'),
-);
-
-List<Room> updatedRooms = [];
-String? floorId;
-int? floorSelectedValue;
-int dropdownCount = 0;
-List<String?> selectedValues = [];
-Map<int, int> roomsCategoryMapping = {};
-Map<int, String> roomMapping = {};
-Map<int, String> categoryMapping = {};
 
 class EditFloorView extends ConsumerStatefulWidget {
   const EditFloorView({super.key});
@@ -33,6 +18,14 @@ class EditFloorView extends ConsumerStatefulWidget {
 
 class _EditFloorViewState extends ConsumerState<EditFloorView> {
   final _formKey = GlobalKey<FormState>();
+
+  String? floorId;
+  int? floorSelectedValue;
+  List<Room> updatedRooms = [];
+  Map<String, int> roomsCategoryMapping = {};
+  final Map<String, String> _roomsNumbers = {};
+  final List<String?> selectedValues = [];
+  int dropdownCount = 0;
 
   @override
   void initState() {
@@ -49,189 +42,101 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 700,
-            child: Consumer(
-              builder: (context, ref, child) {
-                final floor = ref.watch(floorToEditVM);
-                final categories = ref.watch(categoryListVM);
+    final categories = ref.watch(categoryListVM);
 
-                if (floor == null) {
-                  return const Center(child: Text("No floor data available."));
-                }
-
-                return Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(6.0),
-                          child: TextFormField(
-                            initialValue: floor.number.toString(),
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              labelText: 'Floor No.',
-                              labelStyle: TextStyle(fontSize: 13),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter floor number';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              floorSelectedValue = int.tryParse(value ?? '');
-                            },
-                          ),
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: updatedRooms.map<Row>((room) {
-                                return Row(
-                                  children: [
-                                    SizedBox(
-                                      width: 90,
-                                      height: 35,
-                                      child: TextFormField(
-                                        initialValue:
-                                            room.roomNumber.toString(),
-                                        decoration: const InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          labelText: 'Room No.',
-                                          labelStyle: TextStyle(fontSize: 13),
-                                        ),
-                                        validator: (value) =>
-                                            value == null || value.isEmpty
-                                                ? 'Enter room number'
-                                                : null,
-                                        onSaved: (value) {
-                                          room.roomNumber =
-                                              int.tryParse(value ?? '') ??
-                                                  room.roomNumber;
-                                        },
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: DropdownButtonFormField<String>(
-                                        value: roomsCategoryMapping[
-                                                room.roomNumber]
-                                            .toString(),
-                                        hint: const Text("Select category"),
-                                        isExpanded: true,
-                                        onChanged: (newValue) {
-                                          setState(() {
-                                            roomsCategoryMapping[
-                                                    room.roomNumber] =
-                                                int.parse(newValue!);
-                                          });
-                                        },
-                                        items: categories
-                                            .map((cat) =>
-                                                DropdownMenuItem<String>(
-                                                  value: cat.id,
-                                                  child: Text(cat.name),
-                                                ))
-                                            .toList(),
-                                        validator: (value) => value == null
-                                            ? 'Select category'
-                                            : null,
-                                      ),
-                                    ),
-                                    IconButton(
-                                        onPressed: () {},
-                                        icon: const Icon(Icons.clear)),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                        const Text('Add Rooms', style: TextStyle(fontSize: 13)),
-                        DropdownMenu<int>(
-                          initialSelection: dropdownCount,
-                          label: const Text('No. of Rooms',
-                              style: TextStyle(fontSize: 13)),
-                          onSelected: (value) =>
-                              setState(() => _updateDropdownCount(value ?? 0)),
-                          dropdownMenuEntries: _roomsDropdownItems
-                              .map((data) => DropdownMenuEntry<int>(
-                                    value: data.value,
-                                    label: data.label,
-                                  ))
-                              .toList(),
-                        ),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: dropdownCount,
-                          itemBuilder: (context, index) {
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(3.0),
-                                    child: TextFormField(
-                                      decoration: const InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        labelText: 'Room No.',
-                                        labelStyle: TextStyle(fontSize: 13),
-                                      ),
-                                      validator: (value) =>
-                                          value == null || value.isEmpty
-                                              ? 'Enter room number'
-                                              : null,
-                                      onSaved: (value) {
-                                        if (value != null && value.isNotEmpty) {
-                                          _roomsNumbers['$index'] = value;
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: DropdownButtonFormField<String>(
-                                    value: selectedValues.length > index
-                                        ? selectedValues[index]
-                                        : null,
-                                    hint: const Text("Select category"),
-                                    isExpanded: true,
-                                    onChanged: (value) => setState(
-                                        () => selectedValues[index] = value),
-                                    items: categories
-                                        .map((cat) => DropdownMenuItem<String>(
-                                              value: cat.id,
-                                              child: Text(cat.name),
-                                            ))
-                                        .toList(),
-                                    validator: (value) => value == null
-                                        ? 'Select category'
-                                        : null,
-                                  ),
-                                )
-                              ],
-                            );
-                          },
-                        )
-                      ],
-                    ),
-                  ),
-                );
-              },
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            _buildSectionCard(
+              title: "🏢 Floor Info",
+              child: TextFormField(
+                initialValue: floorSelectedValue?.toString(),
+                decoration: _inputDecoration("Floor No."),
+                style: const TextStyle(fontSize: 13),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter floor number'
+                    : null,
+                onSaved: (value) =>
+                    floorSelectedValue = int.tryParse(value ?? ''),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => _submitForm(context),
-            child: const Text("Edit Floor"),
-          )
-        ],
+            const SizedBox(height: 12),
+            _buildSectionCard(
+              title: "📦 Existing Rooms",
+              child: Column(
+                children: updatedRooms.map((room) {
+                  return RoomFormRow(
+                    room: room,
+                    categoryId: roomsCategoryMapping[room.id]?.toString(),
+                    categories: categories,
+                    onCategoryChanged: (newVal) {
+                      setState(() {
+                        roomsCategoryMapping[room.id] = int.parse(newVal);
+                      });
+                    },
+                    onRoomDeleted: () async {
+                      final deleted = await ref
+                          .read(roomListVM.notifier)
+                          .deleteRoom(int.parse(room.id));
+                      if (deleted && context.mounted) {
+                        setState(() =>
+                            updatedRooms.removeWhere((r) => r.id == room.id));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Room deleted")));
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildSectionCard(
+              title: "➕ Add New Rooms",
+              child: Column(
+                children: [
+                  DropdownButtonFormField<int>(
+                    value: dropdownCount,
+                    decoration: _inputDecoration("No. of Rooms"),
+                    style: const TextStyle(fontSize: 13),
+                    isExpanded: true,
+                    items: List.generate(10, (index) {
+                      final label = index == 0 ? "None" : "$index";
+                      return DropdownMenuItem(value: index, child: Text(label));
+                    }),
+                    onChanged: (value) =>
+                        setState(() => _updateDropdownCount(value ?? 0)),
+                  ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: dropdownCount,
+                    itemBuilder: (context, index) {
+                      return NewRoomRow(
+                        index: index,
+                        categories: categories,
+                        onRoomSaved: (val) => _roomsNumbers['$index'] = val,
+                        selectedValue: selectedValues.length > index
+                            ? selectedValues[index]
+                            : null,
+                        onCategorySelected: (val) =>
+                            setState(() => selectedValues[index] = val),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => _submitForm(context),
+              icon: const Icon(Icons.save),
+              label: const Text("Save Changes"),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -242,8 +147,7 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
 
     if (floorId == null || floorSelectedValue == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing floor ID or number.')),
-      );
+          const SnackBar(content: Text('Missing floor ID or number.')));
       return;
     }
 
@@ -266,7 +170,14 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
                 ? 'Floor edited successfully.'
                 : 'An error occurred, try again!')),
       );
-      if (success) routerDelegate.go('edit_property');
+      if (success) {
+        setState(() {
+          dropdownCount = 0;
+          _roomsNumbers.clear();
+          selectedValues.clear();
+        });
+        routerDelegate.go('edit_property');
+      }
     }
   }
 
@@ -296,27 +207,43 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
       selectedValues
           .addAll(List<String?>.filled(count - selectedValues.length, null));
     } else {
-      selectedValues = selectedValues.sublist(0, count);
+      selectedValues.removeRange(count, selectedValues.length);
     }
   }
 
-  Map<int, int> setRoomCategory(List<Room> rooms, List<CategoryVM> categories) {
-    categoryMapping = {
-      for (var category in categories) int.parse(category.id): category.name
-    };
-    Map<int, int> categoryMap = {};
-    roomMapping = {
-      for (var room in rooms) room.roomNumber: room.roomNumber.toString()
-    };
+  Map<String, int> setRoomCategory(
+      List<Room> rooms, List<CategoryVM> categories) {
+    Map<String, int> categoryMap = {};
     for (var room in rooms) {
-      categoryMap[room.roomNumber] = room.categoryId;
+      categoryMap[room.id] = room.categoryId;
     }
     return categoryMap;
   }
-}
 
-class DropdownData {
-  final int value;
-  final String label;
-  DropdownData(this.value, this.label);
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required Widget child}) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          child,
+        ]),
+      ),
+    );
+  }
 }

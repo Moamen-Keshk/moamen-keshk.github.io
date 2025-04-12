@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_academy/main.dart';
@@ -192,6 +193,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
           number: floorSelectedValue!,
           propertyId: selectedPropertyID,
           rooms: createRooms())) {
+        await ref.read(roomListVM.notifier).fetchRooms();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Floor added successfully.')),

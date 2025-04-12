@@ -84,3 +84,23 @@ Future<bool> sendPutRequest(
     return false;
   }
 }
+
+Future<dynamic> sendDeleteRequest(String? idToken, String apiURL) async {
+  try {
+    final response = await http.delete(
+      Uri.parse('$baseURL$apiURL'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $idToken",
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
+}

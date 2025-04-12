@@ -37,6 +37,19 @@ class FloorListVM extends StateNotifier<List<FloorVM>> {
     }
     return false;
   }
+
+  Future<bool> deleteFloor(int floorId) async {
+    try {
+      final success = await floorService.deleteFloor(floorId);
+      if (success) {
+        await fetchFloors(); // Refresh state
+        return true;
+      }
+    } catch (e) {
+      // Optionally log or show an error message
+    }
+    return false;
+  }
 }
 
 final floorListVM = StateNotifierProvider<FloorListVM, List<FloorVM>>(

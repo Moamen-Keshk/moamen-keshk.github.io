@@ -44,7 +44,7 @@ class Floor {
         number: map['floor_number'] ?? '',
         propertyId: map['property_id'] ?? '',
         rooms: map['rooms'].map<Room>((dynamic map) {
-              return Room.fromResMap(map);
+              return Room.fromMap(map);
             }).toList() ??
             []);
   }

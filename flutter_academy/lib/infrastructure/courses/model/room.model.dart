@@ -7,28 +7,32 @@ class Room {
   final int categoryId;
   final int? floorId;
   final int? statusId;
-  Room(
-      {required this.id,
-      required this.roomNumber,
-      required this.propertyId,
-      required this.categoryId,
-      this.floorId,
-      this.statusId});
 
-  Room copyWith(
-      {String? id,
-      int? roomNumber,
-      int? propertyId,
-      int? categoryId,
-      int? floorId,
-      int? statusId}) {
+  Room({
+    required this.id,
+    required this.roomNumber,
+    required this.propertyId,
+    required this.categoryId,
+    this.floorId,
+    this.statusId,
+  });
+
+  Room copyWith({
+    String? id,
+    int? roomNumber,
+    int? propertyId,
+    int? categoryId,
+    int? floorId,
+    int? statusId,
+  }) {
     return Room(
-        id: id ?? this.id,
-        roomNumber: roomNumber ?? this.roomNumber,
-        propertyId: propertyId ?? this.propertyId,
-        categoryId: categoryId ?? this.categoryId,
-        floorId: floorId ?? this.floorId,
-        statusId: statusId ?? this.statusId);
+      id: id ?? this.id,
+      roomNumber: roomNumber ?? this.roomNumber,
+      propertyId: propertyId ?? this.propertyId,
+      categoryId: categoryId ?? this.categoryId,
+      floorId: floorId ?? this.floorId,
+      statusId: statusId ?? this.statusId,
+    );
   }
 
   Map<String, dynamic> toMap() {
@@ -37,35 +41,25 @@ class Room {
       'room_number': roomNumber,
       'property_id': propertyId,
       'category_id': categoryId,
-      'floor_id': floorId,
-      'status_id': statusId
+      if (floorId != null) 'floor_id': floorId,
+      if (statusId != null) 'status_id': statusId,
     };
   }
 
-  factory Room.fromMap(String id, Map<String, dynamic> map) {
+  factory Room.fromMap(Map<String, dynamic> map) {
     return Room(
-        id: map['id'].toString(),
-        roomNumber: map['room_number'] ?? '',
-        propertyId: map['property_id'] ?? '',
-        categoryId: map['category_id'] ?? '',
-        floorId: map['floor_id'] ?? '',
-        statusId: map['status_id'] ?? '');
-  }
-
-  factory Room.fromResMap(Map<String, dynamic> map) {
-    return Room(
-        id: map['id'].toString(),
-        roomNumber: map['room_number'] ?? '',
-        propertyId: map['property_id'] ?? '',
-        categoryId: map['category_id'] ?? '',
-        floorId: map['floor_id'] ?? '',
-        statusId: map['status_id'] ?? '');
+      id: map['id'].toString(),
+      roomNumber: _parseInt(map['room_number']),
+      propertyId: _parseInt(map['property_id']),
+      categoryId: _parseInt(map['category_id']),
+      floorId: _parseNullableInt(map['floor_id']),
+      statusId: _parseNullableInt(map['status_id']),
+    );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory Room.fromJson(String id, String source) =>
-      Room.fromMap(id, json.decode(source));
+  factory Room.fromJson(String source) => Room.fromMap(json.decode(source));
 
   @override
   String toString() {
@@ -94,4 +88,10 @@ class Room {
         floorId.hashCode ^
         statusId.hashCode;
   }
+
+  static int _parseInt(dynamic value) =>
+      value is int ? value : int.tryParse(value.toString()) ?? 0;
+
+  static int? _parseNullableInt(dynamic value) =>
+      value == null ? null : _parseInt(value);
 }

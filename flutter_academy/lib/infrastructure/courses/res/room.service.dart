@@ -7,13 +7,13 @@ class RoomService {
   Future<List<Room>> getRoom() async {
     final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(), "/api/v1/rooms");
-    return (query['data'] as List).map((e) => Room.fromResMap(e)).toList();
+    return (query['data'] as List).map((e) => Room.fromMap(e)).toList();
   }
 
   Future<List<Room>> getAllRooms(int propertyId) async {
     final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(), "/api/v1/all-rooms/$propertyId");
-    return (query['data'] as List).map((e) => Room.fromResMap(e)).toList();
+    return (query['data'] as List).map((e) => Room.fromMap(e)).toList();
   }
 
   Future<bool> addRoom(
@@ -24,5 +24,17 @@ class RoomService {
       "category_id": categoryId,
       "floor_id": floorId
     }, await _auth.currentUser?.getIdToken(), "/api/v1/new_room");
+  }
+
+  Future<bool> deleteRoom(int roomId) async {
+    try {
+      final response = await sendDeleteRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/delete_room/$roomId",
+      );
+      return response['status'] == 'success';
+    } catch (e) {
+      return false;
+    }
   }
 }

@@ -37,4 +37,16 @@ class FloorService {
       return false;
     }
   }
+
+  Future<bool> deleteFloor(int floorId) async {
+    try {
+      final response = await sendDeleteRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/delete_floor/$floorId",
+      );
+      return response['status'] == 'success';
+    } catch (e) {
+      return false;
+    }
+  }
 }
