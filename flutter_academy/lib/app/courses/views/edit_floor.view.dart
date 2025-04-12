@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_academy/main.dart';
@@ -121,14 +122,14 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
                                     Expanded(
                                       child: DropdownButtonFormField<String>(
                                         value: roomsCategoryMapping[
-                                                int.parse(room.id)]
+                                                room.roomNumber]
                                             .toString(),
                                         hint: const Text("Select category"),
                                         isExpanded: true,
                                         onChanged: (newValue) {
                                           setState(() {
                                             roomsCategoryMapping[
-                                                    int.parse(room.id)] =
+                                                    room.roomNumber] =
                                                 int.parse(newValue!);
                                           });
                                         },
@@ -256,6 +257,8 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
       },
     );
 
+    await ref.read(roomListVM.notifier).fetchRooms();
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -303,10 +306,10 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
     };
     Map<int, int> categoryMap = {};
     roomMapping = {
-      for (var room in rooms) int.parse(room.id): room.roomNumber.toString()
+      for (var room in rooms) room.roomNumber: room.roomNumber.toString()
     };
     for (var room in rooms) {
-      categoryMap[int.parse(room.id)] = room.categoryId;
+      categoryMap[room.roomNumber] = room.categoryId;
     }
     return categoryMap;
   }
