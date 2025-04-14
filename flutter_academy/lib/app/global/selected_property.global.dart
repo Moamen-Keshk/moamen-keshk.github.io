@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 
@@ -55,6 +56,13 @@ class FloorToEditVM extends StateNotifier<FloorVM?> {
   void clear() => state = null;
 }
 
+class RatePlanToEditVM extends StateNotifier<RatePlanVM?> {
+  RatePlanToEditVM() : super(null);
+
+  void updateRatePlan(RatePlanVM plan) => state = plan;
+  void clear() => state = null;
+}
+
 /// Providers
 final selectedMonthVM = StateNotifierProvider<SelectedMonthVM, DateTime>(
     (ref) => SelectedMonthVM());
@@ -75,3 +83,6 @@ final highlightedRoomVM = StateNotifierProvider<HighlightedRoomVM, int?>(
 
 final floorToEditVM =
     StateNotifierProvider<FloorToEditVM, FloorVM?>((ref) => FloorToEditVM());
+
+final ratePlanToEditVM = StateNotifierProvider<RatePlanToEditVM, RatePlanVM?>(
+    (ref) => RatePlanToEditVM());

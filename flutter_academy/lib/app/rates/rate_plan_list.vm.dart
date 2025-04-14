@@ -6,13 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
   final int? propertyId;
+  final RatePlanService ratePlanService;
 
-  RatePlanListVM(this.propertyId) : super(const []) {
+  RatePlanListVM(this.propertyId, this.ratePlanService) : super(const []) {
     fetchRatePlans();
   }
 
   Future<void> fetchRatePlans() async {
-    final res = await RatePlanService()
+    final res = await ratePlanService
         .getRatePlans(propertyId!); // Filter by propertyId if supported
     state = [...res.map((ratePlan) => RatePlanVM(ratePlan))];
   }
@@ -40,7 +41,7 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
       isActive: isActive,
     );
 
-    final result = await RatePlanService().addRatePlan(newPlan);
+    final result = await ratePlanService.addRatePlan(newPlan);
     if (result) {
       await fetchRatePlans();
       return true;
@@ -48,10 +49,47 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
     return false;
   }
 
+  Future<RatePlan?> getRatePlanById(String id) async {
+    return await ratePlanService.getRatePlanById(id);
+  }
+
+  Future<bool> updateRatePlan({
+    required String id,
+    required String name,
+    required double baseRate,
+    required String categoryId,
+    required DateTime startDate,
+    required DateTime endDate,
+    double? weekendRate,
+    double? seasonalMultiplier,
+    bool isActive = true,
+  }) async {
+    final updatedPlan = RatePlan(
+      id: id,
+      name: name,
+      baseRate: baseRate,
+      propertyId: propertyId!,
+      categoryId: categoryId,
+      startDate: startDate,
+      endDate: endDate,
+      weekendRate: weekendRate,
+      seasonalMultiplier: seasonalMultiplier,
+      isActive: isActive,
+    );
+
+    final result = await ratePlanService.updateRatePlan(updatedPlan);
+    if (result) {
+      await fetchRatePlans(); // Refresh list
+      return true;
+    }
+    return false;
+  }
+
   Future<bool> deleteRatePlan(String ratePlanId) async {
-    final result = await RatePlanService().deleteRatePlan(ratePlanId);
+    final result = await ratePlanService.deleteRatePlan(ratePlanId);
     if (result) {
       state = state.where((ratePlan) => ratePlan.id != ratePlanId).toList();
+      await fetchRatePlans();
       return true;
     }
     return false;
@@ -59,5 +97,5 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
 }
 
 final ratePlanListVM = StateNotifierProvider<RatePlanListVM, List<RatePlanVM>>(
-  (ref) => RatePlanListVM(ref.watch(selectedPropertyVM)),
+  (ref) => RatePlanListVM(ref.watch(selectedPropertyVM), RatePlanService()),
 );

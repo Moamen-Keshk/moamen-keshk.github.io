@@ -21,6 +21,8 @@ import 'package:flutter_academy/app/courses/pages/new_category.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
+import 'package:flutter_academy/app/rates/edit_rate_plan.page.dart';
+import 'package:flutter_academy/app/rates/hotel_rate_plan.page.dart';
 import 'package:flutter_academy/app/rates/rate_plan.page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -152,6 +154,18 @@ class AppRouterDelegate extends RouterDelegate<Uri>
         pages.add(const MaterialPage(
           child: RatePlanPage(),
           key: ValueKey('rate_plan'),
+        ));
+        break;
+      case 'edit_rate_plan':
+        pages.add(const MaterialPage(
+          child: EditRatePlanPage(),
+          key: ValueKey('edit_rate_plan'),
+        ));
+        break;
+      case 'hotel_rate_plans':
+        pages.add(const MaterialPage(
+          child: HotelRatePlanPage(),
+          key: ValueKey('hotel_rate_plans'),
         ));
         break;
       case 'watchlist':

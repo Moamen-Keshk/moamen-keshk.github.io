@@ -71,11 +71,13 @@ class RoomFormRow extends StatelessWidget {
 class CategoryFormRow extends StatelessWidget {
   final List<CategoryVM> categories;
   final void Function(String) onCategoryChanged;
+  final String? initialValue;
 
   const CategoryFormRow({
     super.key,
     required this.categories,
     required this.onCategoryChanged,
+    this.initialValue,
   });
 
   @override
@@ -86,6 +88,7 @@ class CategoryFormRow extends StatelessWidget {
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<String>(
+            value: initialValue,
             isExpanded: true,
             decoration: _smallInput("Category"),
             style: const TextStyle(fontSize: 13),

@@ -28,6 +28,16 @@ class _DashboardViewState extends State<DashboardView> {
             ),
             const SizedBox(width: 10.0),
             ElevatedButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+              onPressed: () {
+                routerDelegate.go('hotel_rate_plans');
+              },
+              child: const Text("Edit Rates"),
+            ),
+            const SizedBox(width: 10.0),
+            ElevatedButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,
                 ),

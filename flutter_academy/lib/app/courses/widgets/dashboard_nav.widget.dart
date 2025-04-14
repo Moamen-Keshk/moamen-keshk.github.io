@@ -59,15 +59,6 @@ class _DashboardNavState extends State<DashboardNav> {
                 );
               }),
               const SizedBox(width: 10.0),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                ),
-                onPressed: () {
-                  routerDelegate.go('rate_plan');
-                },
-                child: const Text("Rate Plan"),
-              ),
               Consumer(builder: (context, ref, child) {
                 final properties = ref.watch(propertyListVM);
                 propertiesMapping = propertyMapping(properties);
