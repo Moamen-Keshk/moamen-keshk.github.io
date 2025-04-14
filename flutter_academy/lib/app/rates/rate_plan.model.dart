@@ -68,11 +68,11 @@ class RatePlan {
 
   factory RatePlan.fromMap(String id, Map<String, dynamic> map) {
     return RatePlan(
-      id: id,
+      id: map['id'].toString(),
       name: map['name'] ?? '',
       baseRate: (map['base_rate'] ?? 0).toDouble(),
-      propertyId: map['property_id'] ?? '',
-      categoryId: map['category_id'] ?? '',
+      propertyId: map['property_id'] ?? 0,
+      categoryId: map['category_id'].toString(),
       startDate: DateTime.parse(map['start_date']),
       endDate: DateTime.parse(map['end_date']),
       weekendRate: map['weekend_rate'] != null
@@ -86,7 +86,22 @@ class RatePlan {
   }
 
   factory RatePlan.fromResMap(Map<String, dynamic> map) {
-    return RatePlan.fromMap(map['id'].toString(), map);
+    return RatePlan(
+      id: map['id'].toString(),
+      name: map['name'] ?? '',
+      baseRate: (map['base_rate'] ?? 0).toDouble(),
+      propertyId: map['property_id'] ?? 0,
+      categoryId: map['category_id'].toString(),
+      startDate: DateTime.parse(map['start_date']),
+      endDate: DateTime.parse(map['end_date']),
+      weekendRate: map['weekend_rate'] != null
+          ? (map['weekend_rate'] as num).toDouble()
+          : null,
+      seasonalMultiplier: map['seasonal_multiplier'] != null
+          ? (map['seasonal_multiplier'] as num).toDouble()
+          : null,
+      isActive: map['is_active'] ?? true,
+    );
   }
 
   String toJson() => json.encode(toMap());

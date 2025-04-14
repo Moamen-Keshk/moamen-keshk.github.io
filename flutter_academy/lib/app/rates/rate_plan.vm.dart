@@ -8,7 +8,7 @@ class RatePlanVM {
   String get id => ratePlan.id;
   String get name => ratePlan.name;
   double get baseRate => ratePlan.baseRate;
-  int get roompropertyIdTypeId => ratePlan.propertyId;
+  int get propertyId => ratePlan.propertyId;
   String get categoryId => ratePlan.categoryId;
   DateTime get startDate => ratePlan.startDate;
   DateTime get endDate => ratePlan.endDate;

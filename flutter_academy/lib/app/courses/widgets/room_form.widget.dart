@@ -68,6 +68,49 @@ class RoomFormRow extends StatelessWidget {
   }
 }
 
+class CategoryFormRow extends StatelessWidget {
+  final List<CategoryVM> categories;
+  final void Function(String) onCategoryChanged;
+
+  const CategoryFormRow({
+    super.key,
+    required this.categories,
+    required this.onCategoryChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(children: [
+        Expanded(
+          flex: 2,
+          child: DropdownButtonFormField<String>(
+            isExpanded: true,
+            decoration: _smallInput("Category"),
+            style: const TextStyle(fontSize: 13),
+            items: categories.map((cat) {
+              return DropdownMenuItem(value: cat.id, child: Text(cat.name));
+            }).toList(),
+            onChanged: (val) => onCategoryChanged(val!),
+            validator: (val) => val == null ? "Select category" : null,
+          ),
+        )
+      ]),
+    );
+  }
+
+  InputDecoration _smallInput(String label) {
+    return InputDecoration(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13),
+    );
+  }
+}
+
 class NewRoomRow extends StatelessWidget {
   final int index;
   final List<CategoryVM> categories;

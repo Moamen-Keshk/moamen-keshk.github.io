@@ -20,7 +20,6 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
   Future<bool> addRatePlan({
     required String name,
     required double baseRate,
-    required int propertyId,
     required String categoryId,
     required DateTime startDate,
     required DateTime endDate,
@@ -32,7 +31,7 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
       id: '', // let backend generate it
       name: name,
       baseRate: baseRate,
-      propertyId: propertyId,
+      propertyId: propertyId!,
       categoryId: categoryId,
       startDate: startDate,
       endDate: endDate,

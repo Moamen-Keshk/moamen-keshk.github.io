@@ -8,11 +8,9 @@ class RatePlanService {
   Future<List<RatePlan>> getRatePlans(int propertyId) async {
     final query = await sendGetRequest(
       await _auth.currentUser?.getIdToken(),
-      "/api/v1/rate_plans/$propertyId",
+      "/api/v1/all_rate_plans/$propertyId",
     );
-    return (query['data'] as List)
-        .map((e) => RatePlan.fromMap(e['id'].toString(), e))
-        .toList();
+    return (query['data'] as List).map((e) => RatePlan.fromResMap(e)).toList();
   }
 
   Future<List<RatePlan>> getRatePlansByCategoryId(
@@ -21,9 +19,7 @@ class RatePlanService {
       await _auth.currentUser?.getIdToken(),
       "/api/v1/rate_plans_by_category/$propertyId/$categoryId",
     );
-    return (query['data'] as List)
-        .map((e) => RatePlan.fromMap(e['id'].toString(), e))
-        .toList();
+    return (query['data'] as List).map((e) => RatePlan.fromResMap(e)).toList();
   }
 
   Future<bool> addRatePlan(RatePlan ratePlan) async {
