@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/courses/utilities/booking_helpers.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/payment_status_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
@@ -31,8 +32,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
   late List<DateTime> _daysInMonth;
   List<BookingVM> bookingsForTabBarView = [];
   final Map<int, String> paymentStatusMapping = {};
-  final Map<int, String> roomMapping = {};
-  final Map<int, String> categoryMapping = {};
+  Map<int, String> roomMapping = {};
+  Map<int, String> categoryMapping = {};
+  bool _showRates = false; // Toggle state
 
   @override
   void initState() {
@@ -46,6 +48,26 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
     PaymentStatusListVM().paymentStatusMapping().then((result) {
       setState(() => paymentStatusMapping.addAll(result));
     });
+  }
+
+  Map<int, int> setRoomCategory(
+      List<RoomVM> rooms, List<CategoryVM> categories) {
+    categoryMapping = {
+      for (var category in categories) int.parse(category.id): category.name
+    };
+
+    Map<int, int> categoryMap = {};
+    roomMapping = {
+      for (var room in rooms)
+        if (room.id case var id when int.tryParse(id) != null)
+          int.parse(id): room.roomNumber.toString()
+    };
+    for (var room in rooms) {
+      final roomId = int.tryParse(room.id) ?? 0;
+      categoryMap[roomId] = room.categoryId;
+    }
+
+    return categoryMap;
   }
 
   @override
@@ -117,15 +139,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
       final selectedYear = selectedDate.year;
 
       _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
-      final roomsCategoryMapping = setRoomCategory(
-        rooms,
-        categories,
-        categoryMapping,
-        roomMapping,
-      );
+      final roomsCategoryMapping = setRoomCategory(rooms, categories);
 
       _prepareTabController(floors, bookings);
-
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToToday());
 
       return Padding(
@@ -166,16 +182,16 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Container(
-                      alignment: Alignment.center,
-                      width: 160,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: Colors.orange[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child:
-                          const Text('Rooms', style: TextStyle(fontSize: 15)),
+                    Row(
+                      children: [
+                        const Text('Show Rates'),
+                        Switch(
+                          value: _showRates,
+                          onChanged: (val) {
+                            setState(() => _showRates = val);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -203,6 +219,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                         currentYear: selectedYear,
                         tabController: _tabController,
                         ref: ref,
+                        showRates: _showRates,
                       ),
                     ),
                   ],

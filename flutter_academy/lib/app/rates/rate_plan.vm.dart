@@ -28,4 +28,19 @@ class RatePlanVM {
     }
     return rate;
   }
+
+  factory RatePlanVM.empty(DateTime date) {
+    return RatePlanVM(
+      RatePlan(
+        id: '',
+        name: 'Default',
+        baseRate: 0.0,
+        propertyId: 0,
+        categoryId: '',
+        startDate: date,
+        endDate: date,
+        isActive: false,
+      ),
+    );
+  }
 }

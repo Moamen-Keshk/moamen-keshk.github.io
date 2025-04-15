@@ -11,7 +11,11 @@ class ResetPasswordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        children: const <Widget>[FormNav(), Center(child: ResetPasswordView())],
+        children: const <Widget>[
+          FormNav(),
+          SizedBox(height: 20),
+          Center(child: ResetPasswordView())
+        ],
       ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null

@@ -11,7 +11,11 @@ class RegisterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        children: const <Widget>[FormNav(), Center(child: RegisterView())],
+        children: const <Widget>[
+          FormNav(),
+          SizedBox(height: 20),
+          Center(child: RegisterView())
+        ],
       ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null

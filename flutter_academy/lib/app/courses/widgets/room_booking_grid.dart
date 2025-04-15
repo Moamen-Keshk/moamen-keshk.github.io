@@ -22,6 +22,7 @@ class RoomBookingGrid extends StatelessWidget {
   final int currentYear;
   final TabController tabController;
   final WidgetRef ref;
+  final bool showRates; // NEW: Toggle flag passed from parent
 
   const RoomBookingGrid({
     super.key,
@@ -32,11 +33,13 @@ class RoomBookingGrid extends StatelessWidget {
     required this.currentYear,
     required this.tabController,
     required this.ref,
+    required this.showRates, // NEW: Required flag
   });
 
   @override
   Widget build(BuildContext context) {
     int i = 0;
+
     return Row(
       children: [
         Expanded(
@@ -90,11 +93,15 @@ class RoomBookingGrid extends StatelessWidget {
                               tabDay: currentDay,
                               tabRoom: room.id,
                               ref: ref,
+                              date: DateTime(
+                                  currentYear, currentMonth, currentDay),
+                              showRates: showRates, // NEW: uses toggle
                             ),
                           );
                           currentDay++;
                         }
                       }
+
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: rowChildren,
@@ -124,6 +131,7 @@ class RoomBookingGrid extends StatelessWidget {
     for (BookingVM booking in bookingPerRoom) {
       int checkInDay = booking.checkInDay;
       int numberOfNights = booking.numberOfNights;
+
       if (booking.checkInMonth != currentMonth &&
           booking.checkOutMonth == currentMonth) {
         checkInDay = 1;
@@ -133,6 +141,7 @@ class RoomBookingGrid extends StatelessWidget {
           booking.checkOutMonth != currentMonth) {
         numberOfNights = numberOfDays - checkInDay + 1;
       }
+
       if (booking.checkOutYear == currentYear ||
           (booking.checkOutYear != currentYear &&
               booking.checkInMonth == currentMonth)) {
@@ -140,6 +149,7 @@ class RoomBookingGrid extends StatelessWidget {
             BookingWithTab(tabSize: numberOfNights, bookingVM: booking);
       }
     }
+
     return Map.fromEntries(
       bookingsMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );

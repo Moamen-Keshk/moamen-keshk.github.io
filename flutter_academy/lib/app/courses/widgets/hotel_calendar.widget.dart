@@ -186,9 +186,9 @@ class AvailableTabContainer extends StatelessWidget {
                   .read(bookingListVM.notifier)
                   .editBooking(int.parse(details.data.id), {
                 'room_id': tabRoom,
-                'chech_in': DateTime(checkInYear, checkInMonth, tabDay)
+                'check_in': DateTime(checkInYear, checkInMonth, tabDay)
                     .toIso8601String(),
-                'chech_out':
+                'check_out':
                     DateTime(checkInYear, checkInMonth, tabDay + numberOfNights)
                         .toIso8601String(),
                 'check_in_day': tabDay,

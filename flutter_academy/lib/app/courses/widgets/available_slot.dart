@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
+import 'package:flutter_academy/app/courses/widgets/rate_badge.widget.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,14 +10,18 @@ Map<int, int> roomsCategoryMapping = {};
 
 class AvailableSlot extends StatelessWidget {
   final int tabDay;
-  final String tabRoom;
+  final String tabRoom; // Room ID as string
   final WidgetRef ref;
+  final DateTime date;
+  final bool showRates;
 
   const AvailableSlot({
     super.key,
     required this.tabDay,
     required this.tabRoom,
     required this.ref,
+    required this.date,
+    this.showRates = false,
   });
 
   @override
@@ -46,13 +51,13 @@ class AvailableSlot extends StatelessWidget {
               int.parse(details.data.id),
               {
                 'room_id': tabRoom,
-                'chech_in': DateTime(checkInYear, checkInMonth, tabDay)
+                'check_in': DateTime(checkInYear, checkInMonth, tabDay)
                     .toIso8601String(),
-                'chech_out':
+                'check_out':
                     DateTime(checkInYear, checkInMonth, tabDay + numberOfNights)
                         .toIso8601String(),
                 'check_in_day': tabDay,
-                'check_out_day': tabDay + numberOfNights
+                'check_out_day': tabDay + numberOfNights,
               },
             )) {
               if (context.mounted) {
@@ -63,14 +68,21 @@ class AvailableSlot extends StatelessWidget {
             }
           },
           builder: (context, candidateData, rejectedData) {
+            final isHovered = candidateData.isNotEmpty;
+
             return SizedBox(
               height: 35,
               width: 93.9,
               child: Container(
-                color: candidateData.isNotEmpty
-                    ? Colors.green[200]
-                    : Colors.grey[200],
                 margin: const EdgeInsets.all(2),
+                color: isHovered
+                    ? Colors.green[200]
+                    : showRates
+                        ? Colors.transparent
+                        : Colors.grey[200],
+                child: showRates
+                    ? RateBadgeWidget(roomId: tabRoom, date: date)
+                    : null,
               ),
             );
           },
