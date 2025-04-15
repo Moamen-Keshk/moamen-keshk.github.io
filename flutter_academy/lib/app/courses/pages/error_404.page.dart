@@ -14,7 +14,7 @@ class Error404Page extends StatelessWidget {
             ElevatedButton(
               child: const Text('Go to Home'),
               onPressed: () {
-                routerDelegate.replaceAllWith('dashboard');
+                routerDelegate.replaceAllWith('home');
               },
             )
           ],

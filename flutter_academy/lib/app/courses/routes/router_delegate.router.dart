@@ -92,8 +92,8 @@ class AppRouterDelegate extends RouterDelegate<Object>
       case 'new_floor':
         _pages.add(_page(const NewFloorPage(), 'new_floor'));
         break;
-      case 'contacts':
-        _pages.add(_page(const ContactPage(), 'contacts'));
+      case 'contact':
+        _pages.add(_page(const ContactPage(), 'contact'));
         break;
       case 'about':
         _pages.add(_page(const AboutPage(), 'about'));
