@@ -57,10 +57,10 @@ class _LoginViewState extends State<LoginView> {
                         .read(authVM)
                         .login(email: _email.text, password: _password.text)) {
                       if (ref.read(authVM).isEmailVerified) {
-                        routerDelegate.go('/');
+                        routerDelegate.replaceAllWith('dashboard');
                       } else {
                         ref.read(authVM).verifyEmailVerfication();
-                        routerDelegate.go('email_verification');
+                        routerDelegate.push('email_verification');
                       }
 
                       //logged in
@@ -90,7 +90,7 @@ class _LoginViewState extends State<LoginView> {
             const SizedBox(height: 20.0),
             Wrap(children: <Widget>[
               InkWell(
-                onTap: () => {routerDelegate.go('/reset_password')},
+                onTap: () => {routerDelegate.push('reset_password')},
                 child: const Text(
                   'Forgot password?',
                   style: TextStyle(color: Colors.blue),
@@ -103,7 +103,7 @@ class _LoginViewState extends State<LoginView> {
                 children: <Widget>[
                   const Text('New User? '),
                   InkWell(
-                    onTap: () => {routerDelegate.go('/register')},
+                    onTap: () => {routerDelegate.push('register')},
                     child: const Text(
                       'Register',
                       style: TextStyle(color: Colors.blue),

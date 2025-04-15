@@ -40,7 +40,7 @@ class _DashboardNavState extends State<DashboardNav> {
                     icon: const Icon(Icons.exit_to_app),
                     onPressed: () async => {
                           if (await ref.read(authVM).logout())
-                            routerDelegate.go('/')
+                            routerDelegate.replaceAllWith('home')
                         });
               })
             ]
@@ -53,7 +53,7 @@ class _DashboardNavState extends State<DashboardNav> {
                           const Color.fromARGB(255, 109, 106, 106)),
                   onPressed: () {
                     showBookingDialog(context, ref);
-                    routerDelegate.go('/');
+                    routerDelegate.push('');
                   },
                   child: const Text("New booking"),
                 );
@@ -81,7 +81,7 @@ class _DashboardNavState extends State<DashboardNav> {
                       onChanged: (newValue) {
                         if (newValue == 'add') {
                           // Handle the "Add" case
-                          routerDelegate.go('new_property');
+                          routerDelegate.push('new_property');
                         } else {
                           setState(() {
                             selectedProperty = newValue;
@@ -117,7 +117,7 @@ class _DashboardNavState extends State<DashboardNav> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/');
+                  routerDelegate.replaceAllWith('dashboard');
                 },
                 child: const Text("Dashboard"),
               ),
@@ -126,7 +126,7 @@ class _DashboardNavState extends State<DashboardNav> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/courses');
+                  routerDelegate.push('courses');
                 },
                 child: const Text("Today's"),
               ),
@@ -150,7 +150,7 @@ class _DashboardNavState extends State<DashboardNav> {
                     icon: const Icon(Icons.exit_to_app),
                     onPressed: () async => {
                           if (await ref.read(authVM).logout())
-                            routerDelegate.go('/')
+                            routerDelegate.replaceAllWith('home')
                         });
               })
             ],

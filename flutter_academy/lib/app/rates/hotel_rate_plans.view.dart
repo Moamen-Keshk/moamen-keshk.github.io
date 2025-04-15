@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_academy/main.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
 import 'package:flutter_academy/app/rates/rate_plan_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
@@ -15,115 +15,160 @@ class HotelRatePlansView extends ConsumerWidget {
     final ratePlans = ref.watch(ratePlanListVM);
     final categories = ref.watch(categoryListVM);
 
+    if (ratePlans.isEmpty || categories.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     final groupedPlans = _groupRatePlansByCategory(ratePlans, categories);
 
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Grouped Rate Plans by Category
-            ...groupedPlans.entries.map((entry) {
-              final categoryName = entry.key;
-              final plansInCategory = entry.value;
+    if (groupedPlans.isEmpty) {
+      return const Center(child: Text("No rate plans available."));
+    }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(categoryName,
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: plansInCategory.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _getCrossAxisCount(context),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.6,
-                    ),
-                    itemBuilder: (context, index) {
-                      final plan = plansInCategory[index];
-                      return GestureDetector(
-                        onTap: () {
-                          ref
-                              .read(ratePlanToEditVM.notifier)
-                              .updateRatePlan(plan);
-                          routerDelegate.go('edit_rate_plan');
-                        },
-                        child: Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(plan.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium),
-                                const SizedBox(height: 6),
-                                Text(
-                                    "Base Rate: \$${plan.baseRate.toStringAsFixed(2)}"),
-                                Text("Active: ${plan.isActive ? 'Yes' : 'No'}"),
-                                Text(
-                                    "Start: ${plan.startDate.toLocal().toString().split(" ")[0]}"),
-                                Text(
-                                    "End: ${plan.endDate.toLocal().toString().split(" ")[0]}"),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              );
-            }),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...groupedPlans.entries.map((entry) {
+            final categoryName = entry.key;
+            final plans = entry.value;
 
-            // Add New Rate Plan Button
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  routerDelegate.go('rate_plan'); // update as needed
-                },
-                icon: const Icon(Icons.add),
-                label: const Text("Add New Rate Plan"),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  categoryName,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: plans
+                      .map((plan) => _RatePlanCard(
+                            plan: plan,
+                            onTap: () {
+                              ref
+                                  .read(ratePlanToEditVM.notifier)
+                                  .updateRatePlan(plan);
+                              routerDelegate.push('edit_rate_plan');
+                            },
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(height: 32),
+              ],
+            );
+          }),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () => routerDelegate.push('rate_plan'),
+              icon: const Icon(Icons.add),
+              label: const Text("Add New Rate Plan"),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
             ),
-            const SizedBox(height: 30),
-          ],
-        ),
+          ),
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }
 
   Map<String, List<RatePlanVM>> _groupRatePlansByCategory(
-      List<RatePlanVM> plans, List<CategoryVM> categories) {
-    final Map<String, List<RatePlanVM>> grouped = {};
+    List<RatePlanVM> plans,
+    List<CategoryVM> categories,
+  ) {
+    final grouped = <String, List<RatePlanVM>>{};
+    final categoryMap = {
+      for (var c in categories) c.id.trim(): c.name.trim(),
+    };
 
-    for (var category in categories) {
-      grouped[category.name] =
-          plans.where((p) => p.categoryId == category.id).toList();
+    for (final plan in plans) {
+      final categoryName =
+          categoryMap[plan.categoryId.trim()] ?? "Uncategorized";
+      grouped.putIfAbsent(categoryName, () => []).add(plan);
     }
 
     return grouped;
   }
+}
 
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1200) return 4;
-    if (width >= 800) return 3;
-    return 2;
+class _RatePlanCard extends StatefulWidget {
+  final RatePlanVM plan;
+  final VoidCallback onTap;
+
+  const _RatePlanCard({required this.plan, required this.onTap});
+
+  @override
+  State<_RatePlanCard> createState() => _RatePlanCardState();
+}
+
+class _RatePlanCardState extends State<_RatePlanCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = widget.plan;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 260,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
+            border: Border.all(
+              color: _isHovered
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.grey.shade300,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(plan.name, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text("Base Rate: \$${plan.baseRate.toStringAsFixed(2)}"),
+              Row(
+                children: [
+                  Icon(plan.isActive ? Icons.check : Icons.close,
+                      color: plan.isActive ? Colors.green : Colors.red,
+                      size: 18),
+                  const SizedBox(width: 6),
+                  Text(plan.isActive ? "Active" : "Inactive"),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text("Start: ${_formatDate(plan.startDate)}"),
+              Text("End: ${_formatDate(plan.endDate)}"),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+
+  String _formatDate(DateTime date) =>
+      "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
 }

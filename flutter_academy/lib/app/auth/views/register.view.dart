@@ -87,7 +87,7 @@ class _RegisterViewState extends State<RegisterView> {
                           email: _email.text,
                           password: _password.text)) {
                         //logged in
-                        routerDelegate.go('email_verification');
+                        routerDelegate.push('email_verification');
                       } else {
                         // error
                         debugPrint(ref.read(authVM).error);

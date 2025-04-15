@@ -177,7 +177,7 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
           _roomsNumbers.clear();
           selectedValues.clear();
         });
-        routerDelegate.go('edit_property');
+        routerDelegate.push('edit_property');
       }
     }
   }

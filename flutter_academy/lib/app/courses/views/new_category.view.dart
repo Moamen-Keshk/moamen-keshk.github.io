@@ -45,31 +45,27 @@ class _NewCategoryViewState extends State<NewCategoryView> {
                 minLines: 3,
                 maxLines: 3,
                 controller: _description,
-                decoration: const InputDecoration(labelText: "enter description"),
+                decoration:
+                    const InputDecoration(labelText: "enter description"),
               ),
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: () async {
-                    if (await CategoryListVM().addToCategories(
-                          name: _name.text,
-                          description: _description.text)) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Category added successfully.')
-                        ),
+                  if (await CategoryListVM().addToCategories(
+                      name: _name.text, description: _description.text)) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Category added successfully.')),
                       );
-                            }
-                      routerDelegate.go('/');
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('An error occured, try again!')
-                        ),
-                      );
-                      }
                     }
+                    routerDelegate.replaceAllWith('dashboard');
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('An error occured, try again!')),
+                      );
+                    }
+                  }
                 },
                 child: const Text("Add Category"),
               )

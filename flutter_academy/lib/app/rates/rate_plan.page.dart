@@ -11,8 +11,7 @@ class RatePlanPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: DashboardNav(),
-      body: SingleChildScrollView(
-          child: Center(heightFactor: 2.0, child: RatePlanView())),
+      body: SingleChildScrollView(child: RatePlanView()),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

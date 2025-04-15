@@ -58,7 +58,7 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                               content: Text('Property added successfully.')),
                         );
                       }
-                      routerDelegate.go('/');
+                      routerDelegate.replaceAllWith('dashboard');
                     } else {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

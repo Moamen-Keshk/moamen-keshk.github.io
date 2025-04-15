@@ -200,7 +200,7 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
             SnackBar(content: Text('Floor added successfully.')),
           );
         }
-        routerDelegate.go('edit_property');
+        routerDelegate.push('edit_property');
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

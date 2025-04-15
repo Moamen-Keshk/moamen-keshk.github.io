@@ -22,7 +22,7 @@ class _DashboardViewState extends State<DashboardView> {
                 foregroundColor: Colors.grey,
               ),
               onPressed: () {
-                routerDelegate.go('/edit_property');
+                routerDelegate.push('edit_property');
               },
               child: const Text("Edit Property"),
             ),
@@ -32,7 +32,7 @@ class _DashboardViewState extends State<DashboardView> {
                 foregroundColor: Colors.grey,
               ),
               onPressed: () {
-                routerDelegate.go('hotel_rate_plans');
+                routerDelegate.push('hotel_rate_plans');
               },
               child: const Text("Edit Rates"),
             ),
@@ -42,7 +42,7 @@ class _DashboardViewState extends State<DashboardView> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/new_category');
+                  routerDelegate.push('new_category');
                 },
                 child: const Text("New Category")),
           ])),

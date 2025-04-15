@@ -65,7 +65,7 @@ class NotificationsView extends StatelessWidget {
               MenuItemButton(
                 child: InkWell(
                   onTap: () {
-                    routerDelegate.go('/all_notifications');
+                    routerDelegate.push('all_notifications');
                   },
                   child: const Text(
                     'See all',

@@ -20,7 +20,7 @@ class TopNav extends StatelessWidget {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/about');
+                  routerDelegate.push('about');
                 },
                 child: const Text("About"),
               ),
@@ -29,7 +29,7 @@ class TopNav extends StatelessWidget {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/login');
+                  routerDelegate.push('login');
                 },
                 child: const Text("Login"),
               ),
@@ -38,7 +38,7 @@ class TopNav extends StatelessWidget {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.go('/contact');
+                  routerDelegate.push('contact');
                 },
                 child: const Text("Contact"),
               ),

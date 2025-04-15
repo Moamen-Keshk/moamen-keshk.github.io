@@ -52,7 +52,7 @@ class _EditPropertyViewState extends State<EditPropertyView> {
                             ref
                                 .read(floorToEditVM.notifier)
                                 .updateFloor(floors[index]);
-                            routerDelegate.go('edit_floor');
+                            routerDelegate.push('edit_floor');
                           },
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -175,7 +175,7 @@ class _EditPropertyViewState extends State<EditPropertyView> {
               foregroundColor: Colors.grey,
             ),
             onPressed: () {
-              routerDelegate.go('/new_floor');
+              routerDelegate.push('new_floor');
             },
             child: const Text("New Floor"),
           ))

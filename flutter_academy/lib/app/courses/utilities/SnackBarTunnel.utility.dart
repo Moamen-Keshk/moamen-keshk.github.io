@@ -7,13 +7,14 @@ class SnackBarTunnel extends StatelessWidget {
   final String message;
   final String path;
 
-  SnackBarTunnel(String s, {super.key, required this.message, required this.path});
+  SnackBarTunnel(String s,
+      {super.key, required this.message, required this.path});
 
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scaffoldKey
         .currentState
         ?.showSnackBar(SnackBar(content: Text(message))));
-    return routerDelegate.go(path);
+    return routerDelegate.push(path) as Widget;
   }
 }
