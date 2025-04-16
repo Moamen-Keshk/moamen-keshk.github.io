@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/season_list.vm.dart';
 import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
 import 'package:flutter_academy/app/rates/rate_plan_list.vm.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-Map<int, int> roomsCategoryMapping = {};
-Map<int, String> roomMapping = {};
-Map<int, String> categoryMapping = {};
 
 class RateBadgeWidget extends ConsumerWidget {
   final String roomId;
@@ -23,18 +19,31 @@ class RateBadgeWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ratePlanVMs = ref.watch(ratePlanListVM);
-    roomsCategoryMapping = _setRoomCategory(
-      ref.read(roomListVM),
-      ref.read(categoryListVM),
-    );
+    final ratePlans = ref.watch(ratePlanListVM);
+    final rooms = ref.watch(roomListVM);
+    final seasons = ref.watch(seasonListVM);
+
+    final roomCategoryMap = _buildRoomCategoryMap(rooms);
+    final roomIntId = int.tryParse(roomId);
+
+    if (roomIntId == null) {
+      return _buildBadge(0); // fallback if room ID is not an int
+    }
+
+    final categoryId = roomCategoryMap[roomIntId]?.toString();
 
     final price = _resolveRoomRate(
-      roomId: roomId,
       date: date,
-      ratePlanVMs: ratePlanVMs,
+      categoryId: categoryId,
+      ratePlans: ratePlans,
+      seasons: seasons,
     );
 
+    return _buildBadge(price);
+  }
+
+  /// Builds the visual badge with price and background color
+  Widget _buildBadge(double price) {
     return SizedBox(
       height: 35,
       width: 93.9,
@@ -58,15 +67,14 @@ class RateBadgeWidget extends ConsumerWidget {
     );
   }
 
+  /// Calculates the applicable rate for a room and date
   double _resolveRoomRate({
-    required String roomId,
     required DateTime date,
-    required List<RatePlanVM> ratePlanVMs,
+    required String? categoryId,
+    required List<RatePlanVM> ratePlans,
+    required List<SeasonVM> seasons,
   }) {
-    final roomIntId = int.tryParse(roomId) ?? 0;
-    final categoryId = roomsCategoryMapping[roomIntId]?.toString();
-
-    final vm = ratePlanVMs.firstWhere(
+    final vm = ratePlans.firstWhere(
       (rp) =>
           rp.ratePlan.categoryId == categoryId &&
           date.isAfter(
@@ -77,43 +85,40 @@ class RateBadgeWidget extends ConsumerWidget {
 
     double rate = vm.ratePlan.baseRate;
 
+    // Use weekend rate if available
     if ((date.weekday == DateTime.saturday ||
             date.weekday == DateTime.sunday) &&
         vm.ratePlan.weekendRate != null) {
       rate = vm.ratePlan.weekendRate!;
     }
 
-    if (vm.ratePlan.seasonalMultiplier != null) {
+    // Check if the date is inside any season
+    final isInSeason = seasons.any(
+      (season) =>
+          date.isAfter(season.startDate.subtract(const Duration(days: 1))) &&
+          date.isBefore(season.endDate.add(const Duration(days: 1))),
+    );
+
+    // Apply seasonal multiplier if present
+    if (isInSeason && vm.ratePlan.seasonalMultiplier != null) {
       rate *= vm.ratePlan.seasonalMultiplier!;
     }
 
     return rate;
   }
 
+  /// Returns a background color based on price
   Color _getRateColor(double price) {
     if (price < 50) return Colors.green[200]!;
     if (price < 100) return Colors.orange[200]!;
     return Colors.red[200]!;
   }
 
-  Map<int, int> _setRoomCategory(
-      List<RoomVM> rooms, List<CategoryVM> categories) {
-    categoryMapping = {
-      for (var category in categories) int.parse(category.id): category.name
-    };
-
-    roomMapping = {
+  /// Builds a map of roomId (int) -> categoryId (int)
+  Map<int, int> _buildRoomCategoryMap(List<RoomVM> rooms) {
+    return {
       for (var room in rooms)
-        if (room.id case var id when int.tryParse(id) != null)
-          int.parse(id): room.roomNumber.toString()
+        if (int.tryParse(room.id) != null) int.parse(room.id): room.categoryId,
     };
-
-    final categoryMap = <int, int>{};
-    for (var room in rooms) {
-      final roomId = int.tryParse(room.id) ?? 0;
-      categoryMap[roomId] = room.categoryId;
-    }
-
-    return categoryMap;
   }
 }

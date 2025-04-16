@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NewCategoryView extends StatefulWidget {
+class NewCategoryView extends ConsumerStatefulWidget {
   const NewCategoryView({super.key});
 
   @override
-  State<NewCategoryView> createState() => _NewCategoryViewState();
+  ConsumerState<NewCategoryView> createState() => _NewCategoryViewState();
 }
 
-class _NewCategoryViewState extends State<NewCategoryView> {
+class _NewCategoryViewState extends ConsumerState<NewCategoryView> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _name = TextEditingController();
@@ -58,7 +59,7 @@ class _NewCategoryViewState extends State<NewCategoryView> {
                         SnackBar(content: Text('Category added successfully.')),
                       );
                     }
-                    routerDelegate.replaceAllWith('dashboard');
+                    ref.read(routerProvider).replaceAllWith('dashboard');
                   } else {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

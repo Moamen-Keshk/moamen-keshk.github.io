@@ -1,9 +1,12 @@
+// Updated RatePlanView with hybrid conflict handling
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_academy/app/rates/rate_plan_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
+import 'package:flutter_academy/app/rates/rate_plan.model.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 
 class RatePlanView extends ConsumerStatefulWidget {
   const RatePlanView({super.key});
@@ -22,12 +25,13 @@ class _RatePlanViewState extends ConsumerState<RatePlanView> {
   DateTime? endDate;
   double? weekendRate;
   double? seasonalMultiplier;
-  bool isActive = true;
+  bool isActive = false;
 
   @override
   Widget build(BuildContext context) {
     final ratePlanVM = ref.read(ratePlanListVM.notifier);
     final categories = ref.watch(categoryListVM);
+    final propertyId = ref.watch(selectedPropertyVM);
 
     return Center(
       child: SingleChildScrollView(
@@ -124,10 +128,14 @@ class _RatePlanViewState extends ConsumerState<RatePlanView> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate() &&
                         startDate != null &&
-                        endDate != null) {
-                      final success = await ratePlanVM.addRatePlan(
+                        endDate != null &&
+                        categoryId != null &&
+                        propertyId != null) {
+                      final newPlan = RatePlan(
+                        id: '', // will be ignored on creation
                         name: name,
                         baseRate: baseRate,
+                        propertyId: propertyId,
                         categoryId: categoryId!,
                         startDate: startDate!,
                         endDate: endDate!,
@@ -136,12 +144,64 @@ class _RatePlanViewState extends ConsumerState<RatePlanView> {
                         isActive: isActive,
                       );
 
+                      final conflicts =
+                          await ratePlanVM.getConflictingPlans(newPlan);
+
+                      bool override = false;
+                      if (conflicts.isNotEmpty && context.mounted) {
+                        override = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Conflict Detected'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'This rate plan overlaps with the following existing plan(s):',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ...conflicts
+                                        .map((plan) => Text('- ${plan.name}')),
+                                    const SizedBox(height: 16),
+                                    const Text('Do you want to override them?'),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      child: const Text('Cancel')),
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      child: const Text('Override')),
+                                ],
+                              ),
+                            ) ??
+                            false;
+                      }
+
+                      if (!context.mounted) return;
+
+                      final success = await ratePlanVM.saveRatePlan(
+                        ratePlan: newPlan,
+                        overrideConflicts: override,
+                      );
+
                       if (success && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text('Rate Plan created successfully')),
                         );
-                        routerDelegate.push('hotel_rate_plan');
+                        ref.read(routerProvider).pop();
+                      } else if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Could not create rate plan')),
+                        );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(

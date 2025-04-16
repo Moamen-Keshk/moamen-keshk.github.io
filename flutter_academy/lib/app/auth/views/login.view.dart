@@ -3,14 +3,14 @@ import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LoginView extends StatefulWidget {
+class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
 
   @override
-  State<LoginView> createState() => _LoginViewState();
+  ConsumerState<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView> {
+class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _email = TextEditingController();
@@ -57,10 +57,10 @@ class _LoginViewState extends State<LoginView> {
                         .read(authVM)
                         .login(email: _email.text, password: _password.text)) {
                       if (ref.read(authVM).isEmailVerified) {
-                        routerDelegate.replaceAllWith('dashboard');
+                        ref.read(routerProvider).replaceAllWith('dashboard');
                       } else {
                         ref.read(authVM).verifyEmailVerfication();
-                        routerDelegate.push('email_verification');
+                        ref.read(routerProvider).push('email_verification');
                       }
 
                       //logged in
@@ -90,7 +90,7 @@ class _LoginViewState extends State<LoginView> {
             const SizedBox(height: 20.0),
             Wrap(children: <Widget>[
               InkWell(
-                onTap: () => {routerDelegate.push('reset_password')},
+                onTap: () => {ref.read(routerProvider).push('reset_password')},
                 child: const Text(
                   'Forgot password?',
                   style: TextStyle(color: Colors.blue),
@@ -103,7 +103,7 @@ class _LoginViewState extends State<LoginView> {
                 children: <Widget>[
                   const Text('New User? '),
                   InkWell(
-                    onTap: () => {routerDelegate.push('register')},
+                    onTap: () => {ref.read(routerProvider).push('register')},
                     child: const Text(
                       'Register',
                       style: TextStyle(color: Colors.blue),

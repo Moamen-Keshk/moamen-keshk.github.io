@@ -14,16 +14,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 String? selectedProperty;
 
-class DashboardNav extends StatefulWidget implements PreferredSizeWidget {
+class DashboardNav extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   const DashboardNav({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
-  State<DashboardNav> createState() => _DashboardNavState();
+  ConsumerState<DashboardNav> createState() => _DashboardNavState();
 }
 
-class _DashboardNavState extends State<DashboardNav> {
+class _DashboardNavState extends ConsumerState<DashboardNav> {
   Map<String, String> propertiesMapping = {};
 
   @override
@@ -40,7 +41,7 @@ class _DashboardNavState extends State<DashboardNav> {
                     icon: const Icon(Icons.exit_to_app),
                     onPressed: () async => {
                           if (await ref.read(authVM).logout())
-                            routerDelegate.replaceAllWith('home')
+                            ref.read(routerProvider).replaceAllWith('home')
                         });
               })
             ]
@@ -53,7 +54,7 @@ class _DashboardNavState extends State<DashboardNav> {
                           const Color.fromARGB(255, 109, 106, 106)),
                   onPressed: () {
                     showBookingDialog(context, ref);
-                    routerDelegate.push('');
+                    ref.read(routerProvider).replaceAllWith('dashboard');
                   },
                   child: const Text("New booking"),
                 );
@@ -81,7 +82,7 @@ class _DashboardNavState extends State<DashboardNav> {
                       onChanged: (newValue) {
                         if (newValue == 'add') {
                           // Handle the "Add" case
-                          routerDelegate.push('new_property');
+                          ref.read(routerProvider).push('new_property');
                         } else {
                           setState(() {
                             selectedProperty = newValue;
@@ -117,7 +118,7 @@ class _DashboardNavState extends State<DashboardNav> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.replaceAllWith('dashboard');
+                  ref.read(routerProvider).replaceAllWith('dashboard');
                 },
                 child: const Text("Dashboard"),
               ),
@@ -126,7 +127,7 @@ class _DashboardNavState extends State<DashboardNav> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.push('courses');
+                  ref.read(routerProvider).push('courses');
                 },
                 child: const Text("Today's"),
               ),
@@ -150,7 +151,7 @@ class _DashboardNavState extends State<DashboardNav> {
                     icon: const Icon(Icons.exit_to_app),
                     onPressed: () async => {
                           if (await ref.read(authVM).logout())
-                            routerDelegate.replaceAllWith('home')
+                            ref.read(routerProvider).replaceAllWith('home')
                         });
               })
             ],

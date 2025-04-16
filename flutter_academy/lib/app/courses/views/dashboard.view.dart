@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/widgets/hotel_calendar.dart';
 import 'package:flutter_academy/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DashboardView extends StatefulWidget {
+class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
 
   @override
-  State<DashboardView> createState() => _DashboardViewState();
+  ConsumerState<DashboardView> createState() => _DashboardViewState();
 }
 
-class _DashboardViewState extends State<DashboardView> {
+class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
@@ -22,7 +23,7 @@ class _DashboardViewState extends State<DashboardView> {
                 foregroundColor: Colors.grey,
               ),
               onPressed: () {
-                routerDelegate.push('edit_property');
+                ref.read(routerProvider).push('edit_property');
               },
               child: const Text("Edit Property"),
             ),
@@ -32,7 +33,7 @@ class _DashboardViewState extends State<DashboardView> {
                 foregroundColor: Colors.grey,
               ),
               onPressed: () {
-                routerDelegate.push('hotel_rate_plans');
+                ref.read(routerProvider).push('hotel_rate_plan');
               },
               child: const Text("Edit Rates"),
             ),
@@ -42,9 +43,18 @@ class _DashboardViewState extends State<DashboardView> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  routerDelegate.push('new_category');
+                  ref.read(routerProvider).push('new_category');
                 },
                 child: const Text("New Category")),
+            const SizedBox(width: 10.0),
+            ElevatedButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                ),
+                onPressed: () {
+                  ref.read(routerProvider).push('hotel_seasons');
+                },
+                child: const Text("Seasons"))
           ])),
     ]);
   }

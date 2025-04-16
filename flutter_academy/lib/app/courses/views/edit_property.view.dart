@@ -15,14 +15,14 @@ Map<int, String> roomMapping = {};
 
 Map<int, String> categoryMapping = {};
 
-class EditPropertyView extends StatefulWidget {
+class EditPropertyView extends ConsumerStatefulWidget {
   const EditPropertyView({super.key});
 
   @override
-  State<EditPropertyView> createState() => _EditPropertyViewState();
+  ConsumerState<EditPropertyView> createState() => _EditPropertyViewState();
 }
 
-class _EditPropertyViewState extends State<EditPropertyView> {
+class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
@@ -52,7 +52,7 @@ class _EditPropertyViewState extends State<EditPropertyView> {
                             ref
                                 .read(floorToEditVM.notifier)
                                 .updateFloor(floors[index]);
-                            routerDelegate.push('edit_floor');
+                            ref.read(routerProvider).push('edit_floor');
                           },
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -175,7 +175,7 @@ class _EditPropertyViewState extends State<EditPropertyView> {
               foregroundColor: Colors.grey,
             ),
             onPressed: () {
-              routerDelegate.push('new_floor');
+              ref.read(routerProvider).push('new_floor');
             },
             child: const Text("New Floor"),
           ))

@@ -727,7 +727,8 @@ class _FloorRoomsState extends State<FloorRooms> with TickerProviderStateMixin {
                                     onPressed: () {
                                       showEditBookingDialog(
                                           context, bookingWithTab, ref);
-                                      routerDelegate
+                                      ref
+                                          .read(routerProvider)
                                           .replaceAllWith('dashboard');
                                     })
                               ])));

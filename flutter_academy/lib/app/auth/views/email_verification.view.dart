@@ -81,7 +81,7 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
                               : const Text('Resend'),
                           onPressed: () {
                             if (isEmailVerified) {
-                              routerDelegate.push('');
+                              ref.read(routerProvider).push('');
                             } else {
                               try {
                                 FirebaseAuth.instance.currentUser

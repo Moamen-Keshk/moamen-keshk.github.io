@@ -1,101 +1,67 @@
-import 'package:flutter_academy/app/global/selected_property.global.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
 import 'package:flutter_academy/app/rates/rate_plan.model.dart';
 import 'package:flutter_academy/app/rates/rate_plan.service.dart';
-import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 
 class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
   final int? propertyId;
-  final RatePlanService ratePlanService;
 
-  RatePlanListVM(this.propertyId, this.ratePlanService) : super(const []) {
-    fetchRatePlans();
+  RatePlanListVM(this.propertyId) : super([]) {
+    if (propertyId != null && propertyId != 0) {
+      fetchRatePlans();
+    }
   }
 
   Future<void> fetchRatePlans() async {
-    final res = await ratePlanService
-        .getRatePlans(propertyId!); // Filter by propertyId if supported
-    state = [...res.map((ratePlan) => RatePlanVM(ratePlan))];
+    if (propertyId == null) return;
+    final plans = await RatePlanService().getRatePlans(propertyId!);
+    state = plans.map((plan) => RatePlanVM(plan)).toList();
   }
 
-  Future<bool> addRatePlan({
-    required String name,
-    required double baseRate,
-    required String categoryId,
-    required DateTime startDate,
-    required DateTime endDate,
-    double? weekendRate,
-    double? seasonalMultiplier,
-    bool isActive = true,
+  Future<List<RatePlan>> getConflictingPlans(RatePlan newPlan) async {
+    final existingPlans =
+        await RatePlanService().getRatePlans(newPlan.propertyId);
+    return existingPlans.where((plan) {
+      if (plan.id == newPlan.id) return false;
+      return plan.categoryId == newPlan.categoryId &&
+          !(newPlan.endDate.isBefore(plan.startDate) ||
+              newPlan.startDate.isAfter(plan.endDate));
+    }).toList();
+  }
+
+  Future<bool> saveRatePlan({
+    required RatePlan ratePlan,
+    bool overrideConflicts = false,
   }) async {
-    final newPlan = RatePlan(
-      id: '', // let backend generate it
-      name: name,
-      baseRate: baseRate,
-      propertyId: propertyId!,
-      categoryId: categoryId,
-      startDate: startDate,
-      endDate: endDate,
-      weekendRate: weekendRate,
-      seasonalMultiplier: seasonalMultiplier,
-      isActive: isActive,
-    );
+    final conflicts = await getConflictingPlans(ratePlan);
 
-    final result = await ratePlanService.addRatePlan(newPlan);
-    if (result) {
-      await fetchRatePlans();
-      return true;
+    if (conflicts.isNotEmpty && !overrideConflicts) {
+      return false;
     }
-    return false;
-  }
 
-  Future<RatePlan?> getRatePlanById(String id) async {
-    return await ratePlanService.getRatePlanById(id);
-  }
-
-  Future<bool> updateRatePlan({
-    required String id,
-    required String name,
-    required double baseRate,
-    required String categoryId,
-    required DateTime startDate,
-    required DateTime endDate,
-    double? weekendRate,
-    double? seasonalMultiplier,
-    bool isActive = true,
-  }) async {
-    final updatedPlan = RatePlan(
-      id: id,
-      name: name,
-      baseRate: baseRate,
-      propertyId: propertyId!,
-      categoryId: categoryId,
-      startDate: startDate,
-      endDate: endDate,
-      weekendRate: weekendRate,
-      seasonalMultiplier: seasonalMultiplier,
-      isActive: isActive,
-    );
-
-    final result = await ratePlanService.updateRatePlan(updatedPlan);
-    if (result) {
-      await fetchRatePlans(); // Refresh list
-      return true;
+    if (overrideConflicts) {
+      for (final plan in conflicts) {
+        await RatePlanService().deleteRatePlan(plan.id);
+      }
     }
-    return false;
+
+    final success = ratePlan.id.isNotEmpty
+        ? await RatePlanService().updateRatePlan(ratePlan)
+        : await RatePlanService().addRatePlan(ratePlan);
+
+    if (success) await fetchRatePlans();
+
+    return success;
   }
 
   Future<bool> deleteRatePlan(String ratePlanId) async {
-    final result = await ratePlanService.deleteRatePlan(ratePlanId);
-    if (result) {
-      state = state.where((ratePlan) => ratePlan.id != ratePlanId).toList();
-      await fetchRatePlans();
-      return true;
-    }
-    return false;
+    final success = await RatePlanService().deleteRatePlan(ratePlanId);
+    if (success) await fetchRatePlans();
+    return success;
   }
 }
 
 final ratePlanListVM = StateNotifierProvider<RatePlanListVM, List<RatePlanVM>>(
-  (ref) => RatePlanListVM(ref.watch(selectedPropertyVM), RatePlanService()),
+  (ref) => RatePlanListVM(ref.watch(selectedPropertyVM)),
 );

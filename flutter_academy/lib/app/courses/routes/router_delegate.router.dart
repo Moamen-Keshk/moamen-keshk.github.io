@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/auth/pages/email_verification.page.dart';
-import 'package:flutter_academy/app/auth/pages/reset_password.page.dart';
 import 'package:flutter_academy/app/auth/pages/login.page.dart';
 import 'package:flutter_academy/app/auth/pages/register.page.dart';
+import 'package:flutter_academy/app/auth/pages/reset_password.page.dart';
 import 'package:flutter_academy/app/courses/pages/about.page.dart';
-import 'package:flutter_academy/app/courses/pages/all_notifications.page.dart';
 import 'package:flutter_academy/app/courses/pages/contact.page.dart';
 import 'package:flutter_academy/app/courses/pages/course_details.page.dart';
 import 'package:flutter_academy/app/courses/pages/courses.page.dart';
 import 'package:flutter_academy/app/courses/pages/dashboard.page.dart';
 import 'package:flutter_academy/app/courses/pages/edit_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/edit_property.page.dart';
+import 'package:flutter_academy/app/courses/pages/edit_season.page.dart';
 import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
+import 'package:flutter_academy/app/courses/pages/hotel_seasons.page.dart';
 import 'package:flutter_academy/app/courses/pages/load.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_category.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
+import 'package:flutter_academy/app/courses/pages/new_season.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
 import 'package:flutter_academy/app/rates/edit_rate_plan.page.dart';
 import 'package:flutter_academy/app/rates/hotel_rate_plan.page.dart';
 import 'package:flutter_academy/app/rates/rate_plan.page.dart';
+import 'package:flutter_academy/app/courses/pages/all_notifications.page.dart';
 
 class AppRouterDelegate extends RouterDelegate<Object>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<Object> {
@@ -32,8 +35,8 @@ class AppRouterDelegate extends RouterDelegate<Object>
     _pages.add(_page(const HomePage(), 'home'));
   }
 
-  Page _page(Widget child, String name) =>
-      MaterialPage(child: child, key: ValueKey(name));
+  Page _page(Widget child, String keyName) =>
+      MaterialPage(child: child, key: ValueKey(keyName));
 
   @override
   Widget build(BuildContext context) {
@@ -47,17 +50,13 @@ class AppRouterDelegate extends RouterDelegate<Object>
         notifyListeners();
         return true;
       },
-      observers: [
-        NavigatorObserverWithPopCallback(
-          onDidPop: (route, previousRoute) {
-            debugPrint('✅ DidPop: ${route.settings.name}');
-          },
-        ),
-      ],
     );
   }
 
   void push(String routeName, {int? id, Object? extra}) {
+    final alreadyExists = _pages.any((p) => p.key == ValueKey(routeName));
+    if (alreadyExists) return;
+
     switch (routeName) {
       case 'dashboard':
         _pages.add(_page(const DashboardPage(), 'dashboard'));
@@ -107,8 +106,17 @@ class AppRouterDelegate extends RouterDelegate<Object>
       case 'edit_rate_plan':
         _pages.add(_page(const EditRatePlanPage(), 'edit_rate_plan'));
         break;
-      case 'hotel_rate_plans':
-        _pages.add(_page(const HotelRatePlansPage(), 'hotel_rate_plans'));
+      case 'hotel_rate_plan':
+        _pages.add(_page(const HotelRatePlansPage(), 'hotel_rate_plan'));
+        break;
+      case 'new_season':
+        _pages.add(_page(const NewSeasonPage(), 'new_season'));
+        break;
+      case 'edit_season':
+        _pages.add(_page(const EditSeasonPage(), 'edit_season'));
+        break;
+      case 'hotel_seasons':
+        _pages.add(_page(const HotelSeasonsPage(), 'hotel_seasons'));
         break;
       case 'watchlist':
         _pages.add(_page(const WatchlistPage(), 'watchlist'));
@@ -118,13 +126,16 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'course_details':
         if (id != null) {
-          _pages.add(_page(CourseDetailsPage(courseId: id), 'course_$id'));
+          final key = 'course_$id';
+          if (_pages.any((p) => p.key == ValueKey(key))) return;
+          _pages.add(_page(CourseDetailsPage(courseId: id), key));
         }
         break;
       default:
         _pages.add(_page(const Error404Page(), 'error'));
         break;
     }
+
     notifyListeners();
   }
 
@@ -141,9 +152,7 @@ class AppRouterDelegate extends RouterDelegate<Object>
   }
 
   @override
-  Future<void> setNewRoutePath(void configuration) async {
-    // Optional: sync with system route if needed
-  }
+  Future<void> setNewRoutePath(Object? configuration) async {}
 
   @override
   Future<bool> popRoute() async {
@@ -152,17 +161,5 @@ class AppRouterDelegate extends RouterDelegate<Object>
       return true;
     }
     return false;
-  }
-}
-
-class NavigatorObserverWithPopCallback extends NavigatorObserver {
-  final void Function(Route<dynamic>, Route<dynamic>?) onDidPop;
-
-  NavigatorObserverWithPopCallback({required this.onDidPop});
-
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    super.didPop(route, previousRoute);
-    onDidPop(route, previousRoute);
   }
 }

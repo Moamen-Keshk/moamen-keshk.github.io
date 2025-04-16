@@ -1,3 +1,4 @@
+// Updated EditRatePlanView with hybrid conflict handling
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_academy/app/rates/rate_plan_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
 import 'package:flutter_academy/main.dart';
+import 'package:flutter_academy/app/rates/rate_plan.model.dart';
 
 class EditRatePlanView extends ConsumerStatefulWidget {
   const EditRatePlanView({super.key});
@@ -57,6 +59,11 @@ class _EditRatePlanViewState extends ConsumerState<EditRatePlanView> {
   Widget build(BuildContext context) {
     final ratePlanVM = ref.read(ratePlanListVM.notifier);
     final categories = ref.watch(categoryListVM);
+    final propertyId = ref.watch(selectedPropertyVM);
+
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Center(
       child: SingleChildScrollView(
@@ -124,7 +131,7 @@ class _EditRatePlanViewState extends ConsumerState<EditRatePlanView> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  initialValue: weekendRate?.toString(),
+                  initialValue: weekendRate?.toString() ?? '',
                   decoration: const InputDecoration(
                     labelText: 'Weekend Rate (optional)',
                     border: OutlineInputBorder(),
@@ -135,7 +142,7 @@ class _EditRatePlanViewState extends ConsumerState<EditRatePlanView> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  initialValue: seasonalMultiplier?.toString(),
+                  initialValue: seasonalMultiplier?.toString() ?? '',
                   decoration: const InputDecoration(
                     labelText: 'Seasonal Multiplier (optional)',
                     border: OutlineInputBorder(),
@@ -159,11 +166,13 @@ class _EditRatePlanViewState extends ConsumerState<EditRatePlanView> {
                         startDate != null &&
                         endDate != null &&
                         categoryId != null &&
+                        propertyId != null &&
                         ratePlanId != null) {
-                      final success = await ratePlanVM.updateRatePlan(
+                      final updatedPlan = RatePlan(
                         id: ratePlanId!,
                         name: name,
                         baseRate: baseRate,
+                        propertyId: propertyId,
                         categoryId: categoryId!,
                         startDate: startDate!,
                         endDate: endDate!,
@@ -172,12 +181,64 @@ class _EditRatePlanViewState extends ConsumerState<EditRatePlanView> {
                         isActive: isActive,
                       );
 
+                      final conflicts =
+                          await ratePlanVM.getConflictingPlans(updatedPlan);
+
+                      bool override = false;
+                      if (conflicts.isNotEmpty && context.mounted) {
+                        override = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Conflict Detected'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'This rate plan overlaps with the following existing plan(s):',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ...conflicts
+                                        .map((plan) => Text('- ${plan.name}')),
+                                    const SizedBox(height: 16),
+                                    const Text('Do you want to override them?'),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      child: const Text('Cancel')),
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      child: const Text('Override')),
+                                ],
+                              ),
+                            ) ??
+                            false;
+                      }
+
+                      if (!context.mounted) return;
+
+                      final success = await ratePlanVM.saveRatePlan(
+                        ratePlan: updatedPlan,
+                        overrideConflicts: override,
+                      );
+
                       if (success && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text('Rate Plan updated successfully')),
                         );
-                        routerDelegate.push('hotel_rate_plans');
+                        ref.read(routerProvider).pop();
+                      } else if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Could not update rate plan')),
+                        );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(

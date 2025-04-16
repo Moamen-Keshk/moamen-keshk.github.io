@@ -15,15 +15,7 @@ class HotelRatePlansView extends ConsumerWidget {
     final ratePlans = ref.watch(ratePlanListVM);
     final categories = ref.watch(categoryListVM);
 
-    if (ratePlans.isEmpty || categories.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final groupedPlans = _groupRatePlansByCategory(ratePlans, categories);
-
-    if (groupedPlans.isEmpty) {
-      return const Center(child: Text("No rate plans available."));
-    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -52,8 +44,9 @@ class HotelRatePlansView extends ConsumerWidget {
                               ref
                                   .read(ratePlanToEditVM.notifier)
                                   .updateRatePlan(plan);
-                              routerDelegate.push('edit_rate_plan');
+                              ref.read(routerProvider).push('edit_rate_plan');
                             },
+                            ref: ref,
                           ))
                       .toList(),
                 ),
@@ -63,7 +56,7 @@ class HotelRatePlansView extends ConsumerWidget {
           }),
           Center(
             child: ElevatedButton.icon(
-              onPressed: () => routerDelegate.push('rate_plan'),
+              onPressed: () => ref.read(routerProvider).push('rate_plan'),
               icon: const Icon(Icons.add),
               label: const Text("Add New Rate Plan"),
               style: ElevatedButton.styleFrom(
@@ -100,8 +93,13 @@ class HotelRatePlansView extends ConsumerWidget {
 class _RatePlanCard extends StatefulWidget {
   final RatePlanVM plan;
   final VoidCallback onTap;
+  final WidgetRef ref;
 
-  const _RatePlanCard({required this.plan, required this.onTap});
+  const _RatePlanCard({
+    required this.plan,
+    required this.onTap,
+    required this.ref,
+  });
 
   @override
   State<_RatePlanCard> createState() => _RatePlanCardState();
@@ -113,6 +111,7 @@ class _RatePlanCardState extends State<_RatePlanCard> {
   @override
   Widget build(BuildContext context) {
     final plan = widget.plan;
+    final ratePlanVM = widget.ref.read(ratePlanListVM.notifier);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -144,24 +143,79 @@ class _RatePlanCardState extends State<_RatePlanCard> {
               width: 1,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Text(plan.name, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text("Base Rate: \$${plan.baseRate.toStringAsFixed(2)}"),
-              Row(
+              // Main content
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(plan.isActive ? Icons.check : Icons.close,
-                      color: plan.isActive ? Colors.green : Colors.red,
-                      size: 18),
-                  const SizedBox(width: 6),
-                  Text(plan.isActive ? "Active" : "Inactive"),
+                  Text(plan.name,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text("Base Rate: \$${plan.baseRate.toStringAsFixed(2)}"),
+                  Row(
+                    children: [
+                      Icon(plan.isActive ? Icons.check : Icons.close,
+                          color: plan.isActive ? Colors.green : Colors.red,
+                          size: 18),
+                      const SizedBox(width: 6),
+                      Text(plan.isActive ? "Active" : "Inactive"),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text("Start: ${_formatDate(plan.startDate)}"),
+                  Text("End: ${_formatDate(plan.endDate)}"),
+                  if (plan.seasonalMultiplier != null)
+                    Text(
+                        "Season Multiplier: ×${plan.seasonalMultiplier!.toStringAsFixed(2)}"),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text("Start: ${_formatDate(plan.startDate)}"),
-              Text("End: ${_formatDate(plan.endDate)}"),
+
+              // Delete button
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  tooltip: 'Delete rate plan',
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Rate Plan'),
+                        content: Text(
+                            'Are you sure you want to delete "${plan.name}"?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      final success =
+                          await ratePlanVM.deleteRatePlan(plan.ratePlan.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? 'Rate plan deleted'
+                                : 'Failed to delete rate plan'),
+                            backgroundColor:
+                                success ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
             ],
           ),
         ),

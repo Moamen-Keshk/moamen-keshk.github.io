@@ -3,11 +3,13 @@ import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DashboardDrawer extends StatelessWidget {
+class DashboardDrawer extends ConsumerWidget {
   const DashboardDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeModeVM = ref.watch(themeModeProvider);
+
     return Drawer(
       child: ListView(
         children: [
@@ -25,32 +27,29 @@ class DashboardDrawer extends StatelessWidget {
           ListTile(
             title: const Text("Dashboard"),
             onTap: () {
-              routerDelegate.replaceAllWith('dashboard');
+              ref.read(routerProvider).replaceAllWith('dashboard');
             },
           ),
           ListTile(
             title: const Text("Courses"),
             onTap: () {
-              routerDelegate.push('courses');
+              ref.read(routerProvider).push('courses');
             },
           ),
           ListTile(
             title: const Text("Watchlist"),
             onTap: () {
-              routerDelegate.push('watchlist');
+              ref.read(routerProvider).push('watchlist');
             },
           ),
-          Consumer(builder: (context, ref, child) {
-            final themeModeVM = ref.watch(themeModeProvider);
-            return ListTile(
-              title: Text(themeModeVM.themeMode == ThemeMode.dark
-                  ? "Light Theme"
-                  : "Dark Theme"),
-              onTap: () {
-                themeModeVM.toggleThemeMode();
-              },
-            );
-          })
+          ListTile(
+            title: Text(themeModeVM.themeMode == ThemeMode.dark
+                ? "Light Theme"
+                : "Dark Theme"),
+            onTap: () {
+              themeModeVM.toggleThemeMode();
+            },
+          ),
         ],
       ),
     );

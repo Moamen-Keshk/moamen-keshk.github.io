@@ -5,14 +5,23 @@ import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FloorListVM extends StateNotifier<List<FloorVM>> {
+  bool _disposed = false;
   final int? propertyId;
   final FloorService floorService;
 
   FloorListVM(this.propertyId, this.floorService) : super(const []) {
     fetchFloors();
   }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   Future<void> fetchFloors() async {
     final res = await floorService.getAllFloors(propertyId!);
+    if (_disposed) return;
     state = [...res.map((floor) => FloorVM(floor))];
   }
 

@@ -9,37 +9,52 @@ import 'firebase_options.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 
+final routerProvider = Provider<AppRouterDelegate>((ref) {
+  throw UnimplementedError(); // Overridden in MyApp
+});
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await Hive.initFlutter();
-  runApp(ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-final routerDelegate = AppRouterDelegate();
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
 
-class MyApp extends StatelessWidget {
+class _MyAppState extends State<MyApp> {
+  late final AppRouterDelegate _routerDelegate;
   final _routeParser = AppRouteInformationParser();
 
-  MyApp({super.key});
+  @override
+  void initState() {
+    super.initState();
+    _routerDelegate = AppRouterDelegate();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer(builder: (context, ref, child) {
-      final themeModeVM = ref.watch(themeModeProvider);
-      return AnimatedBuilder(
+    return ProviderScope(
+      overrides: [
+        routerProvider.overrideWithValue(_routerDelegate),
+      ],
+      child: Consumer(builder: (context, ref, _) {
+        final themeModeVM = ref.watch(themeModeProvider);
+
+        return AnimatedBuilder(
           animation: themeModeVM,
-          builder: (context, child) {
+          builder: (context, _) {
             return MaterialApp.router(
               title: 'Lotel',
               debugShowCheckedModeBanner: false,
-              theme: ThemeData(
-                primarySwatch: Colors.blue,
-              ),
-              darkTheme: ThemeData.dark().copyWith(
-                primaryColor: Colors.blue,
-              ),
+              theme: ThemeData(primarySwatch: Colors.blue),
+              darkTheme: ThemeData.dark().copyWith(primaryColor: Colors.blue),
               localizationsDelegates: const [
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
@@ -47,17 +62,18 @@ class MyApp extends StatelessWidget {
                 MonthYearPickerLocalizations.delegate,
               ],
               supportedLocales: const [
-                Locale('en', ''), // English
-                Locale('es', ''), // Spanish
-                Locale('fr', ''), // French
-                Locale('de', ''), // German
-                // Add more locales as needed
+                Locale('en', ''),
+                Locale('es', ''),
+                Locale('fr', ''),
+                Locale('de', ''),
               ],
               themeMode: themeModeVM.themeMode,
-              routerDelegate: routerDelegate,
+              routerDelegate: _routerDelegate,
               routeInformationParser: _routeParser,
             );
-          });
-    });
+          },
+        );
+      }),
+    );
   }
 }
