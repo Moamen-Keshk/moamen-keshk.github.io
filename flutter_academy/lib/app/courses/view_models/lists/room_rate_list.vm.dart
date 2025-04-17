@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/app/rates/room_rate.model.dart';
-import 'package:flutter_academy/app/rates/room_rate.service.dart';
-import 'package:flutter_academy/app/rates/room_rate.vm.dart';
+import 'package:flutter_academy/infrastructure/courses/model/room_rate.model.dart';
+import 'package:flutter_academy/infrastructure/courses/res/room_rate.service.dart';
+import 'package:flutter_academy/app/courses/view_models/room_rate.vm.dart';
 import 'package:collection/collection.dart';
 
 class RoomRateListVM extends StateNotifier<List<RoomRateVM>> {
@@ -64,6 +64,15 @@ class RoomRateListVM extends StateNotifier<List<RoomRateVM>> {
     } else {
       return await addRoomRate(rate);
     }
+  }
+
+  Future<List<RoomRateVM>> fetchRatesByCategory(String categoryId) async {
+    if (propertyId == null) return [];
+    final result = await roomRateService.getRatesByPropertyAndCategory(
+      propertyId: propertyId!,
+      categoryId: categoryId,
+    );
+    return result.map((rate) => RoomRateVM(rate)).toList();
   }
 
   bool _isSameDay(DateTime a, DateTime b) {

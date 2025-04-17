@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/app/courses/view_models/season_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/season_list.vm.dart';
 import 'package:flutter_academy/main.dart';
 
 class EditSeasonView extends ConsumerStatefulWidget {

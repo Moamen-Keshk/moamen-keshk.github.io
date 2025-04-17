@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/app/req/request.dart';
-import 'package:flutter_academy/app/rates/rate_plan.model.dart';
+import 'package:flutter_academy/infrastructure/courses/model/rate_plan.model.dart';
 
 class RatePlanService {
   final _auth = FirebaseAuth.instance;

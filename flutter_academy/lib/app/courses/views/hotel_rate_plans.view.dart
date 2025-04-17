@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
-import 'package:flutter_academy/app/rates/rate_plan_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/category_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/category_list.vm.dart';
 
 class HotelRatePlansView extends ConsumerWidget {
   const HotelRatePlansView({super.key});

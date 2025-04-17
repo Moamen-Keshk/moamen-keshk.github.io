@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/views/edit_booking.view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

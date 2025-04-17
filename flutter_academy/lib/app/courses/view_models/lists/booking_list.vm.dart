@@ -39,7 +39,17 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     }
     return false;
   }
+
+  Future<bool> deleteBooking(String bookingId) async {
+    final success = await bookingService.deleteBooking(bookingId);
+    if (success) {
+      state = state.where((b) => b.booking.id != bookingId).toList();
+    }
+    return success;
+  }
 }
+
+final selectedBookingIdProvider = StateProvider<int?>((ref) => null);
 
 final bookingListVM =
     StateNotifierProvider<BookingListVM, List<BookingVM>>((ref) {

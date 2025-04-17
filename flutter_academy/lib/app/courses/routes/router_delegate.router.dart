@@ -20,9 +20,9 @@ import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_season.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
-import 'package:flutter_academy/app/rates/edit_rate_plan.page.dart';
-import 'package:flutter_academy/app/rates/hotel_rate_plan.page.dart';
-import 'package:flutter_academy/app/rates/rate_plan.page.dart';
+import 'package:flutter_academy/app/courses/pages/edit_rate_plan.page.dart';
+import 'package:flutter_academy/app/courses/pages/hotel_rate_plan.page.dart';
+import 'package:flutter_academy/app/courses/pages/rate_plan.page.dart';
 import 'package:flutter_academy/app/courses/pages/all_notifications.page.dart';
 
 class AppRouterDelegate extends RouterDelegate<Object>

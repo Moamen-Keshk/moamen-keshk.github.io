@@ -3,12 +3,12 @@ import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_academy/app/courses/widgets/rate_input.widget.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
-import 'package:flutter_academy/app/rates/rate_plan_list.vm.dart';
-import 'package:flutter_academy/app/rates/room_rate.model.dart';
-import 'package:flutter_academy/app/rates/room_rate_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/season_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/room_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
+import 'package:flutter_academy/infrastructure/courses/model/room_rate.model.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_rate_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/season_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 
@@ -61,13 +61,14 @@ class RateBadgeWidget extends ConsumerWidget {
             initialPrice: price,
           ),
         );
-        if (newRate != null) {
+        if (newRate != null && categoryId != null) {
           final newRoomRate = RoomRate(
             id: '', // Upsert will overwrite ID if exists
             roomId: roomId,
             date: date,
             price: newRate,
             propertyId: propertyId!,
+            categoryId: categoryId, // ✅ Include categoryId
           );
           await ref.read(roomRateListVM.notifier).upsertRoomRate(newRoomRate);
         }

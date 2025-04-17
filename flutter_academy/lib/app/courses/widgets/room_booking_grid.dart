@@ -13,7 +13,7 @@ class BookingWithTab {
   BookingWithTab({required this.tabSize, required this.bookingVM});
 }
 
-class RoomBookingGrid extends StatelessWidget {
+class RoomBookingGrid extends ConsumerWidget {
   final List<FloorVM> floors;
   final List<BookingVM> bookings;
   final int numberOfDays;
@@ -22,7 +22,7 @@ class RoomBookingGrid extends StatelessWidget {
   final TabController tabController;
   final WidgetRef ref;
   final bool showRates;
-  final ScrollController horizontalScrollController; // ✅ Shared controller
+  final ScrollController horizontalScrollController;
 
   const RoomBookingGrid({
     super.key,
@@ -38,75 +38,79 @@ class RoomBookingGrid extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     int i = 0;
 
-    return SingleChildScrollView(
-      controller: horizontalScrollController,
-      scrollDirection: Axis.horizontal,
-      child: Column(
-        children: floors.map<Padding>((floor) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 25),
-            child: Column(
-              children: floor.rooms.map<Row>((Room room) {
-                final bookingsPerRoom = _isRoomHasBooking(
-                  bookings,
-                  int.parse(room.id),
-                );
-                final tabSizes = _isDayHasBooking(
-                  bookingsPerRoom,
-                  numberOfDays,
-                  currentMonth,
-                  currentYear,
-                );
-                final tabPositions = tabSizes.keys.toList();
-                List<Widget> rowChildren = [];
-                int currentDay = 1;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => ref.read(selectedBookingIdProvider.notifier).state = null,
+      child: SingleChildScrollView(
+        controller: horizontalScrollController,
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          children: floors.map<Padding>((floor) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 25),
+              child: Column(
+                children: floor.rooms.map<Row>((Room room) {
+                  final bookingsPerRoom = _isRoomHasBooking(
+                    bookings,
+                    int.parse(room.id),
+                  );
+                  final tabSizes = _isDayHasBooking(
+                    bookingsPerRoom,
+                    numberOfDays,
+                    currentMonth,
+                    currentYear,
+                  );
+                  final tabPositions = tabSizes.keys.toList();
+                  List<Widget> rowChildren = [];
+                  int currentDay = 1;
 
-                while (currentDay <= numberOfDays) {
-                  if (tabPositions.contains(currentDay)) {
-                    final tabIndex = i;
-                    int tabSize = tabSizes[currentDay]?.tabSize ?? 1;
-                    if (tabSize + currentDay - 1 > numberOfDays) {
-                      tabSize = numberOfDays - currentDay + 1;
-                    }
-                    rowChildren.add(
-                      Flexible(
-                        flex: tabSize,
-                        fit: FlexFit.loose,
-                        child: BookingTile(
-                          tabIndex: tabIndex,
-                          tabController: tabController,
-                          tabSize: tabSize,
-                          booking: tabSizes[currentDay]!.bookingVM,
+                  while (currentDay <= numberOfDays) {
+                    if (tabPositions.contains(currentDay)) {
+                      final tabIndex = i;
+                      int tabSize = tabSizes[currentDay]?.tabSize ?? 1;
+                      if (tabSize + currentDay - 1 > numberOfDays) {
+                        tabSize = numberOfDays - currentDay + 1;
+                      }
+                      rowChildren.add(
+                        Flexible(
+                          flex: tabSize,
+                          fit: FlexFit.loose,
+                          child: BookingTile(
+                            tabIndex: tabIndex,
+                            tabController: tabController,
+                            tabSize: tabSize,
+                            booking: tabSizes[currentDay]!.bookingVM,
+                          ),
                         ),
-                      ),
-                    );
-                    currentDay += tabSize;
-                    i++;
-                  } else {
-                    rowChildren.add(
-                      AvailableSlot(
-                        tabDay: currentDay,
-                        tabRoom: room.id,
-                        ref: ref,
-                        date: DateTime(currentYear, currentMonth, currentDay),
-                        showRates: showRates,
-                      ),
-                    );
-                    currentDay++;
+                      );
+                      currentDay += tabSize;
+                      i++;
+                    } else {
+                      rowChildren.add(
+                        AvailableSlot(
+                          tabDay: currentDay,
+                          tabRoom: room.id,
+                          ref: ref,
+                          date: DateTime(currentYear, currentMonth, currentDay),
+                          showRates: showRates,
+                        ),
+                      );
+                      currentDay++;
+                    }
                   }
-                }
 
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: rowChildren,
-                );
-              }).toList(),
-            ),
-          );
-        }).toList(),
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: rowChildren,
+                  );
+                }).toList(),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

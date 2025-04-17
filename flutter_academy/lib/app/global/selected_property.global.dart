@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
-import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 

@@ -1,4 +1,4 @@
-import 'package:flutter_academy/app/rates/rate_plan.model.dart';
+import 'package:flutter_academy/infrastructure/courses/model/rate_plan.model.dart';
 
 class RatePlanVM {
   final RatePlan ratePlan;

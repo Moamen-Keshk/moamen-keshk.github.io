@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_academy/app/rates/rate_plan.vm.dart';
-import 'package:flutter_academy/app/rates/rate_plan.model.dart';
-import 'package:flutter_academy/app/rates/rate_plan.service.dart';
+import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
+import 'package:flutter_academy/infrastructure/courses/model/rate_plan.model.dart';
+import 'package:flutter_academy/infrastructure/courses/res/rate_plan.service.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 
 class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {

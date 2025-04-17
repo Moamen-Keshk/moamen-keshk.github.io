@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
-import 'package:flutter_academy/app/courses/view_models/course_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/course_list.vm.dart';
 import 'package:flutter_academy/app/courses/widgets/course_card.widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

@@ -39,4 +39,19 @@ class BookingService {
       return false;
     }
   }
+
+  Future<bool> deleteBooking(String bookingId) async {
+    try {
+      final response = await sendDeleteRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/delete_booking/$bookingId",
+      );
+
+      // Ensure a boolean is returned
+      return response['status'] == 'success';
+    } catch (e) {
+      // Log or handle error
+      return false; // fallback so it never returns null
+    }
+  }
 }

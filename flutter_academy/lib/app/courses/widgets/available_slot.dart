@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/widgets/rate_input.widget.dart';
-import 'package:flutter_academy/app/rates/room_rate.model.dart';
-import 'package:flutter_academy/app/rates/room_rate_list.vm.dart';
+import 'package:flutter_academy/infrastructure/courses/model/room_rate.model.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_rate_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/booking_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/courses/widgets/rate_badge.widget.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
@@ -127,12 +127,21 @@ class AvailableSlot extends StatelessWidget {
           return;
         }
 
+        final categoryId = roomsCategoryMapping[int.parse(tabRoom)]?.toString();
+        if (categoryId == null && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Room category not found')),
+          );
+          return;
+        }
+
         final newRate = RoomRate(
           id: existing?.id ?? '',
           roomId: tabRoom,
           propertyId: propertyId!,
           date: date,
           price: editedPrice,
+          categoryId: categoryId!, // ✅ Required
         );
 
         final success =

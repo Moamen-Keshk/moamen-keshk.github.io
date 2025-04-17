@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 import 'package:flutter_academy/app/courses/widgets/dashboard_drawer.widget.dart';
 import 'package:flutter_academy/app/courses/widgets/dashboard_nav.widget.dart';
-import 'package:flutter_academy/app/rates/edit_rate_plan.view.dart';
+import 'package:flutter_academy/app/courses/views/edit_rate_plan.view.dart';
 
 class EditRatePlanPage extends StatelessWidget {
   const EditRatePlanPage({super.key});

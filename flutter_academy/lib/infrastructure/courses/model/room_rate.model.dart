@@ -6,6 +6,7 @@ class RoomRate {
   final DateTime date;
   final double price;
   final int propertyId;
+  final String categoryId; // ✅ New field
 
   RoomRate({
     required this.id,
@@ -13,6 +14,7 @@ class RoomRate {
     required this.date,
     required this.price,
     required this.propertyId,
+    required this.categoryId,
   });
 
   RoomRate copyWith({
@@ -21,6 +23,7 @@ class RoomRate {
     DateTime? date,
     double? price,
     int? propertyId,
+    String? categoryId,
   }) {
     return RoomRate(
       id: id ?? this.id,
@@ -28,6 +31,7 @@ class RoomRate {
       date: date ?? this.date,
       price: price ?? this.price,
       propertyId: propertyId ?? this.propertyId,
+      categoryId: categoryId ?? this.categoryId,
     );
   }
 
@@ -38,13 +42,14 @@ class RoomRate {
       'date': date.toIso8601String(),
       'price': price,
       'property_id': propertyId,
+      'category_id': categoryId, // ✅ Added here
     };
   }
 
   factory RoomRate.fromMap(String id, Map<String, dynamic> map) {
     return RoomRate(
       id: id,
-      roomId: map['room_id'].toString(), // enforce String
+      roomId: map['room_id'].toString(),
       date: DateTime.tryParse(map['date'].toString()) ?? DateTime.now(),
       price: (map['price'] is String)
           ? double.tryParse(map['price']) ?? 0.0
@@ -52,6 +57,7 @@ class RoomRate {
       propertyId: (map['property_id'] is String)
           ? int.tryParse(map['property_id']) ?? 0
           : (map['property_id'] ?? 0),
+      categoryId: map['category_id'].toString(), // ✅ Added here
     );
   }
 
@@ -59,13 +65,14 @@ class RoomRate {
     return RoomRate(
       id: map['id'].toString(),
       roomId: map['room_id'].toString(),
-      propertyId: (map['property_id'] is String)
-          ? int.tryParse(map['property_id']) ?? 0
-          : (map['property_id'] ?? 0),
       date: DateTime.tryParse(map['date'].toString()) ?? DateTime.now(),
       price: (map['price'] is String)
           ? double.tryParse(map['price']) ?? 0.0
           : (map['price'] ?? 0.0).toDouble(),
+      propertyId: (map['property_id'] is String)
+          ? int.tryParse(map['property_id']) ?? 0
+          : (map['property_id'] ?? 0),
+      categoryId: map['category_id'].toString(), // ✅ Added here
     );
   }
 
@@ -76,7 +83,7 @@ class RoomRate {
 
   @override
   String toString() {
-    return 'RoomRate(id: $id, roomId: $roomId, date: $date, price: $price, propertyId: $propertyId)';
+    return 'RoomRate(id: $id, roomId: $roomId, date: $date, price: $price, propertyId: $propertyId, categoryId: $categoryId)';
   }
 
   @override
@@ -88,7 +95,8 @@ class RoomRate {
         other.roomId == roomId &&
         other.date == date &&
         other.price == price &&
-        other.propertyId == propertyId;
+        other.propertyId == propertyId &&
+        other.categoryId == categoryId;
   }
 
   @override
@@ -97,6 +105,7 @@ class RoomRate {
         roomId.hashCode ^
         date.hashCode ^
         price.hashCode ^
-        propertyId.hashCode;
+        propertyId.hashCode ^
+        categoryId.hashCode;
   }
 }

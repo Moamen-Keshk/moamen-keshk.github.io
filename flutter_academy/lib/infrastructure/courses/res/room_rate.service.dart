@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/app/req/request.dart';
-import 'package:flutter_academy/app/rates/room_rate.model.dart';
+import 'package:flutter_academy/infrastructure/courses/model/room_rate.model.dart';
 
 class RoomRateService {
   final _auth = FirebaseAuth.instance;
@@ -42,6 +42,7 @@ class RoomRateService {
       "date": roomRate.date.toIso8601String(),
       "price": roomRate.price,
       "property_id": roomRate.propertyId,
+      "category_id": roomRate.categoryId, // ✅ Added categoryId
     };
 
     try {
@@ -59,7 +60,8 @@ class RoomRateService {
   Future<bool> updateRoomRate(RoomRate roomRate) async {
     final payload = {
       "price": roomRate.price,
-      "date": roomRate.date.toIso8601String(), // Optional: include for updates
+      "date": roomRate.date.toIso8601String(),
+      "category_id": roomRate.categoryId, // ✅ Optional: include if needed
     };
 
     try {
@@ -86,7 +88,7 @@ class RoomRateService {
     }
   }
 
-  /// Fetch a single room rate by ID (optional helper)
+  /// Fetch a single room rate by ID
   Future<RoomRate?> getRoomRateById(String id) async {
     try {
       final query = await sendGetRequest(
@@ -96,6 +98,24 @@ class RoomRateService {
       return RoomRate.fromResMap(query['data']);
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Fetch room rates by property and category
+  Future<List<RoomRate>> getRatesByPropertyAndCategory({
+    required int propertyId,
+    required String categoryId,
+  }) async {
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/room_rates_by_category?property_id=$propertyId&category_id=$categoryId",
+      );
+      return (query['data'] as List)
+          .map((e) => RoomRate.fromResMap(e))
+          .toList();
+    } catch (e) {
+      return [];
     }
   }
 }
