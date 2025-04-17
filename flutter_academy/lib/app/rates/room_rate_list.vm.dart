@@ -1,43 +1,76 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
+import 'package:flutter_academy/app/rates/room_rate.model.dart';
 import 'package:flutter_academy/app/rates/room_rate.service.dart';
 import 'package:flutter_academy/app/rates/room_rate.vm.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:collection/collection.dart';
 
 class RoomRateListVM extends StateNotifier<List<RoomRateVM>> {
   final int? propertyId;
+  final RoomRateService roomRateService;
 
-  RoomRateListVM(this.propertyId) : super(const []) {
-    fetchRoomRates();
+  RoomRateListVM(this.propertyId, this.roomRateService) : super(const []) {
+    if (propertyId != null && propertyId != 0) {
+      fetchRoomRates();
+    }
   }
+
+  /// Fetch all room rates for the selected property from the backend
   Future<void> fetchRoomRates() async {
-    final res = await RoomRateService().getAllRoomRates(propertyId!);
-    state = [...res.map((roomRate) => RoomRateVM(roomRate))];
+    if (propertyId == null) return;
+    final res = await roomRateService.getAllRoomRates(propertyId!);
+    state = res.map((rate) => RoomRateVM(rate)).toList();
   }
 
-  Future<bool> addToRoomRates({
-    required String roomId,
-    required DateTime date,
-    required double price,
-    required int propertyId,
-  }) async {
-    if (await RoomRateService().addRoomRate(roomId, date, price, propertyId)) {
+  /// Add a new custom room rate
+  Future<bool> addRoomRate(RoomRate rate) async {
+    final result = await roomRateService.addRoomRate(rate);
+    if (result) {
       await fetchRoomRates();
       return true;
     }
     return false;
   }
 
-  Future<bool> deleteRoomRate(int roomRateId) async {
-    final result = await RoomRateService().deleteRoomRate(roomRateId);
+  /// Update a room rate by ID with new data
+  Future<bool> updateRoomRate(RoomRate rate) async {
+    final result = await roomRateService.updateRoomRate(rate);
     if (result) {
-      state = state
-          .where((roomRate) => roomRate.id != roomRateId.toString())
-          .toList();
+      await fetchRoomRates();
       return true;
     }
     return false;
   }
+
+  /// Delete a room rate by ID
+  Future<bool> deleteRoomRate(String roomRateId) async {
+    final result = await roomRateService.deleteRoomRate(roomRateId);
+    if (result) {
+      state = state.where((rate) => rate.id != roomRateId).toList();
+      return true;
+    }
+    return false;
+  }
+
+  /// Add or update (upsert) a room rate
+  Future<bool> upsertRoomRate(RoomRate rate) async {
+    final existing = state.firstWhereOrNull((vm) =>
+        vm.roomRate.roomId == rate.roomId &&
+        _isSameDay(vm.roomRate.date, rate.date));
+
+    if (existing != null) {
+      final updatedRate = rate.copyWith(id: existing.id);
+      return await updateRoomRate(updatedRate);
+    } else {
+      return await addRoomRate(rate);
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 }
 
-final roomListVM = StateNotifierProvider<RoomRateListVM, List<RoomRateVM>>(
-    (ref) => RoomRateListVM(ref.watch(selectedPropertyVM) ?? 0));
+final roomRateListVM = StateNotifierProvider<RoomRateListVM, List<RoomRateVM>>(
+  (ref) => RoomRateListVM(ref.watch(selectedPropertyVM), RoomRateService()),
+);

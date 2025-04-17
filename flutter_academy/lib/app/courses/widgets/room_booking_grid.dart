@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
@@ -22,7 +21,8 @@ class RoomBookingGrid extends StatelessWidget {
   final int currentYear;
   final TabController tabController;
   final WidgetRef ref;
-  final bool showRates; // NEW: Toggle flag passed from parent
+  final bool showRates;
+  final ScrollController horizontalScrollController; // ✅ Shared controller
 
   const RoomBookingGrid({
     super.key,
@@ -33,87 +33,81 @@ class RoomBookingGrid extends StatelessWidget {
     required this.currentYear,
     required this.tabController,
     required this.ref,
-    required this.showRates, // NEW: Required flag
+    required this.showRates,
+    required this.horizontalScrollController,
   });
 
   @override
   Widget build(BuildContext context) {
     int i = 0;
 
-    return Row(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            controller: scrollController2,
-            scrollDirection: Axis.horizontal,
+    return SingleChildScrollView(
+      controller: horizontalScrollController,
+      scrollDirection: Axis.horizontal,
+      child: Column(
+        children: floors.map<Padding>((floor) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 25),
             child: Column(
-              children: floors.map<Padding>((floor) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 25),
-                  child: Column(
-                    children: floor.rooms.map<Row>((Room room) {
-                      final bookingsPerRoom = _isRoomHasBooking(
-                        bookings,
-                        int.parse(room.id),
-                      );
-                      final tabSizes = _isDayHasBooking(
-                        bookingsPerRoom,
-                        numberOfDays,
-                        currentMonth,
-                        currentYear,
-                      );
-                      final tabPositions = tabSizes.keys.toList();
-                      List<Widget> rowChildren = [];
-                      int currentDay = 1;
+              children: floor.rooms.map<Row>((Room room) {
+                final bookingsPerRoom = _isRoomHasBooking(
+                  bookings,
+                  int.parse(room.id),
+                );
+                final tabSizes = _isDayHasBooking(
+                  bookingsPerRoom,
+                  numberOfDays,
+                  currentMonth,
+                  currentYear,
+                );
+                final tabPositions = tabSizes.keys.toList();
+                List<Widget> rowChildren = [];
+                int currentDay = 1;
 
-                      while (currentDay <= numberOfDays) {
-                        if (tabPositions.contains(currentDay)) {
-                          final tabIndex = i;
-                          int tabSize = tabSizes[currentDay]?.tabSize ?? 1;
-                          if (tabSize + currentDay - 1 > numberOfDays) {
-                            tabSize = numberOfDays - currentDay + 1;
-                          }
-                          rowChildren.add(
-                            Flexible(
-                              flex: tabSize,
-                              fit: FlexFit.loose,
-                              child: BookingTile(
-                                tabIndex: tabIndex,
-                                tabController: tabController,
-                                tabSize: tabSize,
-                                booking: tabSizes[currentDay]!.bookingVM,
-                              ),
-                            ),
-                          );
-                          currentDay += tabSize;
-                          i++;
-                        } else {
-                          rowChildren.add(
-                            AvailableSlot(
-                              tabDay: currentDay,
-                              tabRoom: room.id,
-                              ref: ref,
-                              date: DateTime(
-                                  currentYear, currentMonth, currentDay),
-                              showRates: showRates, // NEW: uses toggle
-                            ),
-                          );
-                          currentDay++;
-                        }
-                      }
+                while (currentDay <= numberOfDays) {
+                  if (tabPositions.contains(currentDay)) {
+                    final tabIndex = i;
+                    int tabSize = tabSizes[currentDay]?.tabSize ?? 1;
+                    if (tabSize + currentDay - 1 > numberOfDays) {
+                      tabSize = numberOfDays - currentDay + 1;
+                    }
+                    rowChildren.add(
+                      Flexible(
+                        flex: tabSize,
+                        fit: FlexFit.loose,
+                        child: BookingTile(
+                          tabIndex: tabIndex,
+                          tabController: tabController,
+                          tabSize: tabSize,
+                          booking: tabSizes[currentDay]!.bookingVM,
+                        ),
+                      ),
+                    );
+                    currentDay += tabSize;
+                    i++;
+                  } else {
+                    rowChildren.add(
+                      AvailableSlot(
+                        tabDay: currentDay,
+                        tabRoom: room.id,
+                        ref: ref,
+                        date: DateTime(currentYear, currentMonth, currentDay),
+                        showRates: showRates,
+                      ),
+                    );
+                    currentDay++;
+                  }
+                }
 
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: rowChildren,
-                      );
-                    }).toList(),
-                  ),
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: rowChildren,
                 );
               }).toList(),
             ),
-          ),
-        ),
-      ],
+          );
+        }).toList(),
+      ),
     );
   }
 

@@ -53,11 +53,16 @@ class AppRouterDelegate extends RouterDelegate<Object>
     );
   }
 
-  void push(String routeName, {int? id, Object? extra}) {
-    final alreadyExists = _pages.any((p) => p.key == ValueKey(routeName));
-    if (alreadyExists) return;
+  void push(String routeName, {int? id, Object? extra, bool force = false}) {
+    final keyName = id != null ? '${routeName}_$id' : routeName;
+
+    final alreadyExists = _pages.any((p) => p.key == ValueKey(keyName));
+    if (alreadyExists && !force) return;
 
     switch (routeName) {
+      case 'home':
+        _pages.add(_page(const HomePage(), 'home'));
+        break;
       case 'dashboard':
         _pages.add(_page(const DashboardPage(), 'dashboard'));
         break;
@@ -127,7 +132,6 @@ class AppRouterDelegate extends RouterDelegate<Object>
       case 'course_details':
         if (id != null) {
           final key = 'course_$id';
-          if (_pages.any((p) => p.key == ValueKey(key))) return;
           _pages.add(_page(CourseDetailsPage(courseId: id), key));
         }
         break;
@@ -148,7 +152,7 @@ class AppRouterDelegate extends RouterDelegate<Object>
 
   void replaceAllWith(String route, {Object? extra}) {
     _pages.clear();
-    push(route, extra: extra);
+    push(route, extra: extra, force: true); // force push to rebuild route
   }
 
   @override

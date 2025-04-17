@@ -5,39 +5,68 @@ class RoomRate {
   final String roomId;
   final DateTime date;
   final double price;
-  RoomRate(
-      {required this.id,
-      required this.roomId,
-      required this.date,
-      required this.price});
+  final int propertyId;
 
-  RoomRate copyWith(
-      {String? id, String? roomId, DateTime? date, double? price}) {
+  RoomRate({
+    required this.id,
+    required this.roomId,
+    required this.date,
+    required this.price,
+    required this.propertyId,
+  });
+
+  RoomRate copyWith({
+    String? id,
+    String? roomId,
+    DateTime? date,
+    double? price,
+    int? propertyId,
+  }) {
     return RoomRate(
-        id: id ?? this.id,
-        roomId: roomId ?? this.roomId,
-        date: date ?? this.date,
-        price: price ?? this.price);
+      id: id ?? this.id,
+      roomId: roomId ?? this.roomId,
+      date: date ?? this.date,
+      price: price ?? this.price,
+      propertyId: propertyId ?? this.propertyId,
+    );
   }
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'room_id': roomId, 'date': date, 'price': price};
+    return {
+      'id': id,
+      'room_id': roomId,
+      'date': date.toIso8601String(),
+      'price': price,
+      'property_id': propertyId,
+    };
   }
 
   factory RoomRate.fromMap(String id, Map<String, dynamic> map) {
     return RoomRate(
-        id: map['id'].toString(),
-        roomId: map['room_id'] ?? '',
-        date: map['date'] ?? '',
-        price: map['price'] ?? '');
+      id: id,
+      roomId: map['room_id'].toString(), // enforce String
+      date: DateTime.tryParse(map['date'].toString()) ?? DateTime.now(),
+      price: (map['price'] is String)
+          ? double.tryParse(map['price']) ?? 0.0
+          : (map['price'] ?? 0.0).toDouble(),
+      propertyId: (map['property_id'] is String)
+          ? int.tryParse(map['property_id']) ?? 0
+          : (map['property_id'] ?? 0),
+    );
   }
 
   factory RoomRate.fromResMap(Map<String, dynamic> map) {
     return RoomRate(
-        id: map['id'].toString(),
-        roomId: map['room_id'] ?? '',
-        date: map['date'] ?? DateTime.now(),
-        price: map['rooms'] ?? 0.0);
+      id: map['id'].toString(),
+      roomId: map['room_id'].toString(),
+      propertyId: (map['property_id'] is String)
+          ? int.tryParse(map['property_id']) ?? 0
+          : (map['property_id'] ?? 0),
+      date: DateTime.tryParse(map['date'].toString()) ?? DateTime.now(),
+      price: (map['price'] is String)
+          ? double.tryParse(map['price']) ?? 0.0
+          : (map['price'] ?? 0.0).toDouble(),
+    );
   }
 
   String toJson() => json.encode(toMap());
@@ -47,7 +76,7 @@ class RoomRate {
 
   @override
   String toString() {
-    return 'Floor(id: $id, roomId: $roomId, date: $date, price: $price)';
+    return 'RoomRate(id: $id, roomId: $roomId, date: $date, price: $price, propertyId: $propertyId)';
   }
 
   @override
@@ -58,11 +87,16 @@ class RoomRate {
         other.id == id &&
         other.roomId == roomId &&
         other.date == date &&
-        other.price == price;
+        other.price == price &&
+        other.propertyId == propertyId;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^ roomId.hashCode ^ date.hashCode ^ price.hashCode;
+    return id.hashCode ^
+        roomId.hashCode ^
+        date.hashCode ^
+        price.hashCode ^
+        propertyId.hashCode;
   }
 }

@@ -1,30 +1,80 @@
-import 'package:flutter_academy/app/rates/room_rate.model.dart';
-import 'package:flutter_academy/app/req/request.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_academy/app/req/request.dart';
+import 'package:flutter_academy/app/rates/room_rate.model.dart';
 
 class RoomRateService {
   final _auth = FirebaseAuth.instance;
-  Future<List<RoomRate>> getRoomRate() async {
-    final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/room_rate");
-    return (query['data'] as List).map((e) => RoomRate.fromResMap(e)).toList();
-  }
 
+  /// Fetch all room rates for a specific property
   Future<List<RoomRate>> getAllRoomRates(int propertyId) async {
-    final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/all_room_rates");
-    return (query['data'] as List).map((e) => RoomRate.fromResMap(e)).toList();
-  }
-
-  Future<bool> addRoomRate(
-      String roomId, DateTime date, double price, int propertyId) async {
-    return await sendPostRequest(
-        {"room_id": roomId, "date": date, 'price': price},
+    try {
+      final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/new_room_rate");
+        "/api/v1/all_room_rates/$propertyId",
+      );
+      return (query['data'] as List)
+          .map((e) => RoomRate.fromResMap(e))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 
-  Future<bool> deleteRoomRate(int roomRateId) async {
+  /// Fetch user-specific room rates (if needed)
+  Future<List<RoomRate>> getRoomRate() async {
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/room_rate",
+      );
+      return (query['data'] as List)
+          .map((e) => RoomRate.fromResMap(e))
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Add a new room rate
+  Future<bool> addRoomRate(RoomRate roomRate) async {
+    final payload = {
+      "room_id": roomRate.roomId,
+      "date": roomRate.date.toIso8601String(),
+      "price": roomRate.price,
+      "property_id": roomRate.propertyId,
+    };
+
+    try {
+      return await sendPostRequest(
+        payload,
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/new_room_rate",
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Update an existing room rate (by ID)
+  Future<bool> updateRoomRate(RoomRate roomRate) async {
+    final payload = {
+      "price": roomRate.price,
+      "date": roomRate.date.toIso8601String(), // Optional: include for updates
+    };
+
+    try {
+      return await sendPutRequest(
+        payload,
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/update_room_rate/${roomRate.id}",
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Delete a room rate by ID
+  Future<bool> deleteRoomRate(String roomRateId) async {
     try {
       final response = await sendDeleteRequest(
         await _auth.currentUser?.getIdToken(),
@@ -33,6 +83,19 @@ class RoomRateService {
       return response['status'] == 'success';
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Fetch a single room rate by ID (optional helper)
+  Future<RoomRate?> getRoomRateById(String id) async {
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/room_rate/$id",
+      );
+      return RoomRate.fromResMap(query['data']);
+    } catch (e) {
+      return null;
     }
   }
 }

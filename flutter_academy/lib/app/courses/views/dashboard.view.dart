@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/courses/widgets/hotel_calendar.dart';
+import 'package:flutter_academy/app/courses/widgets/hotel_calendar.widget.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
