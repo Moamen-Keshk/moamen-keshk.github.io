@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/category.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
-import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/block_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/floor_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
@@ -148,6 +149,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
     return Consumer(builder: (context, ref, child) {
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
+      final blocks = ref.watch(blockListVM); // 👈 watch blocks
       final selectedDate = ref.watch(selectedMonthVM);
       final numberOfDays = ref.watch(numberOfDaysVM);
       final categories = ref.read(categoryListVM);
@@ -174,14 +176,13 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Column(
           children: [
-            // Top Row: Date Picker + Show Rates + Calendar Header
+            // Date Picker + Show Rates + Calendar Header
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Date Picker
                     SizedBox(
                       width: 140,
                       child: ElevatedButton(
@@ -215,8 +216,6 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    // Show Rates + Sync Rates side-by-side
                     SizedBox(
                       width: 140,
                       child: Row(
@@ -270,6 +269,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                                 await ref
                                     .read(roomOnlineListVM.notifier)
                                     .fetchRoomOnline();
+                                await ref
+                                    .read(blockListVM.notifier)
+                                    .fetchBlocks(); // 👈 refresh blocks
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -286,10 +288,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                     ),
                   ],
                 ),
-
                 const SizedBox(width: 8),
-
-                // Calendar Header
                 Expanded(
                   child: CalendarHeader(
                     daysInMonth: _daysInMonth,
@@ -298,10 +297,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
-
-            // Booking Grid
             SizedBox(
               height: 530,
               child: SingleChildScrollView(
@@ -318,6 +314,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                       child: RoomBookingGrid(
                         floors: floors,
                         bookings: bookings,
+                        blocks: blocks, // 👈 pass blocks here
                         numberOfDays: numberOfDays,
                         currentMonth: selectedMonth,
                         currentYear: selectedYear,
@@ -331,8 +328,6 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                 ),
               ),
             ),
-
-            // Booking Details Footer
             BookingDetailsBar(
               bookings: bookingsForTabBarView,
               tabController: _tabController,

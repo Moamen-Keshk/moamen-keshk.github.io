@@ -25,7 +25,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               onPressed: () {
                 ref.read(routerProvider).push('edit_property');
               },
-              child: const Text("Edit Property"),
+              child: const Text("Property"),
             ),
             const SizedBox(width: 10.0),
             ElevatedButton(
@@ -35,7 +35,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               onPressed: () {
                 ref.read(routerProvider).push('hotel_rate_plan');
               },
-              child: const Text("Edit Rates"),
+              child: const Text("Rate Plans"),
             ),
             const SizedBox(width: 10.0),
             ElevatedButton(
@@ -45,7 +45,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 onPressed: () {
                   ref.read(routerProvider).push('new_category');
                 },
-                child: const Text("New Category")),
+                child: const Text("Categories")),
             const SizedBox(width: 10.0),
             ElevatedButton(
                 style: TextButton.styleFrom(

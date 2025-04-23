@@ -101,7 +101,7 @@ class RateBadgeWidget extends ConsumerWidget {
           Container(
             margin: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: _getRateColor(price, isOverride),
+              // ✅ No background color here
               border: Border.all(
                 color: isOverride ? Colors.blueAccent : Colors.transparent,
                 width: 2,
@@ -120,17 +120,5 @@ class RateBadgeWidget extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  Color _getRateColor(double price, bool isOverride) {
-    if (isOverride) {
-      if (price < 50) return Colors.lightBlue[100]!;
-      if (price < 100) return Colors.lightBlue[300]!;
-      return Colors.blue[400]!;
-    } else {
-      if (price < 50) return Colors.green[200]!;
-      if (price < 100) return Colors.orange[200]!;
-      return Colors.red[200]!;
-    }
   }
 }

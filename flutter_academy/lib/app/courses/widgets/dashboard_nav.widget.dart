@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/block_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/property_list.vm.dart';
+import 'package:flutter_academy/app/courses/views/new_block.view.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/views/notifications.view.dart';
@@ -52,6 +54,19 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                       foregroundColor: Colors.white,
                       backgroundColor:
                           const Color.fromARGB(255, 109, 106, 106)),
+                  onPressed: () {
+                    showBlockDialog(context, ref);
+                    ref.read(routerProvider).replaceAllWith('dashboard');
+                  },
+                  child: const Text("Create Block"),
+                );
+              }),
+              const SizedBox(width: 10.0),
+              Consumer(builder: (context, ref, child) {
+                return TextButton(
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue[300]),
                   onPressed: () {
                     showBookingDialog(context, ref);
                     ref.read(routerProvider).replaceAllWith('dashboard');
@@ -170,6 +185,23 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   .read(bookingListVM.notifier)
                   .addToBookings(bookingData);
             },
+          ),
+        );
+      },
+    );
+  }
+
+  void showBlockDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('New Block'),
+          content: BlockForm(
+            onSubmit: (blockData) async {
+              return ref.read(blockListVM.notifier).addToBlocks(blockData);
+            },
+            ref: ref,
           ),
         );
       },

@@ -87,7 +87,9 @@ class _BookingTileState extends ConsumerState<BookingTile> {
     return GestureDetector(
       onTap: () {
         FocusManager.instance.primaryFocus?.unfocus();
-        widget.tabController.animateTo(widget.tabIndex);
+        if (widget.tabIndex < widget.tabController.length) {
+          widget.tabController.animateTo(widget.tabIndex);
+        }
         _focusNode.requestFocus();
         ref.read(selectedBookingIdProvider.notifier).state =
             isSelected ? null : widget.booking.booking.id;

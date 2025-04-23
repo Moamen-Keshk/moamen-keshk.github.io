@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_academy/app/courses/widgets/block_tile.widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/block.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'booking_tile.dart';
@@ -13,9 +15,17 @@ class BookingWithTab {
   BookingWithTab({required this.tabSize, required this.bookingVM});
 }
 
+class BlockWithTab {
+  final int tabSize;
+  final BlockVM blockVM;
+
+  BlockWithTab({required this.tabSize, required this.blockVM});
+}
+
 class RoomBookingGrid extends ConsumerWidget {
   final List<FloorVM> floors;
   final List<BookingVM> bookings;
+  final List<BlockVM> blocks;
   final int numberOfDays;
   final int currentMonth;
   final int currentYear;
@@ -28,6 +38,7 @@ class RoomBookingGrid extends ConsumerWidget {
     super.key,
     required this.floors,
     required this.bookings,
+    required this.blocks,
     required this.numberOfDays,
     required this.currentMonth,
     required this.currentYear,
@@ -57,20 +68,30 @@ class RoomBookingGrid extends ConsumerWidget {
                       .where((b) => b.roomID == int.tryParse(room.id))
                       .toList();
 
-                  final tabSizes = _buildTabSizeMap(
+                  final blocksPerRoom = blocks
+                      .where((b) => b.roomID == int.tryParse(room.id))
+                      .toList();
+
+                  final bookingsTabSizes = _buildBookingTabSizeMap(
                     bookingsPerRoom,
                     numberOfDays,
                     currentMonth,
                     currentYear,
                   );
 
-                  final tabPositions = tabSizes.keys.toList();
+                  final blocksTabSizes = _buildBlockTabSizeMap(
+                    blocksPerRoom,
+                    numberOfDays,
+                    currentMonth,
+                    currentYear,
+                  );
+
                   List<Widget> rowChildren = [];
                   int currentDay = 1;
 
                   while (currentDay <= numberOfDays) {
-                    if (tabPositions.contains(currentDay)) {
-                      final tabSize = tabSizes[currentDay]?.tabSize ?? 1;
+                    if (bookingsTabSizes.containsKey(currentDay)) {
+                      final tabSize = bookingsTabSizes[currentDay]!.tabSize;
                       rowChildren.add(
                         Flexible(
                           flex: tabSize,
@@ -79,7 +100,23 @@ class RoomBookingGrid extends ConsumerWidget {
                             tabIndex: tabIndexCounter,
                             tabController: tabController,
                             tabSize: tabSize,
-                            booking: tabSizes[currentDay]!.bookingVM,
+                            booking: bookingsTabSizes[currentDay]!.bookingVM,
+                          ),
+                        ),
+                      );
+                      currentDay += tabSize;
+                      tabIndexCounter++;
+                    } else if (blocksTabSizes.containsKey(currentDay)) {
+                      final tabSize = blocksTabSizes[currentDay]!.tabSize;
+                      rowChildren.add(
+                        Flexible(
+                          flex: tabSize,
+                          fit: FlexFit.loose,
+                          child: BlockTile(
+                            tabIndex: tabIndexCounter,
+                            tabController: tabController,
+                            tabSize: tabSize,
+                            block: blocksTabSizes[currentDay]!.blockVM,
                           ),
                         ),
                       );
@@ -111,7 +148,7 @@ class RoomBookingGrid extends ConsumerWidget {
     );
   }
 
-  Map<int, BookingWithTab> _buildTabSizeMap(
+  Map<int, BookingWithTab> _buildBookingTabSizeMap(
     List<BookingVM> bookingPerRoom,
     int numberOfDays,
     int currentMonth,
@@ -125,8 +162,8 @@ class RoomBookingGrid extends ConsumerWidget {
       if (booking.checkInMonth != currentMonth &&
           booking.checkOutMonth == currentMonth) {
         checkInDay = 1;
-        numberOfNights =
-            numberOfNights - (booking.checkIn.day - booking.checkInDay + 1);
+        numberOfNights = booking.numberOfNights -
+            (booking.checkIn.day - booking.checkInDay + 1);
       } else if (booking.checkInMonth == currentMonth &&
           booking.checkOutMonth != currentMonth) {
         numberOfNights = numberOfDays - checkInDay + 1;
@@ -144,6 +181,40 @@ class RoomBookingGrid extends ConsumerWidget {
 
     return Map.fromEntries(
       bookingsMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+  }
+
+  Map<int, BlockWithTab> _buildBlockTabSizeMap(
+    List<BlockVM> blocksPerRoom,
+    int numberOfDays,
+    int currentMonth,
+    int currentYear,
+  ) {
+    Map<int, BlockWithTab> blocksMap = {};
+
+    for (BlockVM block in blocksPerRoom) {
+      int startDay = block.startDay;
+      int daysInBlock = block.numberOfDays;
+
+      if (block.startMonth != currentMonth && block.endMonth == currentMonth) {
+        startDay = 1;
+        daysInBlock = block.endDate
+                .difference(DateTime(currentYear, currentMonth, 1))
+                .inDays +
+            1;
+      } else if (block.startMonth == currentMonth &&
+          block.endMonth != currentMonth) {
+        daysInBlock = numberOfDays - startDay + 1;
+      }
+
+      blocksMap[startDay] = BlockWithTab(
+        tabSize: daysInBlock,
+        blockVM: block,
+      );
+    }
+
+    return Map.fromEntries(
+      blocksMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );
   }
 }

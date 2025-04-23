@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:collection/collection.dart';
+import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
+import 'package:flutter_academy/app/courses/views/new_block.view.dart';
+import 'package:flutter_academy/app/courses/widgets/rate_badge.widget.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
-import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
-import 'package:flutter_academy/app/courses/widgets/rate_badge.widget.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/block_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 Map<int, int> roomsCategoryMapping = {};
 
@@ -70,18 +72,12 @@ class AvailableSlot extends ConsumerWidget {
             }
           },
           builder: (context, candidateData, rejectedData) {
-            final isHovered = candidateData.isNotEmpty;
-
             return SizedBox(
               height: 35,
               width: 93.9,
               child: Container(
                 margin: const EdgeInsets.all(2),
-                color: isHovered
-                    ? Colors.green[200]
-                    : showRates
-                        ? Colors.transparent
-                        : Colors.grey[200],
+                color: Colors.grey[200], // Static background color
                 child: showRates
                     ? RateBadgeWidget(roomId: tabRoom, date: date)
                     : null,
@@ -94,26 +90,21 @@ class AvailableSlot extends ConsumerWidget {
   }
 
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
-    if (showRates) {
-      return; // Taps are handled in RateBadgeWidget when showRates is true
-    }
+    if (showRates) return;
     _showBookingDialog(context, ref);
   }
 
   Future<void> _onLongPress(BuildContext context, WidgetRef ref) async {
     if (!showRates) {
-      return; // Long press is handled only in RateBadgeWidget when showRates is true
+      _showBlockDialog(context, ref);
+      return;
     }
 
     final existing = ref.read(roomOnlineListVM).firstWhereOrNull(
-      (vm) {
-        final r = vm.roomOnline;
-        return r.roomId == tabRoom &&
-            r.date.year == date.year &&
-            r.date.month == date.month &&
-            r.date.day == date.day;
-      },
-    );
+          (vm) =>
+              vm.roomOnline.roomId == tabRoom &&
+              DateUtils.isSameDay(vm.roomOnline.date, date),
+        );
 
     if (existing != null) {
       final confirm = await showDialog<bool>(
@@ -163,6 +154,25 @@ class AvailableSlot extends ConsumerWidget {
               return ref
                   .read(bookingListVM.notifier)
                   .addToBookings(bookingData);
+            },
+            ref: ref,
+          ),
+        );
+      },
+    );
+  }
+
+  void _showBlockDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('New Block'),
+          content: BlockForm(
+            tabDay: tabDay,
+            tabRoom: tabRoom,
+            onSubmit: (blockData) async {
+              return ref.read(blockListVM.notifier).addToBlocks(blockData);
             },
             ref: ref,
           ),
