@@ -4,7 +4,7 @@ import 'package:flutter_academy/app/courses/view_models/lists/payment_status_lis
 import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/room_rate_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 
@@ -17,10 +17,10 @@ class RateResolver {
     required DateTime date,
     required String categoryId,
   }) {
-    final roomRates = ref.read(roomRateListVM);
+    final roomOnline = ref.read(roomOnlineListVM);
     final ratePlans = ref.read(ratePlanListVM);
 
-    final match = roomRates.firstWhereOrNull(
+    final match = roomOnline.firstWhereOrNull(
       (r) =>
           r.roomId == roomId &&
           r.date.year == date.year &&

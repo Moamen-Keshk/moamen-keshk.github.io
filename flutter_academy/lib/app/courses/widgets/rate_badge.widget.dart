@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_academy/app/courses/widgets/rate_input.widget.dart';
+import 'package:flutter_academy/infrastructure/courses/model/room_online.model.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
-import 'package:flutter_academy/infrastructure/courses/model/room_rate.model.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/room_rate_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/season_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 
@@ -24,32 +18,16 @@ class RateBadgeWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final roomRates = ref.watch(roomRateListVM);
-    final ratePlans = ref.watch(ratePlanListVM);
-    final rooms = ref.watch(roomListVM);
-    final seasons = ref.watch(seasonListVM);
+    final roomOnlineList = ref.watch(roomOnlineListVM);
     final propertyId = ref.read(selectedPropertyVM);
 
-    final roomCategoryMap = _buildRoomCategoryMap(rooms);
-    final roomIntId = int.tryParse(roomId);
-    if (roomIntId == null) return _buildBadge(0);
-
-    final categoryId = roomCategoryMap[roomIntId]?.toString();
-
-    final override = roomRates.firstWhereOrNull(
+    final override = roomOnlineList.firstWhereOrNull(
       (r) =>
-          r.roomRate.roomId == roomId &&
-          DateUtils.isSameDay(r.roomRate.date, date),
+          r.roomOnline.roomId == roomId &&
+          DateUtils.isSameDay(r.roomOnline.date, date),
     );
 
-    final price = override?.roomRate.price ??
-        _resolveRoomRate(
-          date: date,
-          categoryId: categoryId,
-          ratePlans: ratePlans,
-          seasons: seasons,
-        );
-
+    final price = override?.roomOnline.price ?? 0.0;
     final isOverride = override != null;
 
     return GestureDetector(
@@ -61,16 +39,26 @@ class RateBadgeWidget extends ConsumerWidget {
             initialPrice: price,
           ),
         );
-        if (newRate != null && categoryId != null) {
-          final newRoomRate = RoomRate(
-            id: '', // Upsert will overwrite ID if exists
-            roomId: roomId,
-            date: date,
-            price: newRate,
-            propertyId: propertyId!,
-            categoryId: categoryId, // ✅ Include categoryId
-          );
-          await ref.read(roomRateListVM.notifier).upsertRoomRate(newRoomRate);
+
+        if (newRate != null) {
+          final categoryId = override?.roomOnline.categoryId;
+          if (categoryId != null && propertyId != null) {
+            final newRoomOnline = RoomOnline(
+              id: override?.id ?? '', // Upsert will overwrite if exists
+              roomId: roomId,
+              date: date,
+              price: newRate,
+              propertyId: propertyId,
+              categoryId: categoryId,
+            );
+            await ref
+                .read(roomOnlineListVM.notifier)
+                .upsertRoomOnline(newRoomOnline);
+          } else if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Missing category or property ID.')),
+            );
+          }
         }
       },
       onLongPress: isOverride
@@ -79,8 +67,7 @@ class RateBadgeWidget extends ConsumerWidget {
                 context: context,
                 builder: (_) => AlertDialog(
                   title: const Text("Remove Custom Rate?"),
-                  content: const Text(
-                      "This will revert to the base rate from the rate plan."),
+                  content: const Text("This will clear the rate override."),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
@@ -95,8 +82,8 @@ class RateBadgeWidget extends ConsumerWidget {
               );
               if (confirmed == true) {
                 await ref
-                    .read(roomRateListVM.notifier)
-                    .deleteRoomRate(override.id);
+                    .read(roomOnlineListVM.notifier)
+                    .deleteRoomOnline(override.id);
               }
             }
           : null,
@@ -135,42 +122,6 @@ class RateBadgeWidget extends ConsumerWidget {
     );
   }
 
-  double _resolveRoomRate({
-    required DateTime date,
-    required String? categoryId,
-    required List<RatePlanVM> ratePlans,
-    required List<SeasonVM> seasons,
-  }) {
-    if (categoryId == null) return 0.0;
-
-    final vm = ratePlans.firstWhere(
-      (rp) =>
-          rp.ratePlan.categoryId == categoryId &&
-          !date.isBefore(rp.ratePlan.startDate) &&
-          !date.isAfter(rp.ratePlan.endDate),
-      orElse: () => RatePlanVM.empty(date),
-    );
-
-    double rate = vm.ratePlan.baseRate;
-
-    if ((date.weekday == DateTime.saturday ||
-            date.weekday == DateTime.sunday) &&
-        vm.ratePlan.weekendRate != null) {
-      rate = vm.ratePlan.weekendRate!;
-    }
-
-    final isInSeason = seasons.any(
-      (season) =>
-          !date.isBefore(season.startDate) && !date.isAfter(season.endDate),
-    );
-
-    if (isInSeason && vm.ratePlan.seasonalMultiplier != null) {
-      rate *= vm.ratePlan.seasonalMultiplier!;
-    }
-
-    return rate;
-  }
-
   Color _getRateColor(double price, bool isOverride) {
     if (isOverride) {
       if (price < 50) return Colors.lightBlue[100]!;
@@ -181,12 +132,5 @@ class RateBadgeWidget extends ConsumerWidget {
       if (price < 100) return Colors.orange[200]!;
       return Colors.red[200]!;
     }
-  }
-
-  Map<int, int> _buildRoomCategoryMap(List<RoomVM> rooms) {
-    return {
-      for (var room in rooms)
-        if (int.tryParse(room.id) != null) int.parse(room.id): room.categoryId,
-    };
   }
 }

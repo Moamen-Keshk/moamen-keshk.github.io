@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/room_rate_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
 import 'package:collection/collection.dart';
 
@@ -13,7 +13,7 @@ class RateResolver {
     required DateTime date,
     required String categoryId,
   }) {
-    final roomRates = ref.read(roomRateListVM);
+    final roomRates = ref.read(roomOnlineListVM);
     final ratePlans = ref.read(ratePlanListVM);
 
     final match = roomRates.firstWhereOrNull(

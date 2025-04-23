@@ -39,7 +39,7 @@ class RoomBookingGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    int i = 0;
+    int tabIndexCounter = 0;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -53,33 +53,30 @@ class RoomBookingGrid extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 25),
               child: Column(
                 children: floor.rooms.map<Row>((Room room) {
-                  final bookingsPerRoom = _isRoomHasBooking(
-                    bookings,
-                    int.parse(room.id),
-                  );
-                  final tabSizes = _isDayHasBooking(
+                  final bookingsPerRoom = bookings
+                      .where((b) => b.roomID == int.tryParse(room.id))
+                      .toList();
+
+                  final tabSizes = _buildTabSizeMap(
                     bookingsPerRoom,
                     numberOfDays,
                     currentMonth,
                     currentYear,
                   );
+
                   final tabPositions = tabSizes.keys.toList();
                   List<Widget> rowChildren = [];
                   int currentDay = 1;
 
                   while (currentDay <= numberOfDays) {
                     if (tabPositions.contains(currentDay)) {
-                      final tabIndex = i;
-                      int tabSize = tabSizes[currentDay]?.tabSize ?? 1;
-                      if (tabSize + currentDay - 1 > numberOfDays) {
-                        tabSize = numberOfDays - currentDay + 1;
-                      }
+                      final tabSize = tabSizes[currentDay]?.tabSize ?? 1;
                       rowChildren.add(
                         Flexible(
                           flex: tabSize,
                           fit: FlexFit.loose,
                           child: BookingTile(
-                            tabIndex: tabIndex,
+                            tabIndex: tabIndexCounter,
                             tabController: tabController,
                             tabSize: tabSize,
                             booking: tabSizes[currentDay]!.bookingVM,
@@ -87,13 +84,12 @@ class RoomBookingGrid extends ConsumerWidget {
                         ),
                       );
                       currentDay += tabSize;
-                      i++;
+                      tabIndexCounter++;
                     } else {
                       rowChildren.add(
                         AvailableSlot(
                           tabDay: currentDay,
                           tabRoom: room.id,
-                          ref: ref,
                           date: DateTime(currentYear, currentMonth, currentDay),
                           showRates: showRates,
                         ),
@@ -115,11 +111,7 @@ class RoomBookingGrid extends ConsumerWidget {
     );
   }
 
-  List<BookingVM> _isRoomHasBooking(List<BookingVM> bookings, int roomId) {
-    return bookings.where((booking) => booking.roomID == roomId).toList();
-  }
-
-  Map<int, BookingWithTab> _isDayHasBooking(
+  Map<int, BookingWithTab> _buildTabSizeMap(
     List<BookingVM> bookingPerRoom,
     int numberOfDays,
     int currentMonth,
@@ -143,8 +135,10 @@ class RoomBookingGrid extends ConsumerWidget {
       if (booking.checkOutYear == currentYear ||
           (booking.checkOutYear != currentYear &&
               booking.checkInMonth == currentMonth)) {
-        bookingsMap[checkInDay] =
-            BookingWithTab(tabSize: numberOfNights, bookingVM: booking);
+        bookingsMap[checkInDay] = BookingWithTab(
+          tabSize: numberOfNights,
+          bookingVM: booking,
+        );
       }
     }
 

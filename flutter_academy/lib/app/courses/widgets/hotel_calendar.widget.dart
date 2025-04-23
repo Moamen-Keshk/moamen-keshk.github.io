@@ -9,6 +9,7 @@ import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.da
 import 'package:flutter_academy/app/courses/view_models/lists/category_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/floor_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
@@ -215,45 +216,72 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                     ),
                     const SizedBox(height: 8),
 
-                    // Show Rates
+                    // Show Rates + Sync Rates side-by-side
                     SizedBox(
                       width: 140,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
-                          backgroundColor: Colors.grey[200],
-                          elevation: 0,
-                          visualDensity: VisualDensity.compact,
-                          shape: BeveledRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          minimumSize: const Size(140, 36),
-                        ),
-                        onPressed: () {
-                          setState(() => _showRates = !_showRates);
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Show Rates',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                            Transform.scale(
-                              scale: 0.75,
-                              child: Switch(
-                                value: _showRates,
-                                overlayColor:
-                                    WidgetStateProperty.all(Colors.transparent),
-                                onChanged: (val) {
-                                  setState(() => _showRates = val);
-                                },
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _showRates
+                                    ? Colors.green[200]
+                                    : Colors.grey[300],
+                                elevation: 0,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                shape: BeveledRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() => _showRates = !_showRates);
+                              },
+                              child: Text(
+                                _showRates ? 'Hide' : 'Rates',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[200],
+                                elevation: 0,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                shape: BeveledRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              onPressed: () async {
+                                final propertyId = ref.read(selectedPropertyVM);
+                                if (propertyId == null) return;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Refreshing rates...')),
+                                );
+
+                                await ref
+                                    .read(roomOnlineListVM.notifier)
+                                    .fetchRoomOnline();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Rates updated.')),
+                                  );
+                                }
+                              },
+                              child: const Icon(Icons.sync,
+                                  size: 16, color: Colors.black),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
