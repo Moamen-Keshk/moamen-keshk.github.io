@@ -5,6 +5,9 @@ import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart'
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
+import 'package:intl/intl.dart';
+
+final dateFormatter = DateFormat('yyyy-MM-dd');
 
 class BookingForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
@@ -65,7 +68,12 @@ class _BookingFormState extends State<BookingForm> {
   }
 
   Future<void> _resolveAndSetRate() async {
-    if (_roomID == null || checkInDate == null || widget.ref == null) return;
+    if (_roomID == null ||
+        checkInDate == null ||
+        checkOutDate == null ||
+        widget.ref == null) {
+      return;
+    }
 
     final roomVM = widget.ref!.read(roomListVM).firstWhereOrNull(
           (room) => int.tryParse(room.id) == _roomID,
@@ -74,17 +82,25 @@ class _BookingFormState extends State<BookingForm> {
     if (categoryId == null) return;
 
     final resolver = RateResolver(widget.ref!);
-    final rate = resolver.getRateForRoomAndDate(
-      roomId: _roomID.toString(),
-      date: checkInDate!,
-      categoryId: categoryId,
-    );
 
-    if (rate != null) {
-      setState(() {
-        rateController.text = rate.toStringAsFixed(2);
-      });
+    double totalRate = 0.0;
+    DateTime currentDate = checkInDate!;
+
+    while (currentDate.isBefore(checkOutDate!)) {
+      final nightlyRate = resolver.getRateForRoomAndDate(
+        roomId: _roomID.toString(),
+        date: currentDate,
+        categoryId: categoryId,
+      );
+      if (nightlyRate != null) {
+        totalRate += nightlyRate;
+      }
+      currentDate = currentDate.add(const Duration(days: 1));
     }
+
+    setState(() {
+      rateController.text = totalRate.toStringAsFixed(2);
+    });
   }
 
   void calculateNumberOfNights() {
@@ -164,7 +180,7 @@ class _BookingFormState extends State<BookingForm> {
                       ))
                   .toList(),
               onChanged: (val) =>
-                  setState(() => _paymentStatusID = int.tryParse(val!)),
+                  setState(() => _paymentStatusID = int.parse(val!)),
             );
           }),
         ]),
@@ -204,8 +220,8 @@ class _BookingFormState extends State<BookingForm> {
                 final success = await widget.onSubmit({
                   'first_name': firstNameController.text,
                   'last_name': lastNameController.text,
-                  'check_in': checkInDate!.toIso8601String(),
-                  'check_out': checkOutDate!.toIso8601String(),
+                  "check_in": DateFormat('yyyy-MM-dd').format(checkInDate!),
+                  "check_out": DateFormat('yyyy-MM-dd').format(checkOutDate!),
                   'number_of_days': _numberOfNights,
                   'number_of_adults': _numberOfAdults,
                   'number_of_children': _numberOfChildren,

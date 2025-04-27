@@ -26,6 +26,8 @@ class BookingTile extends ConsumerStatefulWidget {
 class _BookingTileState extends ConsumerState<BookingTile> {
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
+  // ignore: unused_field
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -84,32 +86,42 @@ class _BookingTileState extends ConsumerState<BookingTile> {
     final selectedId = ref.watch(selectedBookingIdProvider);
     final isSelected = selectedId == widget.booking.booking.id;
 
-    return GestureDetector(
-      onTap: () {
-        FocusManager.instance.primaryFocus?.unfocus();
-        if (widget.tabIndex < widget.tabController.length) {
-          widget.tabController.animateTo(widget.tabIndex);
-        }
-        _focusNode.requestFocus();
-        ref.read(selectedBookingIdProvider.notifier).state =
-            isSelected ? null : widget.booking.booking.id;
-      },
-      child: Draggable<BookingVM>(
-        data: widget.booking,
-        feedback: _buildTile(context,
-            color: Colors.blue[300]!, opacity: 1.0, showDelete: false),
-        childWhenDragging: _buildTile(context,
-            color: Colors.grey[300]!, opacity: 0.5, showDelete: false),
-        child: Focus(
-          focusNode: _focusNode,
-          child: _buildTile(
-            context,
-            color: _isFocused
-                ? Colors.brown[300]!
-                : widget.booking.paymentStatusID == 1
-                    ? Colors.blue[300]!
-                    : Colors.red[300]!,
-            showDelete: isSelected,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Tooltip(
+        message: _generateRatesTooltip(widget.booking),
+        padding: const EdgeInsets.all(8),
+        preferBelow: false,
+        verticalOffset: 40,
+        child: GestureDetector(
+          onTap: () {
+            FocusManager.instance.primaryFocus?.unfocus();
+            if (widget.tabIndex < widget.tabController.length) {
+              widget.tabController.animateTo(widget.tabIndex);
+            }
+            _focusNode.requestFocus();
+            ref.read(selectedBookingIdProvider.notifier).state =
+                isSelected ? null : widget.booking.booking.id;
+          },
+          child: Draggable<BookingVM>(
+            data: widget.booking,
+            feedback: _buildTile(context,
+                color: Colors.blue[300]!, opacity: 1.0, showDelete: false),
+            childWhenDragging: _buildTile(context,
+                color: Colors.grey[300]!, opacity: 0.5, showDelete: false),
+            child: Focus(
+              focusNode: _focusNode,
+              child: _buildTile(
+                context,
+                color: _isFocused
+                    ? Colors.brown[300]!
+                    : widget.booking.paymentStatusID == 1
+                        ? Colors.blue[300]!
+                        : Colors.red[300]!,
+                showDelete: isSelected,
+              ),
+            ),
           ),
         ),
       ),
@@ -151,5 +163,15 @@ class _BookingTileState extends ConsumerState<BookingTile> {
         ),
       ),
     );
+  }
+
+  /// Builds a tooltip string listing each night's rate and date
+  String _generateRatesTooltip(BookingVM booking) {
+    if (booking.bookingRates.isEmpty) return "No rates available.";
+
+    return booking.bookingRates
+        .map((r) =>
+            "${r.rateDate.year}-${r.rateDate.month.toString().padLeft(2, '0')}-${r.rateDate.day.toString().padLeft(2, '0')}: \$${r.nightlyRate.toStringAsFixed(2)}")
+        .join("\n");
   }
 }

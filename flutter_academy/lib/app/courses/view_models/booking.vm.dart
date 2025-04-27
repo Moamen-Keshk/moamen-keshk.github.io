@@ -1,8 +1,11 @@
 import 'package:flutter_academy/infrastructure/courses/model/booking.model.dart';
+import 'package:flutter_academy/infrastructure/courses/model/booking_rate.model.dart';
 
 class BookingVM {
   final Booking booking;
+
   BookingVM(this.booking);
+
   String get id => booking.id;
   int get confirmationNumber => booking.confirmationNumber;
   String get firstName => booking.firstName;
@@ -25,4 +28,5 @@ class BookingVM {
   double get rate => booking.rate;
   int get propertyID => booking.propertyID;
   int get roomID => booking.roomID;
+  List<BookingRate> get bookingRates => booking.bookingRates;
 }
