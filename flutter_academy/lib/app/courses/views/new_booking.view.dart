@@ -33,10 +33,10 @@ class _BookingFormState extends State<BookingForm> {
   final lastNameController = TextEditingController();
   final noteController = TextEditingController();
   final specialRequestController = TextEditingController();
-  final rateController = TextEditingController();
   final dateRangeController = TextEditingController();
   final checkInController = TextEditingController();
   final checkOutController = TextEditingController();
+  final rateController = TextEditingController();
 
   DateTime? checkInDate;
   DateTime? checkOutDate;
@@ -61,9 +61,23 @@ class _BookingFormState extends State<BookingForm> {
 
       checkInController.text = _formatDate(checkInDate!);
       checkOutController.text = _formatDate(checkOutDate!);
-      _roomID = int.parse(widget.tabRoom!);
+      _roomID = int.tryParse(widget.tabRoom ?? '');
 
-      _resolveAndSetRate();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (_roomID != null && checkInDate != null && checkOutDate != null) {
+          await _tryResolveAndSetRate();
+        }
+      });
+    }
+  }
+
+  Future<void> _tryResolveAndSetRate() async {
+    if (_roomID != null && checkInDate != null && checkOutDate != null) {
+      await _resolveAndSetRate();
+    } else {
+      setState(() {
+        rateController.text = '';
+      });
     }
   }
 
@@ -76,7 +90,7 @@ class _BookingFormState extends State<BookingForm> {
     }
 
     final roomVM = widget.ref!.read(roomListVM).firstWhereOrNull(
-          (room) => int.tryParse(room.id) == _roomID,
+          (room) => room.id == _roomID.toString(),
         );
     final categoryId = roomVM?.categoryId.toString();
     if (categoryId == null) return;
@@ -95,7 +109,7 @@ class _BookingFormState extends State<BookingForm> {
       if (nightlyRate != null) {
         totalRate += nightlyRate;
       }
-      currentDate = currentDate.add(const Duration(days: 1));
+      currentDate = currentDate.add(Duration(days: 1));
     }
 
     setState(() {
@@ -117,10 +131,10 @@ class _BookingFormState extends State<BookingForm> {
     lastNameController.dispose();
     noteController.dispose();
     specialRequestController.dispose();
-    rateController.dispose();
     dateRangeController.dispose();
     checkInController.dispose();
     checkOutController.dispose();
+    rateController.dispose();
     super.dispose();
   }
 
@@ -128,136 +142,142 @@ class _BookingFormState extends State<BookingForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(children: [
+            Expanded(
               child: TextFormField(
-            controller: firstNameController,
-            decoration: InputDecoration(labelText: 'First Name'),
-            validator: _requiredString,
-          )),
-          Expanded(
+                controller: firstNameController,
+                decoration: InputDecoration(labelText: 'First Name'),
+                validator: _requiredString,
+              ),
+            ),
+            Expanded(
               child: TextFormField(
-            controller: lastNameController,
-            decoration: InputDecoration(labelText: 'Last Name'),
-            validator: _requiredString,
-          )),
-        ]),
-        widget.tabDay == null ? _buildDateRangePicker() : _buildDatePickers(),
-        Row(children: [
-          _buildDropdown("Adults:", _numberOfAdults,
-              (val) => setState(() => _numberOfAdults = val)),
-          _buildDropdown("Children:", _numberOfChildren,
-              (val) => setState(() => _numberOfChildren = val)),
-        ]),
-        Row(children: [
-          Consumer(builder: (context, ref, _) {
-            final rooms = ref.watch(roomListVM);
-            return _buildDropdownField<String>(
-              label: 'Room',
-              value: _roomID?.toString(),
-              items: rooms
-                  .map((r) => DropdownMenuItem(
-                        value: r.id,
-                        child: Text(r.roomNumber.toString()),
-                      ))
-                  .toList(),
-              onChanged: (val) async {
-                setState(() => _roomID = int.tryParse(val!));
-                await _resolveAndSetRate();
-              },
-            );
-          }),
-          Consumer(builder: (context, ref, _) {
-            final statuses = ref.watch(paymentStatusListVM);
-            return _buildDropdownField<String>(
-              label: 'Payment',
-              value: _paymentStatusID?.toString(),
-              items: statuses
-                  .map((s) => DropdownMenuItem(
-                        value: s.id,
-                        child: Text(s.name),
-                      ))
-                  .toList(),
-              onChanged: (val) =>
-                  setState(() => _paymentStatusID = int.parse(val!)),
-            );
-          }),
-        ]),
-        TextFormField(
+                controller: lastNameController,
+                decoration: InputDecoration(labelText: 'Last Name'),
+                validator: _requiredString,
+              ),
+            ),
+          ]),
+          widget.tabDay == null ? _buildDateRangePicker() : _buildDatePickers(),
+          Row(children: [
+            _buildDropdown("Adults:", _numberOfAdults,
+                (val) => setState(() => _numberOfAdults = val)),
+            _buildDropdown("Children:", _numberOfChildren,
+                (val) => setState(() => _numberOfChildren = val)),
+          ]),
+          Row(children: [
+            Consumer(builder: (context, ref, _) {
+              final rooms = ref.watch(roomListVM);
+              return _buildDropdownField<String>(
+                label: 'Room',
+                value: _roomID?.toString(),
+                items: rooms
+                    .map((r) => DropdownMenuItem(
+                        value: r.id, child: Text(r.roomNumber.toString())))
+                    .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _roomID = int.tryParse(val!);
+                  });
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _tryResolveAndSetRate();
+                  });
+                },
+              );
+            }),
+            Consumer(builder: (context, ref, _) {
+              final statuses = ref.watch(paymentStatusListVM);
+              return _buildDropdownField<String>(
+                label: 'Payment',
+                value: _paymentStatusID?.toString(),
+                items: statuses
+                    .map((s) =>
+                        DropdownMenuItem(value: s.id, child: Text(s.name)))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _paymentStatusID = int.parse(val!)),
+              );
+            }),
+          ]),
+          TextFormField(
             controller: noteController,
-            decoration: InputDecoration(labelText: 'Note')),
-        TextFormField(
+            decoration: InputDecoration(labelText: 'Note'),
+          ),
+          TextFormField(
             controller: specialRequestController,
             maxLines: 2,
-            decoration: InputDecoration(labelText: 'Special request')),
-        Row(children: [
-          SizedBox(
-            width: 80,
-            child: TextFormField(
-              controller: rateController,
-              decoration: InputDecoration(labelText: 'Rate'),
-              validator: _requiredString,
-            ),
+            decoration: InputDecoration(labelText: 'Special request'),
           ),
-        ]),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              if (checkInDate == null || checkOutDate == null) {
-                _showError(context,
-                    'Please select both check-in and check-out dates.');
-                return;
-              }
-
-              if (_numberOfNights == null || _numberOfNights! <= 0) {
-                _showError(context, 'Invalid number of nights.');
-                return;
-              }
-
-              try {
-                final success = await widget.onSubmit({
-                  'first_name': firstNameController.text,
-                  'last_name': lastNameController.text,
-                  "check_in": DateFormat('yyyy-MM-dd').format(checkInDate!),
-                  "check_out": DateFormat('yyyy-MM-dd').format(checkOutDate!),
-                  'number_of_days': _numberOfNights,
-                  'number_of_adults': _numberOfAdults,
-                  'number_of_children': _numberOfChildren,
-                  'payment_status_id': _paymentStatusID,
-                  'note': noteController.text,
-                  'special_request': specialRequestController.text,
-                  'check_in_day': checkInDate!.day,
-                  'check_in_month': checkInDate!.month,
-                  'check_in_year': checkInDate!.year,
-                  'check_out_day': checkOutDate!.day,
-                  'check_out_month': checkOutDate!.month,
-                  'check_out_year': checkOutDate!.year,
-                  'rate': rateController.text,
-                  'room_id': _roomID,
-                  'property_id': widget.ref!.read(selectedPropertyVM) ?? 0,
-                });
-
-                if (!mounted) return;
-
-                if (success && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Booking added successfully.')),
-                  );
-                  Navigator.of(context).pop();
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                _showError(context, 'Something went wrong during submission.');
-              }
-            }
-          },
-          child: const Text('Submit'),
-        )
-      ]),
+          Row(children: [
+            SizedBox(
+              width: 100,
+              child: TextFormField(
+                controller: rateController,
+                readOnly: true,
+                decoration: InputDecoration(labelText: 'Rate'),
+                validator: _requiredString,
+              ),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _handleSubmit,
+            child: const Text('Submit'),
+          )
+        ],
+      ),
     );
+  }
+
+  void _handleSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      if (checkInDate == null || checkOutDate == null) {
+        _showError(context, 'Please select both check-in and check-out dates.');
+        return;
+      }
+      if (_numberOfNights == null || _numberOfNights! <= 0) {
+        _showError(context, 'Invalid number of nights.');
+        return;
+      }
+
+      try {
+        final success = await widget.onSubmit({
+          'first_name': firstNameController.text,
+          'last_name': lastNameController.text,
+          'check_in': dateFormatter.format(checkInDate!),
+          'check_out': dateFormatter.format(checkOutDate!),
+          'number_of_days': _numberOfNights,
+          'number_of_adults': _numberOfAdults,
+          'number_of_children': _numberOfChildren,
+          'payment_status_id': _paymentStatusID,
+          'note': noteController.text,
+          'special_request': specialRequestController.text,
+          'check_in_day': checkInDate!.day,
+          'check_in_month': checkInDate!.month,
+          'check_in_year': checkInDate!.year,
+          'check_out_day': checkOutDate!.day,
+          'check_out_month': checkOutDate!.month,
+          'check_out_year': checkOutDate!.year,
+          'rate': rateController.text,
+          'room_id': _roomID,
+          'property_id': widget.ref!.read(selectedPropertyVM) ?? 0,
+        });
+
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Booking added successfully.')),
+          );
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          _showError(context, 'Something went wrong during submission.');
+        }
+      }
+    }
   }
 
   Widget _buildDateRangePicker() {
@@ -269,19 +289,11 @@ class _BookingFormState extends State<BookingForm> {
           readOnly: true,
           onTap: () async {
             final now = DateTime.now();
-            final safeStart =
-                checkInDate?.isAfter(now) == true ? checkInDate! : now;
-            final safeEnd = checkOutDate?.isAfter(safeStart) == true
-                ? checkOutDate!
-                : safeStart.add(Duration(days: 1));
-
             final picked = await showDateRangePicker(
               context: context,
               firstDate: now,
               lastDate: DateTime(2027),
-              initialDateRange: DateTimeRange(start: safeStart, end: safeEnd),
             );
-
             if (picked != null) {
               setState(() {
                 checkInDate = picked.start;
@@ -290,7 +302,12 @@ class _BookingFormState extends State<BookingForm> {
                     "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
                 calculateNumberOfNights();
               });
-              await _resolveAndSetRate();
+
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (_roomID != null) {
+                  await _tryResolveAndSetRate();
+                }
+              });
             }
           },
           validator: _requiredString,
@@ -313,14 +330,12 @@ class _BookingFormState extends State<BookingForm> {
           decoration: InputDecoration(labelText: 'Check in'),
           readOnly: true,
           onTap: () async {
-            final now = DateTime.now();
             final picked = await showDatePicker(
               context: context,
-              initialDate: checkInDate ?? now,
-              firstDate: now,
+              firstDate: DateTime.now(),
               lastDate: DateTime(2100),
+              initialDate: checkInDate ?? DateTime.now(),
             );
-
             if (picked != null) {
               setState(() {
                 checkInDate = picked;
@@ -329,7 +344,7 @@ class _BookingFormState extends State<BookingForm> {
                 checkOutController.text = _formatDate(checkOutDate!);
                 calculateNumberOfNights();
               });
-              await _resolveAndSetRate();
+              await _tryResolveAndSetRate();
             }
           },
           validator: _requiredString,
@@ -342,20 +357,18 @@ class _BookingFormState extends State<BookingForm> {
           decoration: InputDecoration(labelText: 'Check out'),
           readOnly: true,
           onTap: () async {
-            final base = checkInDate ?? DateTime.now();
             final picked = await showDatePicker(
               context: context,
-              initialDate: base.add(Duration(days: 1)),
-              firstDate: base.add(Duration(days: 1)),
+              firstDate: (checkInDate ?? DateTime.now()).add(Duration(days: 1)),
               lastDate: DateTime(2100),
             );
-
             if (picked != null) {
               setState(() {
                 checkOutDate = picked;
                 checkOutController.text = _formatDate(picked);
                 calculateNumberOfNights();
               });
+              await _tryResolveAndSetRate();
             }
           },
           validator: _requiredString,
@@ -363,46 +376,34 @@ class _BookingFormState extends State<BookingForm> {
       ),
       if (_numberOfNights != null)
         Padding(
-          padding: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.only(left: 8.0),
           child:
               Text('$_numberOfNights Nights', style: TextStyle(fontSize: 12)),
         ),
     ]);
   }
 
-  String _formatDate(DateTime date) =>
-      "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-
-  String? _requiredString(String? value) =>
-      (value == null || value.isEmpty) ? 'Required' : null;
-
-  String? _requiredInt(int? value) => value == null ? 'Required' : null;
-
-  void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
   Widget _buildDropdown(
       String label, int? value, ValueChanged<int?> onChanged) {
     return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Row(children: [
-        SizedBox(width: 90, child: Text(label, style: TextStyle(fontSize: 16))),
-        SizedBox(
-          width: 70,
-          child: DropdownButtonFormField<int>(
-            decoration: InputDecoration(border: OutlineInputBorder()),
-            value: value,
-            items: List.generate(
-              5,
-              (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          SizedBox(width: 90, child: Text(label)),
+          SizedBox(
+            width: 70,
+            child: DropdownButtonFormField<int>(
+              value: value,
+              items: List.generate(
+                5,
+                (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
+              ),
+              onChanged: onChanged,
+              validator: _requiredInt,
             ),
-            onChanged: onChanged,
-            validator: _requiredInt,
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -410,20 +411,30 @@ class _BookingFormState extends State<BookingForm> {
     required String label,
     required T? value,
     required List<DropdownMenuItem<T>> items,
-    required void Function(T?) onChanged,
+    required ValueChanged<T?> onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8.0),
       child: SizedBox(
         width: 160,
         child: DropdownButtonFormField<T>(
-          decoration:
-              InputDecoration(border: OutlineInputBorder(), labelText: label),
           value: value,
           items: items,
           onChanged: onChanged,
+          decoration:
+              InputDecoration(border: OutlineInputBorder(), labelText: label),
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) => dateFormatter.format(date);
+  String? _requiredString(String? value) =>
+      (value == null || value.isEmpty) ? 'Required' : null;
+  String? _requiredInt(int? value) => value == null ? 'Required' : null;
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }

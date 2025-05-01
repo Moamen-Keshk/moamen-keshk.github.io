@@ -99,7 +99,7 @@ class _BlockFormState extends ConsumerState<BlockForm> {
                     return;
                   }
 
-                  final propertyID = widget.ref?.read(selectedPropertyVM) ?? 0;
+                  final propertyID = ref.read(selectedPropertyVM) ?? 0;
 
                   final success = await widget.onSubmit({
                     'start_date': startDate!.toIso8601String(),

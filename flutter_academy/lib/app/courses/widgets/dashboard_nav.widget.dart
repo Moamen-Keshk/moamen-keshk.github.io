@@ -185,6 +185,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   .read(bookingListVM.notifier)
                   .addToBookings(bookingData);
             },
+            ref: ref,
           ),
         );
       },

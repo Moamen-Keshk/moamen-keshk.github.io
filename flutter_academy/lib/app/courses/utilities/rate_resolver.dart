@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
 import 'package:collection/collection.dart';
 
 class RateResolver {
@@ -11,10 +10,9 @@ class RateResolver {
   double? getRateForRoomAndDate({
     required String roomId,
     required DateTime date,
-    required String categoryId,
+    String? categoryId, // unused now but kept for compatibility
   }) {
     final roomRates = ref.read(roomOnlineListVM);
-    final ratePlans = ref.read(ratePlanListVM);
 
     final match = roomRates.firstWhereOrNull(
       (r) =>
@@ -23,22 +21,7 @@ class RateResolver {
           r.date.month == date.month &&
           r.date.day == date.day,
     );
-    if (match != null) return match.price;
 
-    final plan = ratePlans.firstWhereOrNull(
-      (rp) =>
-          rp.categoryId == categoryId &&
-          !date.isBefore(rp.startDate) &&
-          !date.isAfter(rp.endDate) &&
-          rp.isActive,
-    );
-    if (plan == null) return null;
-
-    final isWeekend =
-        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
-
-    return isWeekend && plan.weekendRate != null
-        ? plan.weekendRate
-        : plan.baseRate;
+    return match?.price;
   }
 }
