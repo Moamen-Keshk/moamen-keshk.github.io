@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
 
-final selectedBookingIdProvider = StateProvider<String?>((ref) => null);
-
 class BookingTile extends ConsumerStatefulWidget {
   final int tabIndex;
   final TabController tabController;
@@ -24,26 +22,10 @@ class BookingTile extends ConsumerStatefulWidget {
 }
 
 class _BookingTileState extends ConsumerState<BookingTile> {
-  final FocusNode _focusNode = FocusNode();
-  bool _isFocused = false;
-  // ignore: unused_field
   bool _isHovered = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
+  bool _showDelete = false;
+  bool _showCheckIn = false;
+  bool _isSelected = false;
 
   Future<void> _handleDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -81,46 +63,79 @@ class _BookingTileState extends ConsumerState<BookingTile> {
     }
   }
 
+  Future<void> _handleCheckIn(BuildContext context) async {
+    final success = await ref
+        .read(bookingListVM.notifier)
+        .checkInBooking(int.parse(widget.booking.booking.id));
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Guest checked in successfully."),
+          backgroundColor: Colors.teal,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedId = ref.watch(selectedBookingIdProvider);
-    final isSelected = selectedId == widget.booking.booking.id;
+    _isSelected = selectedId == int.parse(widget.booking.booking.id);
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Tooltip(
-        message: _generateRatesTooltip(widget.booking),
-        padding: const EdgeInsets.all(8),
-        preferBelow: false,
-        verticalOffset: 40,
-        child: GestureDetector(
-          onTap: () {
-            FocusManager.instance.primaryFocus?.unfocus();
-            if (widget.tabIndex < widget.tabController.length) {
-              widget.tabController.animateTo(widget.tabIndex);
-            }
-            _focusNode.requestFocus();
-            ref.read(selectedBookingIdProvider.notifier).state =
-                isSelected ? null : widget.booking.booking.id;
-          },
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        setState(() {
+          _showDelete = false;
+          _showCheckIn = true;
+          ref.read(selectedBookingIdProvider.notifier).state =
+              int.parse(widget.booking.booking.id);
+        });
+      },
+      onLongPress: () {
+        setState(() {
+          _showDelete = true;
+          _showCheckIn = false;
+          ref.read(selectedBookingIdProvider.notifier).state =
+              int.parse(widget.booking.booking.id);
+        });
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Tooltip(
+          message: _generateRatesTooltip(widget.booking),
+          padding: const EdgeInsets.all(8),
+          preferBelow: false,
+          verticalOffset: 40,
           child: Draggable<BookingVM>(
             data: widget.booking,
-            feedback: _buildTile(context,
-                color: Colors.blue[300]!, opacity: 1.0, showDelete: false),
-            childWhenDragging: _buildTile(context,
-                color: Colors.grey[300]!, opacity: 0.5, showDelete: false),
-            child: Focus(
-              focusNode: _focusNode,
-              child: _buildTile(
-                context,
-                color: _isFocused
-                    ? Colors.brown[300]!
-                    : widget.booking.paymentStatusID == 1
-                        ? Colors.blue[300]!
-                        : Colors.red[300]!,
-                showDelete: isSelected,
-              ),
+            feedback: _buildTile(
+              context,
+              color: Colors.blue[300]!,
+              opacity: 1.0,
+              showDelete: false,
+            ),
+            childWhenDragging: _buildTile(
+              context,
+              color: Colors.grey[300]!,
+              opacity: 0.5,
+              showDelete: false,
+            ),
+            child: _buildTile(
+              context,
+              color: _isSelected
+                  ? Colors.indigo[400]!
+                  : widget.booking.booking.statusID == 2
+                      ? Colors.brown[200]!
+                      : widget.booking.booking.statusID == 1
+                          ? Colors.blue[300]!
+                          : widget.booking.paymentStatusID == 3
+                              ? Colors.red[300]!
+                              : Colors.blue[300]!,
+              showDelete: _isSelected && _showDelete,
+              opacity: _isHovered ? 0.85 : 1.0,
             ),
           ),
         ),
@@ -130,6 +145,7 @@ class _BookingTileState extends ConsumerState<BookingTile> {
 
   Widget _buildTile(BuildContext context,
       {required Color color, double opacity = 1.0, bool showDelete = false}) {
+    final booking = widget.booking.booking;
     return Opacity(
       opacity: opacity,
       child: Container(
@@ -159,13 +175,22 @@ class _BookingTileState extends ConsumerState<BookingTile> {
                 constraints: const BoxConstraints(),
                 onPressed: () => _handleDelete(context),
               ),
+            if (!showDelete &&
+                _showCheckIn &&
+                booking.statusID == 1 &&
+                _isSelected)
+              IconButton(
+                icon: const Icon(Icons.login, size: 18, color: Colors.white),
+                padding: const EdgeInsets.only(right: 4),
+                constraints: const BoxConstraints(),
+                onPressed: () => _handleCheckIn(context),
+              ),
           ],
         ),
       ),
     );
   }
 
-  /// Builds a tooltip string listing each night's rate and date
   String _generateRatesTooltip(BookingVM booking) {
     if (booking.bookingRates.isEmpty) return "No rates available.";
 

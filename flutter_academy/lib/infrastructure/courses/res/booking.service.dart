@@ -54,4 +54,18 @@ class BookingService {
       return false; // fallback so it never returns null
     }
   }
+
+  Future<bool> checkInBooking(int bookingId) async {
+    try {
+      final response = await sendPostRequest(
+        {}, // No body needed
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/check_in_booking/$bookingId",
+      );
+      return response;
+    } catch (e) {
+      // You can optionally log the error
+      return false;
+    }
+  }
 }

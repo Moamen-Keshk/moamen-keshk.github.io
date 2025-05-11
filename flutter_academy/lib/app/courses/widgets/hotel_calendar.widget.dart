@@ -330,12 +330,10 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
             ),
             BookingDetailsBar(
               bookings: bookingsForTabBarView,
-              tabController: _tabController,
               roomMapping: roomMapping,
               roomsCategoryMapping: roomsCategoryMapping,
               categoryMapping: categoryMapping,
               paymentStatusMapping: paymentStatusMapping,
-              ref: ref,
             ),
           ],
         ),

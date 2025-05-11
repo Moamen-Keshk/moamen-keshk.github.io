@@ -47,6 +47,14 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     }
     return success;
   }
+
+  Future<bool> checkInBooking(int bookingId) async {
+    final success = await bookingService.checkInBooking(bookingId);
+    if (success) {
+      await fetchBookings(); // refresh list
+    }
+    return success;
+  }
 }
 
 final selectedBookingIdProvider = StateProvider<int?>((ref) => null);

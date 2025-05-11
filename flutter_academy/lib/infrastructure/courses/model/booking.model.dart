@@ -12,6 +12,7 @@ class Booking {
   final int numberOfAdults;
   final int numberOfChildren;
   final int paymentStatusID;
+  final int statusID;
   final String? note;
   final String? specialRequest;
   final DateTime bookingDate;
@@ -37,6 +38,7 @@ class Booking {
     required this.numberOfAdults,
     required this.numberOfChildren,
     required this.paymentStatusID,
+    required this.statusID, // ✅ added to constructor
     this.note,
     this.specialRequest,
     required this.bookingDate,
@@ -63,6 +65,7 @@ class Booking {
     int? numberOfAdults,
     int? numberOfChildren,
     int? paymentStatusID,
+    int? statusID,
     String? note,
     String? specialRequest,
     DateTime? bookingDate,
@@ -88,6 +91,7 @@ class Booking {
       numberOfAdults: numberOfAdults ?? this.numberOfAdults,
       numberOfChildren: numberOfChildren ?? this.numberOfChildren,
       paymentStatusID: paymentStatusID ?? this.paymentStatusID,
+      statusID: statusID ?? this.statusID,
       note: note ?? this.note,
       specialRequest: specialRequest ?? this.specialRequest,
       bookingDate: bookingDate ?? this.bookingDate,
@@ -115,7 +119,8 @@ class Booking {
       'last_name': lastName,
       'number_of_adults': numberOfAdults,
       'number_of_children': numberOfChildren,
-      'payment_status': paymentStatusID,
+      'payment_status_id': paymentStatusID,
+      'status_id': statusID, // ✅ include in map
       'note': note,
       'special_request': specialRequest,
       'booking_date': bookingDate.toIso8601String(),
@@ -152,6 +157,7 @@ class Booking {
       numberOfAdults: map['number_of_adults'] ?? 0,
       numberOfChildren: map['number_of_children'] ?? 0,
       paymentStatusID: map['payment_status_id'] ?? 0,
+      statusID: map['status_id'] ?? 0, // ✅ parse from backend
       note: map['note'] ?? '',
       specialRequest: map['special_request'] ?? '',
       bookingDate: safeParseDate(map['booking_date']),
@@ -187,7 +193,7 @@ class Booking {
   String toString() {
     return '''Booking(id: $id, confirmationNumber: $confirmationNumber,
     firstName: $firstName, lastName: $lastName, numberOfAdults: $numberOfAdults,
-    numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID,
+    numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID,
     note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate,
     checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay,
     checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay,
@@ -207,6 +213,7 @@ class Booking {
         other.numberOfAdults == numberOfAdults &&
         other.numberOfChildren == numberOfChildren &&
         other.paymentStatusID == paymentStatusID &&
+        other.statusID == statusID &&
         other.note == note &&
         other.specialRequest == specialRequest &&
         other.bookingDate == bookingDate &&
@@ -234,6 +241,7 @@ class Booking {
         numberOfAdults.hashCode ^
         numberOfChildren.hashCode ^
         paymentStatusID.hashCode ^
+        statusID.hashCode ^
         note.hashCode ^
         specialRequest.hashCode ^
         bookingDate.hashCode ^

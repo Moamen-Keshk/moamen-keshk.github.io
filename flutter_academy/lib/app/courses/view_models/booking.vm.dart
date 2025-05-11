@@ -13,6 +13,7 @@ class BookingVM {
   int get numberOfAdults => booking.numberOfAdults;
   int get numberOfChildren => booking.numberOfChildren;
   int get paymentStatusID => booking.paymentStatusID;
+  int get statusID => booking.statusID;
   String? get note => booking.note;
   String? get specialRequest => booking.specialRequest;
   DateTime get bookingDate => booking.bookingDate;
