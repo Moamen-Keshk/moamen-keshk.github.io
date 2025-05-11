@@ -105,8 +105,23 @@ class _EditBookingFormState extends State<EditBookingForm> {
     }
   }
 
+  Future<void> _tryResolveAndSetRate() async {
+    if (_roomID != null && checkInDate != null && checkOutDate != null) {
+      await _resolveAndSetRate();
+    } else {
+      setState(() {
+        rateController.text = '';
+      });
+    }
+  }
+
   Future<void> _resolveAndSetRate() async {
-    if (_roomID == null || checkInDate == null || widget.ref == null) return;
+    if (_roomID == null ||
+        checkInDate == null ||
+        checkOutDate == null ||
+        widget.ref == null) {
+      return;
+    }
 
     final roomVM = widget.ref!.read(roomListVM).firstWhereOrNull(
           (room) => int.tryParse(room.id) == _roomID,
@@ -115,17 +130,24 @@ class _EditBookingFormState extends State<EditBookingForm> {
     if (categoryId == null) return;
 
     final resolver = RateResolver(widget.ref!);
-    final rate = resolver.getRateForRoomAndDate(
-      roomId: _roomID.toString(),
-      date: checkInDate!,
-      categoryId: categoryId,
-    );
+    double totalRate = 0.0;
+    DateTime currentDate = checkInDate!;
 
-    if (rate != null) {
-      setState(() {
-        rateController.text = rate.toStringAsFixed(2);
-      });
+    while (currentDate.isBefore(checkOutDate!)) {
+      final nightlyRate = resolver.getRateForRoomAndDate(
+        roomId: _roomID.toString(),
+        date: currentDate,
+        categoryId: categoryId,
+      );
+      if (nightlyRate != null) {
+        totalRate += nightlyRate;
+      }
+      currentDate = currentDate.add(Duration(days: 1));
     }
+
+    setState(() {
+      rateController.text = totalRate.toStringAsFixed(2);
+    });
   }
 
   void calculateNumberOfNights() {
@@ -199,7 +221,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
                         "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
                     calculateNumberOfNights();
                   });
-                  await _resolveAndSetRate();
+                  await _tryResolveAndSetRate();
                 }
               },
               validator: _requiredString,
@@ -232,7 +254,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
                   .toList(),
               onChanged: (val) async {
                 setState(() => _roomID = int.tryParse(val!));
-                await _resolveAndSetRate();
+                await _tryResolveAndSetRate();
               },
             );
           }),
@@ -263,6 +285,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
           controller: rateController,
           decoration: InputDecoration(labelText: 'Rate'),
           validator: _requiredString,
+          readOnly: true,
         ),
         const SizedBox(height: 20),
         ElevatedButton(
