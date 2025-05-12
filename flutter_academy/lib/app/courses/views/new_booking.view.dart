@@ -31,6 +31,8 @@ class _BookingFormState extends State<BookingForm> {
   final _formKey = GlobalKey<FormState>();
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
   final noteController = TextEditingController();
   final specialRequestController = TextEditingController();
   final dateRangeController = TextEditingController();
@@ -49,7 +51,6 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void initState() {
     super.initState();
-
     if (widget.tabDay != null) {
       checkInDate = DateTime(
         widget.ref!.read(selectedMonthVM).year,
@@ -99,16 +100,13 @@ class _BookingFormState extends State<BookingForm> {
 
     double totalRate = 0.0;
     DateTime currentDate = checkInDate!;
-
     while (currentDate.isBefore(checkOutDate!)) {
       final nightlyRate = resolver.getRateForRoomAndDate(
         roomId: _roomID.toString(),
         date: currentDate,
         categoryId: categoryId,
       );
-      if (nightlyRate != null) {
-        totalRate += nightlyRate;
-      }
+      if (nightlyRate != null) totalRate += nightlyRate;
       currentDate = currentDate.add(Duration(days: 1));
     }
 
@@ -129,6 +127,8 @@ class _BookingFormState extends State<BookingForm> {
   void dispose() {
     firstNameController.dispose();
     lastNameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
     noteController.dispose();
     specialRequestController.dispose();
     dateRangeController.dispose();
@@ -161,6 +161,22 @@ class _BookingFormState extends State<BookingForm> {
               ),
             ),
           ]),
+          Row(children: [
+            Expanded(
+              child: TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ),
+            Expanded(
+              child: TextFormField(
+                controller: phoneController,
+                decoration: InputDecoration(labelText: 'Phone'),
+                keyboardType: TextInputType.phone,
+              ),
+            ),
+          ]),
           widget.tabDay == null ? _buildDateRangePicker() : _buildDatePickers(),
           Row(children: [
             _buildDropdown("Adults:", _numberOfAdults,
@@ -179,12 +195,9 @@ class _BookingFormState extends State<BookingForm> {
                         value: r.id, child: Text(r.roomNumber.toString())))
                     .toList(),
                 onChanged: (val) {
-                  setState(() {
-                    _roomID = int.tryParse(val!);
-                  });
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _tryResolveAndSetRate();
-                  });
+                  setState(() => _roomID = int.tryParse(val!));
+                  WidgetsBinding.instance
+                      .addPostFrameCallback((_) => _tryResolveAndSetRate());
                 },
               );
             }),
@@ -226,7 +239,7 @@ class _BookingFormState extends State<BookingForm> {
           ElevatedButton(
             onPressed: _handleSubmit,
             child: const Text('Submit'),
-          )
+          ),
         ],
       ),
     );
@@ -247,6 +260,8 @@ class _BookingFormState extends State<BookingForm> {
         final success = await widget.onSubmit({
           'first_name': firstNameController.text,
           'last_name': lastNameController.text,
+          'email': emailController.text,
+          'phone': phoneController.text,
           'check_in': dateFormatter.format(checkInDate!),
           'check_out': dateFormatter.format(checkOutDate!),
           'number_of_days': _numberOfNights,
@@ -288,10 +303,9 @@ class _BookingFormState extends State<BookingForm> {
           decoration: InputDecoration(labelText: 'Select Dates'),
           readOnly: true,
           onTap: () async {
-            final now = DateTime.now();
             final picked = await showDateRangePicker(
               context: context,
-              firstDate: now,
+              firstDate: DateTime.now(),
               lastDate: DateTime(2027),
             );
             if (picked != null) {
@@ -302,7 +316,6 @@ class _BookingFormState extends State<BookingForm> {
                     "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
                 calculateNumberOfNights();
               });
-
               WidgetsBinding.instance.addPostFrameCallback((_) async {
                 if (_roomID != null) {
                   await _tryResolveAndSetRate();

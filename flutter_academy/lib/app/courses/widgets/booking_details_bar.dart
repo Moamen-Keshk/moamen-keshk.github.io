@@ -47,97 +47,102 @@ class BookingDetailsBar extends ConsumerWidget {
               ),
             )
           : Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
+              padding: const EdgeInsets.all(3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Expanded(
-                            child: Text(
-                              '${booking.firstName} ${booking.lastName}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              '${booking.numberOfNights} nights',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Adults: ${booking.numberOfAdults}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Children: ${booking.numberOfChildren}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        ]),
-                        const SizedBox(height: 10),
-                        Row(children: [
-                          SizedBox(
-                            width: 130,
-                            child: Text(
-                              paymentStatusMapping[booking.paymentStatusID] ??
-                                  '',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Category: ${categoryMapping[roomsCategoryMapping[booking.roomID]] ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'created: ${_format.format(booking.bookingDate)}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'price: ${booking.rate}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              'note: ${booking.note ?? ''}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        ])
-                      ],
+                  Row(children: [
+                    Expanded(
+                      child: Text(
+                        '${booking.firstName} ${booking.lastName}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      _showEditBookingDialog(context, booking, ref);
-                    },
-                  )
+                    Expanded(
+                      child: Text(
+                        booking.email ?? 'N/A',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        booking.phone ?? 'N/A',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '${booking.numberOfNights} nights',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    SizedBox(
+                      width: 130,
+                      child: Text(
+                        paymentStatusMapping[booking.paymentStatusID] ?? '',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Category: ${categoryMapping[roomsCategoryMapping[booking.roomID]] ?? 'N/A'}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'created: ${_format.format(booking.bookingDate)}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Adults: ${booking.numberOfAdults}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Children: ${booking.numberOfChildren}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Price: ${booking.rate}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        'Note: ${booking.note ?? ''}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        _showEditBookingDialog(context, booking, ref);
+                      },
+                    )
+                  ])
                 ],
               ),
             ),

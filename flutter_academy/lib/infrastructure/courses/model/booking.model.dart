@@ -9,6 +9,8 @@ class Booking {
   final int confirmationNumber;
   final String firstName;
   final String lastName;
+  final String? email;
+  final String? phone;
   final int numberOfAdults;
   final int numberOfChildren;
   final int paymentStatusID;
@@ -35,10 +37,12 @@ class Booking {
     required this.confirmationNumber,
     required this.firstName,
     required this.lastName,
+    this.email,
+    this.phone,
     required this.numberOfAdults,
     required this.numberOfChildren,
     required this.paymentStatusID,
-    required this.statusID, // ✅ added to constructor
+    required this.statusID,
     this.note,
     this.specialRequest,
     required this.bookingDate,
@@ -62,6 +66,8 @@ class Booking {
     int? confirmationNumber,
     String? firstName,
     String? lastName,
+    String? email,
+    String? phone,
     int? numberOfAdults,
     int? numberOfChildren,
     int? paymentStatusID,
@@ -88,6 +94,8 @@ class Booking {
       confirmationNumber: confirmationNumber ?? this.confirmationNumber,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
       numberOfAdults: numberOfAdults ?? this.numberOfAdults,
       numberOfChildren: numberOfChildren ?? this.numberOfChildren,
       paymentStatusID: paymentStatusID ?? this.paymentStatusID,
@@ -117,10 +125,12 @@ class Booking {
       'confirmation_number': confirmationNumber,
       'first_name': firstName,
       'last_name': lastName,
+      'email': email,
+      'phone': phone,
       'number_of_adults': numberOfAdults,
       'number_of_children': numberOfChildren,
       'payment_status_id': paymentStatusID,
-      'status_id': statusID, // ✅ include in map
+      'status_id': statusID,
       'note': note,
       'special_request': specialRequest,
       'booking_date': bookingDate.toIso8601String(),
@@ -154,10 +164,12 @@ class Booking {
       confirmationNumber: map['confirmation_number'] ?? 0,
       firstName: map['first_name'] ?? '',
       lastName: map['last_name'] ?? '',
+      email: map['email'],
+      phone: map['phone'],
       numberOfAdults: map['number_of_adults'] ?? 0,
       numberOfChildren: map['number_of_children'] ?? 0,
       paymentStatusID: map['payment_status_id'] ?? 0,
-      statusID: map['status_id'] ?? 0, // ✅ parse from backend
+      statusID: map['status_id'] ?? 0,
       note: map['note'] ?? '',
       specialRequest: map['special_request'] ?? '',
       bookingDate: safeParseDate(map['booking_date']),
@@ -191,14 +203,7 @@ class Booking {
 
   @override
   String toString() {
-    return '''Booking(id: $id, confirmationNumber: $confirmationNumber,
-    firstName: $firstName, lastName: $lastName, numberOfAdults: $numberOfAdults,
-    numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID,
-    note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate,
-    checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay,
-    checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay,
-    checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights,
-    rate: $rate, propertyID: $propertyID, roomID: $roomID, bookingRates: $bookingRates)''';
+    return 'Booking(id: $id, confirmationNumber: $confirmationNumber, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, numberOfAdults: $numberOfAdults, numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID, note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate, checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay, checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay, checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights, rate: $rate, propertyID: $propertyID, roomID: $roomID, bookingRates: $bookingRates)';
   }
 
   @override
@@ -210,6 +215,8 @@ class Booking {
         other.confirmationNumber == confirmationNumber &&
         other.firstName == firstName &&
         other.lastName == lastName &&
+        other.email == email &&
+        other.phone == phone &&
         other.numberOfAdults == numberOfAdults &&
         other.numberOfChildren == numberOfChildren &&
         other.paymentStatusID == paymentStatusID &&
@@ -238,6 +245,8 @@ class Booking {
         confirmationNumber.hashCode ^
         firstName.hashCode ^
         lastName.hashCode ^
+        email.hashCode ^
+        phone.hashCode ^
         numberOfAdults.hashCode ^
         numberOfChildren.hashCode ^
         paymentStatusID.hashCode ^

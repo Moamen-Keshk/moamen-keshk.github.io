@@ -10,6 +10,8 @@ class BookingVM {
   int get confirmationNumber => booking.confirmationNumber;
   String get firstName => booking.firstName;
   String get lastName => booking.lastName;
+  String? get email => booking.email;
+  String? get phone => booking.phone;
   int get numberOfAdults => booking.numberOfAdults;
   int get numberOfChildren => booking.numberOfChildren;
   int get paymentStatusID => booking.paymentStatusID;

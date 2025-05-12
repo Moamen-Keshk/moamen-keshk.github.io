@@ -67,6 +67,8 @@ class _EditBookingFormState extends State<EditBookingForm> {
   final _formKey = GlobalKey<FormState>();
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
   final noteController = TextEditingController();
   final specialRequestController = TextEditingController();
   final rateController = TextEditingController();
@@ -94,6 +96,8 @@ class _EditBookingFormState extends State<EditBookingForm> {
 
     firstNameController.text = widget.booking.firstName;
     lastNameController.text = widget.booking.lastName;
+    emailController.text = widget.booking.email ?? '';
+    phoneController.text = widget.booking.phone ?? '';
     noteController.text = widget.booking.note ?? '';
     specialRequestController.text = widget.booking.specialRequest ?? '';
     rateController.text = widget.booking.rate.toStringAsFixed(2);
@@ -105,63 +109,12 @@ class _EditBookingFormState extends State<EditBookingForm> {
     }
   }
 
-  Future<void> _tryResolveAndSetRate() async {
-    if (_roomID != null && checkInDate != null && checkOutDate != null) {
-      await _resolveAndSetRate();
-    } else {
-      setState(() {
-        rateController.text = '';
-      });
-    }
-  }
-
-  Future<void> _resolveAndSetRate() async {
-    if (_roomID == null ||
-        checkInDate == null ||
-        checkOutDate == null ||
-        widget.ref == null) {
-      return;
-    }
-
-    final roomVM = widget.ref!.read(roomListVM).firstWhereOrNull(
-          (room) => int.tryParse(room.id) == _roomID,
-        );
-    final categoryId = roomVM?.categoryId.toString();
-    if (categoryId == null) return;
-
-    final resolver = RateResolver(widget.ref!);
-    double totalRate = 0.0;
-    DateTime currentDate = checkInDate!;
-
-    while (currentDate.isBefore(checkOutDate!)) {
-      final nightlyRate = resolver.getRateForRoomAndDate(
-        roomId: _roomID.toString(),
-        date: currentDate,
-        categoryId: categoryId,
-      );
-      if (nightlyRate != null) {
-        totalRate += nightlyRate;
-      }
-      currentDate = currentDate.add(Duration(days: 1));
-    }
-
-    setState(() {
-      rateController.text = totalRate.toStringAsFixed(2);
-    });
-  }
-
-  void calculateNumberOfNights() {
-    if (checkInDate != null && checkOutDate != null) {
-      setState(() {
-        _numberOfNights = checkOutDate!.difference(checkInDate!).inDays;
-      });
-    }
-  }
-
   @override
   void dispose() {
     firstNameController.dispose();
     lastNameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
     noteController.dispose();
     specialRequestController.dispose();
     rateController.dispose();
@@ -176,64 +129,63 @@ class _EditBookingFormState extends State<EditBookingForm> {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           Expanded(
-              child: TextFormField(
-            controller: firstNameController,
-            decoration: InputDecoration(labelText: 'First Name'),
-            validator: _requiredString,
-          )),
+            child: TextFormField(
+              controller: firstNameController,
+              decoration: InputDecoration(labelText: 'First Name'),
+              validator: _requiredString,
+            ),
+          ),
           Expanded(
-              child: TextFormField(
-            controller: lastNameController,
-            decoration: InputDecoration(labelText: 'Last Name'),
-            validator: _requiredString,
-          )),
+            child: TextFormField(
+              controller: lastNameController,
+              decoration: InputDecoration(labelText: 'Last Name'),
+              validator: _requiredString,
+            ),
+          ),
         ]),
         Row(children: [
           Expanded(
             child: TextFormField(
-              controller: dateRangeController,
-              decoration: InputDecoration(labelText: 'Select Dates'),
-              readOnly: true,
-              onTap: () async {
-                final now = DateTime.now();
-                final safeStart =
-                    (checkInDate != null && checkInDate!.isAfter(now))
-                        ? checkInDate!
-                        : now;
-                final safeEnd =
-                    (checkOutDate != null && checkOutDate!.isAfter(safeStart))
-                        ? checkOutDate!
-                        : safeStart.add(Duration(days: 1));
-
-                final picked = await showDateRangePicker(
-                  context: context,
-                  firstDate: now,
-                  lastDate: DateTime(2027),
-                  initialDateRange:
-                      DateTimeRange(start: safeStart, end: safeEnd),
-                );
-
-                if (picked != null) {
-                  setState(() {
-                    checkInDate = picked.start;
-                    checkOutDate = picked.end;
-                    dateRangeController.text =
-                        "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
-                    calculateNumberOfNights();
-                  });
-                  await _tryResolveAndSetRate();
-                }
-              },
-              validator: _requiredString,
+              controller: emailController,
+              decoration: InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
             ),
           ),
-          if (_numberOfNights != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text('$_numberOfNights Nights',
-                  style: TextStyle(fontSize: 12)),
-            )
+          Expanded(
+            child: TextFormField(
+              controller: phoneController,
+              decoration: InputDecoration(labelText: 'Phone'),
+              keyboardType: TextInputType.phone,
+            ),
+          ),
         ]),
+        TextFormField(
+          controller: dateRangeController,
+          decoration: InputDecoration(labelText: 'Select Dates'),
+          readOnly: true,
+          onTap: () async {
+            final now = DateTime.now();
+            final picked = await showDateRangePicker(
+              context: context,
+              firstDate: now,
+              lastDate: DateTime(2027),
+              initialDateRange: checkInDate != null && checkOutDate != null
+                  ? DateTimeRange(start: checkInDate!, end: checkOutDate!)
+                  : null,
+            );
+            if (picked != null) {
+              setState(() {
+                checkInDate = picked.start;
+                checkOutDate = picked.end;
+                dateRangeController.text =
+                    "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
+                calculateNumberOfNights();
+              });
+              await _tryResolveAndSetRate();
+            }
+          },
+          validator: _requiredString,
+        ),
         Row(children: [
           _buildDropdown("Adults:", _numberOfAdults,
               (val) => setState(() => _numberOfAdults = val)),
@@ -305,6 +257,8 @@ class _EditBookingFormState extends State<EditBookingForm> {
                 final success = await widget.onSubmit({
                   'first_name': firstNameController.text,
                   'last_name': lastNameController.text,
+                  'email': emailController.text,
+                  'phone': phoneController.text,
                   'check_in': checkInDate!.toIso8601String(),
                   'check_out': checkOutDate!.toIso8601String(),
                   'number_of_days': _numberOfNights,
@@ -356,6 +310,59 @@ class _EditBookingFormState extends State<EditBookingForm> {
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void calculateNumberOfNights() {
+    if (checkInDate != null && checkOutDate != null) {
+      setState(() {
+        _numberOfNights = checkOutDate!.difference(checkInDate!).inDays;
+      });
+    }
+  }
+
+  Future<void> _tryResolveAndSetRate() async {
+    if (_roomID != null && checkInDate != null && checkOutDate != null) {
+      await _resolveAndSetRate();
+    } else {
+      setState(() {
+        rateController.text = '';
+      });
+    }
+  }
+
+  Future<void> _resolveAndSetRate() async {
+    if (_roomID == null ||
+        checkInDate == null ||
+        checkOutDate == null ||
+        widget.ref == null) {
+      return;
+    }
+
+    final roomVM = widget.ref!.read(roomListVM).firstWhereOrNull(
+          (room) => int.tryParse(room.id) == _roomID,
+        );
+    final categoryId = roomVM?.categoryId.toString();
+    if (categoryId == null) return;
+
+    final resolver = RateResolver(widget.ref!);
+    double totalRate = 0.0;
+    DateTime currentDate = checkInDate!;
+
+    while (currentDate.isBefore(checkOutDate!)) {
+      final nightlyRate = resolver.getRateForRoomAndDate(
+        roomId: _roomID.toString(),
+        date: currentDate,
+        categoryId: categoryId,
+      );
+      if (nightlyRate != null) {
+        totalRate += nightlyRate;
+      }
+      currentDate = currentDate.add(Duration(days: 1));
+    }
+
+    setState(() {
+      rateController.text = totalRate.toStringAsFixed(2);
+    });
   }
 
   Widget _buildDropdown(
