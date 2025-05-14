@@ -55,6 +55,11 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     }
     return success;
   }
+
+  Future<void> fetchBookingsByDate(DateTime date) async {
+    final res = await bookingService.getBookingsByDate(propertyId, date);
+    state = [...res.map((booking) => BookingVM(booking))];
+  }
 }
 
 final selectedBookingIdProvider = StateProvider<int?>((ref) => null);
@@ -65,4 +70,16 @@ final bookingListVM =
   final selectedMonth = ref.watch(selectedMonthVM);
   return BookingListVM(selectedProperty, selectedMonth.year,
       selectedMonth.month, BookingService());
+});
+
+final bookingListByDateVM =
+    StateNotifierProvider.family<BookingListVM, List<BookingVM>, DateTime>(
+        (ref, date) {
+  final selectedProperty = ref.watch(selectedPropertyVM) ?? 0;
+  return BookingListVM(
+    selectedProperty,
+    date.year,
+    date.month,
+    BookingService(),
+  )..fetchBookingsByDate(date);
 });

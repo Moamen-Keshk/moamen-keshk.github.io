@@ -68,4 +68,17 @@ class BookingService {
       return false;
     }
   }
+
+  Future<List<Booking>> getBookingsByDate(int propertyId, DateTime date) async {
+    final query = await sendGetWithParamsRequest(
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/bookings_by_date",
+      {
+        'property_id': propertyId.toString(),
+        'date': date.toIso8601String().split('T')[0], // format as YYYY-MM-DD
+      },
+    );
+
+    return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
+  }
 }

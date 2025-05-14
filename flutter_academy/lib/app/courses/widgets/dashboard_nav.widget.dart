@@ -142,7 +142,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   foregroundColor: Colors.grey,
                 ),
                 onPressed: () {
-                  ref.read(routerProvider).push('courses');
+                  ref.read(routerProvider).push('todays');
                 },
                 child: const Text("Today's"),
               ),
