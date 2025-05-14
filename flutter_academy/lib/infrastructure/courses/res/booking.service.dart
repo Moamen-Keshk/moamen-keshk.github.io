@@ -81,4 +81,17 @@ class BookingService {
 
     return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
   }
+
+  Future<Booking?> getBookingById(String bookingId) async {
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/booking/$bookingId",
+      );
+      return Booking.fromResMap(query['data']);
+    } catch (e) {
+      // Handle error or log
+      return null;
+    }
+  }
 }

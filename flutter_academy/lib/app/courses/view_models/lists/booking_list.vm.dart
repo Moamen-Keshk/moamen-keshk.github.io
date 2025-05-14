@@ -1,13 +1,14 @@
-import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
-import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:flutter_academy/infrastructure/courses/res/booking.service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
+import 'package:flutter_academy/infrastructure/courses/res/booking.service.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 
 class BookingListVM extends StateNotifier<List<BookingVM>> {
   final BookingService bookingService;
   final int propertyId;
   final int year;
   final int month;
+
   BookingListVM(this.propertyId, this.year, this.month, this.bookingService)
       : super(const []) {
     fetchBookings();
@@ -15,6 +16,11 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
 
   Future<void> fetchBookings() async {
     final res = await bookingService.getAllBookings(propertyId, year, month);
+    state = [...res.map((booking) => BookingVM(booking))];
+  }
+
+  Future<void> fetchBookingsByDate(DateTime date) async {
+    final res = await bookingService.getBookingsByDate(propertyId, date);
     state = [...res.map((booking) => BookingVM(booking))];
   }
 
@@ -34,9 +40,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
         await fetchBookings();
         return true;
       }
-    } catch (e) {
-      // Handle error, e.g., log it or update the state with an error message
-    }
+    } catch (_) {}
     return false;
   }
 
@@ -51,14 +55,17 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   Future<bool> checkInBooking(int bookingId) async {
     final success = await bookingService.checkInBooking(bookingId);
     if (success) {
-      await fetchBookings(); // refresh list
+      await fetchBookings();
     }
     return success;
   }
 
-  Future<void> fetchBookingsByDate(DateTime date) async {
-    final res = await bookingService.getBookingsByDate(propertyId, date);
-    state = [...res.map((booking) => BookingVM(booking))];
+  Future<BookingVM?> getBookingById(String bookingId) async {
+    final booking = await bookingService.getBookingById(bookingId);
+    if (booking != null) {
+      return BookingVM(booking);
+    }
+    return null;
   }
 }
 
@@ -66,20 +73,23 @@ final selectedBookingIdProvider = StateProvider<int?>((ref) => null);
 
 final bookingListVM =
     StateNotifierProvider<BookingListVM, List<BookingVM>>((ref) {
-  final selectedProperty = ref.watch(selectedPropertyVM) ?? 0;
+  final propertyId = ref.watch(selectedPropertyVM) ?? 0;
   final selectedMonth = ref.watch(selectedMonthVM);
-  return BookingListVM(selectedProperty, selectedMonth.year,
-      selectedMonth.month, BookingService());
+  return BookingListVM(
+    propertyId,
+    selectedMonth.year,
+    selectedMonth.month,
+    BookingService(),
+  );
 });
 
-final bookingListByDateVM =
-    StateNotifierProvider.family<BookingListVM, List<BookingVM>, DateTime>(
-        (ref, date) {
-  final selectedProperty = ref.watch(selectedPropertyVM) ?? 0;
-  return BookingListVM(
-    selectedProperty,
-    date.year,
-    date.month,
-    BookingService(),
-  )..fetchBookingsByDate(date);
-});
+final bookingListByDateVM = StateNotifierProvider.family<BookingListVM,
+    List<BookingVM>, (int propertyId, DateTime date)>(
+  (ref, args) {
+    final (propertyId, date) = args;
+    return BookingListVM(propertyId, date.year, date.month, BookingService())
+      ..fetchBookingsByDate(date);
+  },
+);
+
+final bookingIdProvider = StateProvider<int?>((ref) => null);
