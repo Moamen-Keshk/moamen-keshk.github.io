@@ -11,7 +11,7 @@ class HotelSeasonsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: DashboardNav(),
-      body: SingleChildScrollView(child: HotelSeasonsView()),
+      body: HotelSeasonsView(),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

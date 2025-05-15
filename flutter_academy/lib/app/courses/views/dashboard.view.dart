@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/widgets/hotel_calendar.widget.dart';
-import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardView extends ConsumerStatefulWidget {
@@ -13,49 +12,10 @@ class DashboardView extends ConsumerStatefulWidget {
 class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      FloorRooms(),
-      Padding(
-          padding: EdgeInsets.all(6),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            ElevatedButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey,
-              ),
-              onPressed: () {
-                ref.read(routerProvider).push('edit_property');
-              },
-              child: const Text("Property"),
-            ),
-            const SizedBox(width: 10.0),
-            ElevatedButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey,
-              ),
-              onPressed: () {
-                ref.read(routerProvider).push('hotel_rate_plan');
-              },
-              child: const Text("Rate Plans"),
-            ),
-            const SizedBox(width: 10.0),
-            ElevatedButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                ),
-                onPressed: () {
-                  ref.read(routerProvider).push('new_category');
-                },
-                child: const Text("Categories")),
-            const SizedBox(width: 10.0),
-            ElevatedButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                ),
-                onPressed: () {
-                  ref.read(routerProvider).push('hotel_seasons');
-                },
-                child: const Text("Seasons"))
-          ])),
-    ]);
+    return const Column(
+      children: [
+        FloorRooms(),
+      ],
+    );
   }
 }

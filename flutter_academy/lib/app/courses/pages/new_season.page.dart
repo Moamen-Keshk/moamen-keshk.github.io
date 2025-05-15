@@ -11,8 +11,7 @@ class NewSeasonPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: DashboardNav(),
-      body: SingleChildScrollView(
-          child: Center(heightFactor: 2.0, child: NewSeasonView())),
+      body: Center(heightFactor: 2.0, child: NewSeasonView()),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

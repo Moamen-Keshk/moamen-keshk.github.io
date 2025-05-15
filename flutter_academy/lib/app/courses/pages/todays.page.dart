@@ -11,7 +11,7 @@ class TodaysPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: DashboardNav(),
-      body: SingleChildScrollView(child: TodaysView()),
+      body: TodaysView(),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

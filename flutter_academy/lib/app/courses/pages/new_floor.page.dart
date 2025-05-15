@@ -11,8 +11,7 @@ class NewFloorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: DashboardNav(),
-      body: SingleChildScrollView(
-          child: Center(heightFactor: 2.0, child: NewFloorView())),
+      body: Center(heightFactor: 2.0, child: NewFloorView()),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

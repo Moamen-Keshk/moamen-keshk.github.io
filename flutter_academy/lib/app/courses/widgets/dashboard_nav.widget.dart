@@ -4,13 +4,12 @@ import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/app/courses/res/responsive.res.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/block_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/property_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
 import 'package:flutter_academy/app/courses/views/new_block.view.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
-import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/views/notifications.view.dart';
-import 'package:flutter_academy/app/users/view_models/theme_mode.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,6 +21,7 @@ class DashboardNav extends ConsumerStatefulWidget
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
   @override
   ConsumerState<DashboardNav> createState() => _DashboardNavState();
 }
@@ -40,20 +40,22 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
           ? [
               Consumer(builder: (context, ref, child) {
                 return IconButton(
-                    icon: const Icon(Icons.exit_to_app),
-                    onPressed: () async => {
-                          if (await ref.read(authVM).logout())
-                            ref.read(routerProvider).replaceAllWith('home')
-                        });
-              })
+                  icon: const Icon(Icons.exit_to_app),
+                  onPressed: () async {
+                    if (await ref.read(authVM).logout()) {
+                      ref.read(routerProvider).replaceAllWith('home');
+                    }
+                  },
+                );
+              }),
             ]
           : [
               Consumer(builder: (context, ref, child) {
                 return TextButton(
                   style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor:
-                          const Color.fromARGB(255, 109, 106, 106)),
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color.fromARGB(255, 109, 106, 106),
+                  ),
                   onPressed: () {
                     showBlockDialog(context, ref);
                     ref.read(routerProvider).replaceAllWith('dashboard');
@@ -65,8 +67,9 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
               Consumer(builder: (context, ref, child) {
                 return TextButton(
                   style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue[300]),
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.blue[300],
+                  ),
                   onPressed: () {
                     showBookingDialog(context, ref);
                     ref.read(routerProvider).replaceAllWith('dashboard');
@@ -79,54 +82,53 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 final properties = ref.watch(propertyListVM);
                 propertiesMapping = propertyMapping(properties);
                 return Container(
-                    width: 130,
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey, width: 1)),
-                    child: DropdownButton<String>(
-                      value: selectedProperty,
-                      hint: Text("Property"),
-                      isExpanded: true,
-                      underline: SizedBox(),
-                      // requestFocusOnTap is enabled/disabled by platforms when it is null.
-                      // On mobile platforms, this is false by default. Setting this to true will
-                      // trigger focus request on the text field and virtual keyboard will appear
-                      // afterward. On desktop platforms however, this defaults to true.
-                      onChanged: (newValue) {
-                        if (newValue == 'add') {
-                          // Handle the "Add" case
-                          ref.read(routerProvider).push('new_property');
-                        } else {
-                          setState(() {
-                            selectedProperty = newValue;
-                            ref
-                                .read(selectedPropertyVM.notifier)
-                                .updateProperty(int.parse(selectedProperty!));
-                          });
-                        }
-                      },
-                      items: properties.map<DropdownMenuItem<String>>(
-                              (PropertyVM property) {
-                            return DropdownMenuItem<String>(
-                              value: property.id,
-                              child: Text(property.name),
-                            );
-                          }).toList() +
-                          [
-                            DropdownMenuItem(
-                              value: 'add', // Use a unique value
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.add),
-                                  SizedBox(width: 8)
-                                ],
-                              ),
-                            ),
-                          ],
-                      icon: Icon(Icons.arrow_drop_down, color: Colors.black),
-                    ));
+                  width: 130,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey, width: 1),
+                  ),
+                  child: DropdownButton<String>(
+                    value: selectedProperty,
+                    hint: const Text("Property"),
+                    isExpanded: true,
+                    underline: const SizedBox(),
+                    onChanged: (newValue) {
+                      if (newValue == 'add') {
+                        ref.read(routerProvider).push('new_property');
+                      } else {
+                        setState(() {
+                          selectedProperty = newValue;
+                          ref
+                              .read(selectedPropertyVM.notifier)
+                              .updateProperty(int.parse(selectedProperty!));
+                        });
+                      }
+                    },
+                    items: properties
+                        .map<DropdownMenuItem<String>>((PropertyVM property) {
+                      return DropdownMenuItem<String>(
+                        value: property.id,
+                        child: Text(property.name),
+                      );
+                    }).toList()
+                      ..add(
+                        const DropdownMenuItem(
+                          value: 'add',
+                          child: Row(
+                            children: [
+                              Icon(Icons.add),
+                              SizedBox(width: 8),
+                              Text("Add"),
+                            ],
+                          ),
+                        ),
+                      ),
+                    icon:
+                        const Icon(Icons.arrow_drop_down, color: Colors.black),
+                  ),
+                );
               }),
               TextButton(
                 style: TextButton.styleFrom(
@@ -146,29 +148,56 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 },
                 child: const Text("Today's"),
               ),
-              Consumer(builder: (context, ref, child) {
-                final themeModeVM = ref.watch(themeModeProvider);
-                return TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey,
-                  ),
-                  onPressed: () {
-                    themeModeVM.toggleThemeMode();
-                  },
-                  child: Text(themeModeVM.themeMode == ThemeMode.dark
-                      ? "Light Theme"
-                      : "Dark Theme"),
-                );
-              }),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                ),
+                onPressed: () {
+                  ref.read(routerProvider).push('booking_search');
+                },
+                child: const Text("Bookings"),
+              ),
+
+              /// 💡 NEW: Settings Dropdown
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.settings),
+                onSelected: (value) {
+                  final router = ref.read(routerProvider);
+                  switch (value) {
+                    case 'property':
+                      router.push('edit_property');
+                      break;
+                    case 'rate_plans':
+                      router.push('hotel_rate_plan');
+                      break;
+                    case 'categories':
+                      router.push('new_category');
+                      break;
+                    case 'seasons':
+                      router.push('hotel_seasons');
+                      break;
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'property', child: Text('Property')),
+                  PopupMenuItem(value: 'rate_plans', child: Text('Rate Plans')),
+                  PopupMenuItem(value: 'categories', child: Text('Categories')),
+                  PopupMenuItem(value: 'seasons', child: Text('Seasons')),
+                ],
+              ),
+
               const NotificationsView(),
+
               Consumer(builder: (context, ref, child) {
                 return IconButton(
-                    icon: const Icon(Icons.exit_to_app),
-                    onPressed: () async => {
-                          if (await ref.read(authVM).logout())
-                            ref.read(routerProvider).replaceAllWith('home')
-                        });
-              })
+                  icon: const Icon(Icons.exit_to_app),
+                  onPressed: () async {
+                    if (await ref.read(authVM).logout()) {
+                      ref.read(routerProvider).replaceAllWith('home');
+                    }
+                  },
+                );
+              }),
             ],
     );
   }
@@ -178,7 +207,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('New Booking'),
+          title: const Text('New Booking'),
           content: BookingForm(
             onSubmit: (bookingData) async {
               return ref
@@ -210,10 +239,8 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
   }
 
   Map<String, String> propertyMapping(List<PropertyVM> propertyVMList) {
-    Map<String, String> propertyMap = {};
-    for (var property in propertyVMList) {
-      propertyMap[property.id] = property.name;
-    }
-    return propertyMap;
+    return {
+      for (var property in propertyVMList) property.id: property.name,
+    };
   }
 }

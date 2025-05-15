@@ -299,7 +299,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 530,
+              height: MediaQuery.of(context).size.height - 218,
               child: SingleChildScrollView(
                 controller: _verticalScrollController,
                 scrollDirection: Axis.vertical,
