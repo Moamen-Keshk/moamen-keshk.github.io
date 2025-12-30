@@ -375,7 +375,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
           width: 70,
           child: DropdownButtonFormField<int>(
             decoration: InputDecoration(border: OutlineInputBorder()),
-            value: value,
+            initialValue: value,
             items: List.generate(
               5,
               (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
@@ -401,7 +401,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
         child: DropdownButtonFormField<String>(
           decoration:
               InputDecoration(border: OutlineInputBorder(), labelText: label),
-          value: value,
+          initialValue: value,
           items: items,
           onChanged: onChanged,
         ),

@@ -406,7 +406,7 @@ class _BookingFormState extends State<BookingForm> {
           SizedBox(
             width: 70,
             child: DropdownButtonFormField<int>(
-              value: value,
+              initialValue: value,
               items: List.generate(
                 5,
                 (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
@@ -431,7 +431,7 @@ class _BookingFormState extends State<BookingForm> {
       child: SizedBox(
         width: 160,
         child: DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           items: items,
           onChanged: onChanged,
           decoration:

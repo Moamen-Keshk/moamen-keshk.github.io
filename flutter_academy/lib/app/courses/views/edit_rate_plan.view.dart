@@ -102,7 +102,7 @@ class _EditRatePlanViewState extends ConsumerState<EditRatePlanView> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: categoryId,
+                  initialValue: categoryId,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),

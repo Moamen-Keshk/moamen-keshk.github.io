@@ -182,7 +182,7 @@ class _BlockFormState extends ConsumerState<BlockForm> {
         child: DropdownButtonFormField<T>(
           decoration:
               InputDecoration(border: OutlineInputBorder(), labelText: label),
-          value: value,
+          initialValue: value,
           items: items,
           onChanged: onChanged,
           validator: (val) => val == null ? 'Required' : null,

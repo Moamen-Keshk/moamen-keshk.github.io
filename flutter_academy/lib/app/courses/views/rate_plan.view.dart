@@ -68,7 +68,7 @@ class _RatePlanViewState extends ConsumerState<RatePlanView> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: categoryId,
+                  initialValue: categoryId,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),

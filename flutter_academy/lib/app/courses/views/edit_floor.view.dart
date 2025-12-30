@@ -98,7 +98,7 @@ class _EditFloorViewState extends ConsumerState<EditFloorView> {
               child: Column(
                 children: [
                   DropdownButtonFormField<int>(
-                    value: dropdownCount,
+                    initialValue: dropdownCount,
                     decoration: _inputDecoration("No. of Rooms"),
                     style: const TextStyle(fontSize: 13),
                     isExpanded: true,

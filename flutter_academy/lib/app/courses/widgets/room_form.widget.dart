@@ -39,7 +39,7 @@ class RoomFormRow extends StatelessWidget {
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<String>(
-            value: categoryId,
+            initialValue: categoryId,
             isExpanded: true,
             decoration: _smallInput("Category"),
             style: const TextStyle(fontSize: 13),
@@ -88,7 +88,7 @@ class CategoryFormRow extends StatelessWidget {
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<String>(
-            value: initialValue,
+            initialValue: initialValue,
             isExpanded: true,
             decoration: _smallInput("Category"),
             style: const TextStyle(fontSize: 13),
@@ -151,7 +151,7 @@ class NewRoomRow extends StatelessWidget {
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<String>(
-            value: selectedValue,
+            initialValue: selectedValue,
             isExpanded: true,
             decoration: _smallInput("Category"),
             style: const TextStyle(fontSize: 13),
