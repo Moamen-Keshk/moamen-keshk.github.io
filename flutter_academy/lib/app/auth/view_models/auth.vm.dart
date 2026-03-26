@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/users/view_models/user.vm.dart';
 import 'package:flutter_academy/app/req/request.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class AuthVM extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -84,7 +84,7 @@ class AuthVM extends ChangeNotifier {
         Timer.periodic(const Duration(seconds: 3), (_) => checkEmailVerified());
   }
 
-  checkEmailVerified() async {
+  Future<void> checkEmailVerified() async {
     await _auth.currentUser?.reload();
 
     isEmailVerified = _auth.currentUser!.emailVerified;

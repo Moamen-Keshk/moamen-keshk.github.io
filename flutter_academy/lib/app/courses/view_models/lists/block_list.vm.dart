@@ -1,7 +1,7 @@
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/view_models/block.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/res/block.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class BlockListVM extends StateNotifier<List<BlockVM>> {
   final BlockService blockService;

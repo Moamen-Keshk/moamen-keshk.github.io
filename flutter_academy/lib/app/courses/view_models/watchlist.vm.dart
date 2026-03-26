@@ -1,6 +1,6 @@
 import 'package:flutter_academy/app/auth/view_models/auth.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/res/watchlist.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'course.vm.dart';
 
 class WatchlistVM extends StateNotifier<List<CourseVM>> {

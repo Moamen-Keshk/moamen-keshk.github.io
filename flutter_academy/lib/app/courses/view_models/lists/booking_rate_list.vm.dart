@@ -1,6 +1,6 @@
 import 'package:flutter_academy/infrastructure/courses/model/booking_rate.model.dart';
 import 'package:flutter_academy/infrastructure/courses/res/booking_rate.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class BookingRateListVM extends StateNotifier<List<BookingRate>> {
   final BookingRateService bookingRateService;

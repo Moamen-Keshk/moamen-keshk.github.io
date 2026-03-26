@@ -1,7 +1,7 @@
 import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/res/room.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class RoomListVM extends StateNotifier<List<RoomVM>> {
   bool _disposed = false;

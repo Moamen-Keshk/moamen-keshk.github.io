@@ -1,6 +1,6 @@
 import 'package:flutter_academy/app/courses/view_models/payment_status.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/res/payment_status.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class PaymentStatusListVM extends StateNotifier<List<PaymentStatusVM>> {
   PaymentStatusListVM() : super(const []) {

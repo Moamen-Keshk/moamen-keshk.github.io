@@ -69,13 +69,16 @@ class BookingService {
     }
   }
 
-  Future<List<Booking>> getBookingsByDate(int propertyId, DateTime date) async {
+  Future<List<Booking>> getBookingsByDate(
+      int propertyId, DateTime date, String bookingState) async {
     final query = await sendGetWithParamsRequest(
       await _auth.currentUser?.getIdToken(),
-      "/api/v1/bookings_by_date",
+      "/api/v1/bookings_by_date_and_state",
       {
         'property_id': propertyId.toString(),
         'date': date.toIso8601String().split('T')[0], // format as YYYY-MM-DD
+        'booking_state':
+            bookingState, // e.g., "arrivals", "departures", "in_house"
       },
     );
 

@@ -2,7 +2,7 @@ import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/season.model.dart';
 import 'package:flutter_academy/infrastructure/courses/res/season.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class SeasonListVM extends StateNotifier<List<SeasonVM>> {
   bool _disposed = false;

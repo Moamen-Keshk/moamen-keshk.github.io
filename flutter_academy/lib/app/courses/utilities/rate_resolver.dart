@@ -1,6 +1,6 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
-import 'package:collection/collection.dart';
 
 class RateResolver {
   final WidgetRef ref;

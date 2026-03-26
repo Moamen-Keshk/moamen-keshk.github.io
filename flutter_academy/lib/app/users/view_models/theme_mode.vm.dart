@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/infrastructure/users/res/theme_mode.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class ThemeModeVM extends ChangeNotifier {
   final ThemeModeService _themeModeService;

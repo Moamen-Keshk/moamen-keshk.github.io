@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/block.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/block_list.vm.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 final selectedBlockIdProvider = StateProvider<String?>((ref) => null);
 

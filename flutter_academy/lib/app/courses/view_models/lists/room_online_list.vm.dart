@@ -1,9 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room_online.model.dart';
 import 'package:flutter_academy/infrastructure/courses/res/room_online.service.dart';
 import 'package:flutter_academy/app/courses/view_models/room_online.vm.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class RoomOnlineListVM extends StateNotifier<List<RoomOnlineVM>> {
   final int? propertyId;

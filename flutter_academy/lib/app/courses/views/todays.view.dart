@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter_academy/app/courses/utilities/booking_summary_card.utils.dart';
 import 'package:flutter_academy/app/courses/utilities/status_card.utils.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
-import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -34,9 +35,22 @@ class TodaysView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
+    final currentDate = _dateOnly(selectedDate);
     final selectedView = ref.watch(selectedViewProvider);
     final propertyId = ref.watch(selectedPropertyVM) ?? 0;
-    final bookings = ref.watch(bookingListByDateVM((propertyId, selectedDate)));
+
+    final arrivals = ref.watch(
+      bookingListByDateVM((propertyId, currentDate, 'Arrivals')),
+    );
+
+    final inHouse = ref.watch(
+      bookingListByDateVM((propertyId, currentDate, 'InHouse')),
+    );
+
+    final departures = ref.watch(
+      bookingListByDateVM((propertyId, currentDate, 'Departures')),
+    );
+
     final roomMapping = ref.watch(roomMappingProvider);
     final paymentStatusAsync = ref.watch(paymentStatusMappingProvider);
     final paymentStatusMapping = paymentStatusAsync.maybeWhen(
@@ -44,42 +58,32 @@ class TodaysView extends ConsumerWidget {
       orElse: () => <int, String>{},
     );
 
-    final arrivals =
-        bookings.where((b) => isSameDay(b.checkIn, selectedDate)).toList();
-    final departures =
-        bookings.where((b) => isSameDay(b.checkOut, selectedDate)).toList();
-    final inHouse = bookings
-        .where((b) =>
-            b.checkIn.isBefore(selectedDate) &&
-            b.checkOut.isAfter(selectedDate))
-        .toList();
-
-    final readyRoomIDs = bookings
-        .where((b1) => isSameDay(b1.checkIn, selectedDate))
-        .where((b1) => !bookings.any(
-              (b2) =>
-                  b2.roomID == b1.roomID &&
-                  b2 != b1 &&
-                  isSameDay(b2.checkOut, selectedDate),
-            ))
+    final readyRoomIDs = arrivals
+        .where(
+          (arrival) => !departures.any(
+            (departure) => departure.roomID == arrival.roomID,
+          ),
+        )
         .map((b) => b.roomID)
         .toSet();
 
-    final toCleanRoomIDs = bookings
-        .where((b1) => isSameDay(b1.checkOut, selectedDate))
-        .expand((b1) => bookings.where((b2) =>
-            b2.roomID == b1.roomID &&
-            b2 != b1 &&
-            isSameDay(b2.checkIn, selectedDate)))
+    final toCleanRoomIDs = departures
+        .where(
+          (departure) => arrivals.any(
+            (arrival) => arrival.roomID == departure.roomID,
+          ),
+        )
         .map((b) => b.roomID)
         .toSet();
 
     List<Widget> rows;
+
     if (selectedView == 'Ready') {
       final rooms = readyRoomIDs
           .map((id) => roomMapping[id] ?? 'Room $id')
           .toList()
         ..sort();
+
       rows = [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -89,13 +93,14 @@ class TodaysView extends ConsumerWidget {
             runSpacing: 8,
             children: rooms.map((room) => Chip(label: Text(room))).toList(),
           ),
-        )
+        ),
       ];
     } else if (selectedView == 'ToClean') {
       final rooms = toCleanRoomIDs
           .map((id) => roomMapping[id] ?? 'Room $id')
           .toList()
         ..sort();
+
       rows = [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -105,7 +110,7 @@ class TodaysView extends ConsumerWidget {
             runSpacing: 8,
             children: rooms.map((room) => Chip(label: Text(room))).toList(),
           ),
-        )
+        ),
       ];
     } else {
       final filtered = selectedView == 'Departures'
@@ -113,9 +118,18 @@ class TodaysView extends ConsumerWidget {
           : selectedView == 'InHouse'
               ? inHouse
               : arrivals;
+
       rows = filtered
-          .map((booking) => _bookingRow(context, ref, propertyId, booking,
-              roomMapping, paymentStatusMapping))
+          .map(
+            (booking) => _bookingRow(
+              context,
+              ref,
+              propertyId,
+              booking,
+              roomMapping,
+              paymentStatusMapping,
+            ),
+          )
           .toList();
     }
 
@@ -135,9 +149,9 @@ class TodaysView extends ConsumerWidget {
                     arrivals: arrivals.length,
                     inHouse: inHouse.length,
                     departures: departures.length,
-                    onTap: (category) => ref
-                        .read(selectedViewProvider.notifier)
-                        .state = category,
+                    onTap: (category) {
+                      ref.read(selectedViewProvider.notifier).state = category;
+                    },
                   ),
                   const SizedBox(height: 8),
                   StatusCards(
@@ -145,8 +159,9 @@ class TodaysView extends ConsumerWidget {
                     toCleanRoomIDs: toCleanRoomIDs,
                     roomMapping: roomMapping,
                     selectedGroup: selectedView,
-                    onTap: (group) =>
-                        ref.read(selectedViewProvider.notifier).state = group!,
+                    onTap: (group) {
+                      ref.read(selectedViewProvider.notifier).state = group!;
+                    },
                   ),
                   const Divider(height: 24),
                 ],
@@ -161,8 +176,7 @@ class TodaysView extends ConsumerWidget {
     );
   }
 
-  bool isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   Widget _bookingRow(
     BuildContext context,
@@ -182,7 +196,7 @@ class TodaysView extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 1.5,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

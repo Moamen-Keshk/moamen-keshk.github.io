@@ -51,98 +51,126 @@ class BookingDetailsBar extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Expanded(
-                      child: Text(
-                        '${booking.firstName} ${booking.lastName}',
-                        style: const TextStyle(fontSize: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${booking.firstName} ${booking.lastName}',
+                          style: const TextStyle(fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        booking.email ?? 'N/A',
-                        style: const TextStyle(fontSize: 13),
+                      Expanded(
+                        child: _EllipsisTooltipText(
+                          booking.email ?? 'N/A',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        booking.phone ?? 'N/A',
-                        style: const TextStyle(fontSize: 13),
+                      Expanded(
+                        child: Text(
+                          booking.phone ?? 'N/A',
+                          style: const TextStyle(fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '${booking.numberOfNights} nights',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          '${booking.numberOfNights} nights',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
+                          style: const TextStyle(fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ]),
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Row(children: [
-                    SizedBox(
-                      width: 130,
-                      child: Text(
-                        paymentStatusMapping[booking.paymentStatusID] ?? '',
-                        style: const TextStyle(fontSize: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 130,
+                        child: Text(
+                          paymentStatusMapping[booking.paymentStatusID] ?? '',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Category: ${categoryMapping[roomsCategoryMapping[booking.roomID]] ?? 'N/A'}',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          'Category: ${categoryMapping[roomsCategoryMapping[booking.roomID]] ?? 'N/A'}',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'created: ${_format.format(booking.bookingDate)}',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          'created: ${_format.format(booking.bookingDate)}',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Adults: ${booking.numberOfAdults}',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          'Adults: ${booking.numberOfAdults}',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Children: ${booking.numberOfChildren}',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          'Children: ${booking.numberOfChildren}',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Price: ${booking.rate}',
-                        style: const TextStyle(fontSize: 14),
+                      Expanded(
+                        child: Text(
+                          'Price: ${booking.rate}',
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Note: ${booking.note ?? ''}',
-                        style: const TextStyle(fontSize: 13),
+                      Expanded(
+                        flex: 2,
+                        child: _EllipsisTooltipText(
+                          'Note: ${booking.note ?? ''}',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        _showEditBookingDialog(context, booking, ref);
-                      },
-                    )
-                  ])
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          _showEditBookingDialog(context, booking, ref);
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -150,7 +178,10 @@ class BookingDetailsBar extends ConsumerWidget {
   }
 
   void _showEditBookingDialog(
-      BuildContext context, BookingVM booking, WidgetRef ref) {
+    BuildContext context,
+    BookingVM booking,
+    WidgetRef ref,
+  ) {
     showDialog(
       context: context,
       builder: (context) {
@@ -166,6 +197,63 @@ class BookingDetailsBar extends ConsumerWidget {
             },
             ref: ref,
           ),
+        );
+      },
+    );
+  }
+}
+
+/// Single-line text with ellipsis.
+/// Tooltip is shown ONLY if the text is actually truncated (overflowing).
+class _EllipsisTooltipText extends StatelessWidget {
+  final String text;
+  final TextStyle? style;
+
+  const _EllipsisTooltipText(
+    this.text, {
+    this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final value = text.trim();
+    final message = value.isEmpty ? 'N/A' : value;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final effectiveStyle = style ?? DefaultTextStyle.of(context).style;
+
+        final span = TextSpan(
+          text: message,
+          style: effectiveStyle,
+        );
+
+        final painter = TextPainter(
+          text: span,
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+          ellipsis: '…',
+        );
+
+        painter.layout(maxWidth: constraints.maxWidth);
+
+        final isOverflowing = painter.didExceedMaxLines;
+
+        final textWidget = Text(
+          message,
+          style: effectiveStyle,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+        );
+
+        if (!isOverflowing) return textWidget;
+
+        return Tooltip(
+          message: message,
+          waitDuration: const Duration(milliseconds: 350),
+          showDuration: const Duration(seconds: 6),
+          child: textWidget,
         );
       },
     );

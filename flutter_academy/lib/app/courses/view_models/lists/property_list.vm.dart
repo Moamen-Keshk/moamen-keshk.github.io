@@ -1,6 +1,6 @@
 import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/res/property.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class PropertyListVM extends StateNotifier<List<PropertyVM>> {
   final PropertyService propertyService;

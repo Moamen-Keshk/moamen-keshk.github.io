@@ -1,106 +1,113 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-const baseURL = "http://127.0.0.1:5000";
-List<Object> resData = [];
+const String baseURL = "http://127.0.0.1:5000";
+final List<Object> resData = <Object>[];
 
 Future<bool> sendPostRequest(
-    Map<String, dynamic> body, String? idToken, String apiURL) async {
+  Map<String, dynamic> body,
+  String? idToken,
+  String apiURL,
+) async {
   try {
-    final response = await http.post(
+    final http.Response response = await http.post(
       Uri.parse('$baseURL$apiURL'),
-      headers: {
+      headers: <String, String>{
         "Content-Type": "application/json",
-        "Authorization": "Bearer $idToken"
+        if (idToken != null) "Authorization": "Bearer $idToken",
       },
       body: jsonEncode(body),
     );
 
     return response.statusCode == 201;
-  } catch (e) {
+  } catch (_) {
     return false;
   }
 }
 
-Future<dynamic> sendGetRequest(idToken, String apiURL) async {
+Future<dynamic> sendGetRequest(String? idToken, String apiURL) async {
   try {
-    final query = await http.get(
+    final http.Response query = await http.get(
       Uri.parse(baseURL + apiURL),
-      headers: {
+      headers: <String, String>{
         "Content-Type": "application/json",
-        "Authorization": "Bearer $idToken",
+        if (idToken != null) "Authorization": "Bearer $idToken",
       },
     );
 
-    if (query.statusCode == 201) {
-      var data = jsonDecode(query.body);
+    if (query.statusCode == 200 || query.statusCode == 201) {
+      final dynamic data = jsonDecode(query.body);
       return data;
-    } else {
-      return null;
     }
+    return null;
   } on Exception {
     return null;
   }
 }
 
 Future<dynamic> sendGetWithParamsRequest(
-    idToken, String apiURL, Map<String, String?> queryParams) async {
+  String? idToken,
+  String apiURL,
+  Map<String, String?> queryParams,
+) async {
   try {
-    final url = Uri.parse(baseURL + apiURL);
-    final uriWithParams = url.replace(queryParameters: queryParams);
-    final query = await http.get(
+    final Uri url = Uri.parse(baseURL + apiURL);
+    final Uri uriWithParams = url.replace(queryParameters: queryParams);
+
+    final http.Response query = await http.get(
       uriWithParams,
-      headers: {
+      headers: <String, String>{
         "Content-Type": "application/json",
-        "Authorization": "Bearer $idToken"
+        if (idToken != null) "Authorization": "Bearer $idToken",
       },
     );
 
-    if (query.statusCode == 201) {
-      var data = jsonDecode(query.body);
+    if (query.statusCode == 200 || query.statusCode == 201) {
+      final dynamic data = jsonDecode(query.body);
       return data;
-    } else {
-      return null;
     }
+    return null;
   } on Exception {
     return null;
   }
 }
 
 Future<bool> sendPutRequest(
-    Map<String, dynamic> body, String? idToken, String apiURL) async {
+  Map<String, dynamic> body,
+  String? idToken,
+  String apiURL,
+) async {
   try {
-    final response = await http.put(
+    final http.Response response = await http.put(
       Uri.parse('$baseURL$apiURL'),
-      headers: {
+      headers: <String, String>{
         "Content-Type": "application/json",
-        "Authorization": "Bearer $idToken",
+        if (idToken != null) "Authorization": "Bearer $idToken",
       },
       body: jsonEncode(body),
     );
 
     return response.statusCode == 201 || response.statusCode == 204;
-  } catch (e) {
+  } catch (_) {
     return false;
   }
 }
 
 Future<dynamic> sendDeleteRequest(String? idToken, String apiURL) async {
   try {
-    final response = await http.delete(
+    final http.Response response = await http.delete(
       Uri.parse('$baseURL$apiURL'),
-      headers: {
+      headers: <String, String>{
         "Content-Type": "application/json",
-        "Authorization": "Bearer $idToken",
+        if (idToken != null) "Authorization": "Bearer $idToken",
       },
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
-    } else {
-      return null;
     }
-  } catch (e) {
+    return null;
+  } catch (_) {
     return null;
   }
 }

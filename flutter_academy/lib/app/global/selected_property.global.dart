@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 final ScrollController scrollController1 = ScrollController();
 final ScrollController scrollController2 = ScrollController();

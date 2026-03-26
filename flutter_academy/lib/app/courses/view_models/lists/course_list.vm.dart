@@ -1,6 +1,6 @@
 import 'package:flutter_academy/app/courses/view_models/course.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/res/course.service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class CourseListVM extends StateNotifier<List<CourseVM>> {
   CourseListVM() : super(const []) {

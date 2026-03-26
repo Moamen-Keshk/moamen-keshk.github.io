@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/views/new_booking.view.dart';
 import 'package:flutter_academy/app/courses/views/new_block.view.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.da
 import 'package:flutter_academy/app/courses/view_models/lists/block_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 

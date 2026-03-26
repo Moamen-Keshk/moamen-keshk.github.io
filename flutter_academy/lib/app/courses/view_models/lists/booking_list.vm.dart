@@ -1,7 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/infrastructure/courses/res/booking.service.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class BookingListVM extends StateNotifier<List<BookingVM>> {
   final BookingService bookingService;
@@ -9,9 +9,16 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   final int year;
   final int month;
 
-  BookingListVM(this.propertyId, this.year, this.month, this.bookingService)
-      : super(const []) {
-    fetchBookings();
+  BookingListVM(
+    this.propertyId,
+    this.year,
+    this.month,
+    this.bookingService, {
+    bool autoFetch = true,
+  }) : super(const []) {
+    if (autoFetch) {
+      fetchBookings();
+    }
   }
 
   Future<void> fetchBookings() async {
@@ -19,8 +26,9 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     state = [...res.map((booking) => BookingVM(booking))];
   }
 
-  Future<void> fetchBookingsByDate(DateTime date) async {
-    final res = await bookingService.getBookingsByDate(propertyId, date);
+  Future<void> fetchBookingsByDate(DateTime date, String bookingState) async {
+    final res =
+        await bookingService.getBookingsByDate(propertyId, date, bookingState);
     state = [...res.map((booking) => BookingVM(booking))];
   }
 
@@ -33,7 +41,9 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   }
 
   Future<bool> editBooking(
-      int bookingId, Map<String, dynamic> updatedData) async {
+    int bookingId,
+    Map<String, dynamic> updatedData,
+  ) async {
     try {
       final success = await bookingService.editBooking(bookingId, updatedData);
       if (success) {
@@ -75,21 +85,29 @@ final bookingListVM =
     StateNotifierProvider<BookingListVM, List<BookingVM>>((ref) {
   final propertyId = ref.watch(selectedPropertyVM) ?? 0;
   final selectedMonth = ref.watch(selectedMonthVM);
+
   return BookingListVM(
     propertyId,
     selectedMonth.year,
     selectedMonth.month,
     BookingService(),
+    autoFetch: true,
   );
 });
 
-final bookingListByDateVM = StateNotifierProvider.family<BookingListVM,
-    List<BookingVM>, (int propertyId, DateTime date)>(
-  (ref, args) {
-    final (propertyId, date) = args;
-    return BookingListVM(propertyId, date.year, date.month, BookingService())
-      ..fetchBookingsByDate(date);
-  },
-);
+final bookingListByDateVM = StateNotifierProvider.family<
+    BookingListVM,
+    List<BookingVM>,
+    (int propertyId, DateTime date, String bookingState)>((ref, args) {
+  final (propertyId, date, bookingState) = args;
+
+  return BookingListVM(
+    propertyId,
+    date.year,
+    date.month,
+    BookingService(),
+    autoFetch: false,
+  )..fetchBookingsByDate(date, bookingState);
+});
 
 final bookingIdProvider = StateProvider<int?>((ref) => null);

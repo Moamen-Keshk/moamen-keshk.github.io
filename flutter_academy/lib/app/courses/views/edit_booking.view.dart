@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
@@ -6,7 +7,6 @@ import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/rate_plan_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:collection/collection.dart';
 
 class RateResolver {
   final WidgetRef ref;

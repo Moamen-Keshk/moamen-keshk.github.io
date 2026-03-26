@@ -1,10 +1,10 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/widgets/rate_input.widget.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room_online.model.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:collection/collection.dart';
 
 class RateBadgeWidget extends ConsumerWidget {
   final String roomId;

@@ -2,7 +2,7 @@ import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/res/floor.service.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 class FloorListVM extends StateNotifier<List<FloorVM>> {
   bool _disposed = false;
