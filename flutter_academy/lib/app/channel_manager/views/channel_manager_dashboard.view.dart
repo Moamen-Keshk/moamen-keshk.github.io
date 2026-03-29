@@ -52,10 +52,10 @@ class ChannelManagerView extends ConsumerWidget {
                   // NEW: Use the SupportedChannel object from the DB
                   final SupportedChannel channelInfo = supportedChannels[index];
 
-                  // Match by channel name to align with the current connection model
+                  // Match by channel code to align with the current connection model
                   final matchedConnections = activeConnections.where((conn) =>
-                      conn.channelName.toLowerCase() ==
-                      channelInfo.name.toLowerCase());
+                      conn.channelCode.toLowerCase() ==
+                      channelInfo.code.toLowerCase());
 
                   final ChannelConnection? connection =
                       matchedConnections.isNotEmpty
@@ -391,31 +391,36 @@ class ChannelManagerView extends ConsumerWidget {
                   onPressed: () async {
                     if (!formKey.currentState!.validate()) return;
 
+                    // 1. Get the current property ID
                     final propertyId = ref.read(selectedPropertyVM);
-                    if (propertyId == null || propertyId == 0) return;
 
+                    if (propertyId == null) return;
+
+                    // 2. Call the ViewModel, passing the channel.code!
                     final success = await ref
                         .read(channelConnectionListVMProvider.notifier)
-                        .connectChannel(
+                        .connectNewChannel(
                           propertyId: propertyId,
-                          channelId: channel.id,
-                          channelName: channel.name,
-                          hotelIdOnChannel: hotelIdController.text.trim(),
+                          channelCode: channel.code, // <-- HERE IT IS!
+                          hotelId: hotelIdController.text.trim(),
                           username: usernameController.text.trim(),
                           password: passwordController.text.trim(),
                         );
 
-                    if (!context.mounted) return;
-                    Navigator.of(dialogContext).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success
-                              ? '${channel.name} connected for hotel ${hotelIdController.text.trim()}.'
-                              : 'Failed to connect ${channel.name}. Please try again.',
+                    if (context.mounted) {
+                      Navigator.of(dialogContext).pop(); // Close dialog
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success
+                                ? '${channel.name} connected successfully!'
+                                : 'Failed to connect to ${channel.name}. Check credentials.',
+                          ),
+                          backgroundColor: success ? Colors.green : Colors.red,
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                   child: const Text('Connect'),
                 ),
@@ -434,6 +439,7 @@ class ChannelManagerView extends ConsumerWidget {
   Widget _buildStatusBadge(String? status) {
     Color bgColor;
     String text;
+
     switch (status?.toLowerCase()) {
       case 'active':
         bgColor = Colors.green;
@@ -447,10 +453,16 @@ class ChannelManagerView extends ConsumerWidget {
         bgColor = Colors.orange;
         text = "PENDING";
         break;
+      case 'inactive':
+        bgColor = Colors.grey;
+        text = "INACTIVE"; // Changed from DISCONNECTED
+        break;
       default:
+        // This handles cases where connection == null
         bgColor = Colors.grey;
         text = "DISCONNECTED";
     }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(

@@ -3,41 +3,59 @@ import 'dart:convert';
 class ChannelConnection {
   final String id;
   final int propertyId;
-  final int channelId; // The internal ID for the OTA (e.g., 1 for Booking.com)
-  final String channelName; // e.g., "Booking.com", "Expedia", "Airbnb"
-  final String
-      hotelIdOnChannel; // Your property's specific ID on the OTA's platform
-  final String status; // e.g., 'active', 'inactive', 'pending', 'error'
-  final DateTime?
-      lastSync; // When the channel manager last synced with this OTA
+  final String channelCode; // MATCHES FLASK: 'channel_code'
+  final String status;
+  final Map<String, dynamic>
+      credentialsJson; // MATCHES FLASK: 'credentials_json'
+  final Map<String, dynamic> settingsJson; // MATCHES FLASK: 'settings_json'
+  final bool pollingEnabled;
+  final DateTime? lastSuccessAt; // MATCHES FLASK: 'last_success_at'
+  final DateTime? lastErrorAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   ChannelConnection({
     required this.id,
     required this.propertyId,
-    required this.channelId,
-    required this.channelName,
-    required this.hotelIdOnChannel,
+    required this.channelCode,
     required this.status,
-    this.lastSync,
+    this.credentialsJson = const {},
+    this.settingsJson = const {},
+    this.pollingEnabled = true,
+    this.lastSuccessAt,
+    this.lastErrorAt,
+    this.createdAt,
+    this.updatedAt,
   });
+
+  // NEW: A helpful getter to extract the hotel ID from the JSON payload easily
+  String get hotelIdOnChannel => credentialsJson['hotel_id']?.toString() ?? '';
 
   ChannelConnection copyWith({
     String? id,
     int? propertyId,
-    int? channelId,
-    String? channelName,
-    String? hotelIdOnChannel,
+    String? channelCode,
     String? status,
-    DateTime? lastSync,
+    Map<String, dynamic>? credentialsJson,
+    Map<String, dynamic>? settingsJson,
+    bool? pollingEnabled,
+    DateTime? lastSuccessAt,
+    DateTime? lastErrorAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return ChannelConnection(
       id: id ?? this.id,
       propertyId: propertyId ?? this.propertyId,
-      channelId: channelId ?? this.channelId,
-      channelName: channelName ?? this.channelName,
-      hotelIdOnChannel: hotelIdOnChannel ?? this.hotelIdOnChannel,
+      channelCode: channelCode ?? this.channelCode,
       status: status ?? this.status,
-      lastSync: lastSync ?? this.lastSync,
+      credentialsJson: credentialsJson ?? this.credentialsJson,
+      settingsJson: settingsJson ?? this.settingsJson,
+      pollingEnabled: pollingEnabled ?? this.pollingEnabled,
+      lastSuccessAt: lastSuccessAt ?? this.lastSuccessAt,
+      lastErrorAt: lastErrorAt ?? this.lastErrorAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -45,38 +63,49 @@ class ChannelConnection {
     return {
       'id': id,
       'property_id': propertyId,
-      'channel_id': channelId,
-      'channel_name': channelName,
-      'hotel_id_on_channel': hotelIdOnChannel,
+      'channel_code': channelCode,
       'status': status,
-      'last_sync': lastSync?.toIso8601String(),
+      'credentials_json': credentialsJson,
+      'settings_json': settingsJson,
+      'polling_enabled': pollingEnabled,
+      'last_success_at': lastSuccessAt?.toIso8601String(),
+      'last_error_at': lastErrorAt?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
-  }
-
-  factory ChannelConnection.fromMap(String id, Map<String, dynamic> map) {
-    return ChannelConnection(
-      id: id,
-      propertyId: map['property_id'] ?? 0,
-      channelId: map['channel_id'] ?? 0,
-      channelName: map['channel_name'] ?? '',
-      hotelIdOnChannel: map['hotel_id_on_channel']?.toString() ?? '',
-      status: map['status'] ?? 'inactive',
-      lastSync:
-          map['last_sync'] != null ? DateTime.tryParse(map['last_sync']) : null,
-    );
   }
 
   factory ChannelConnection.fromResMap(Map<String, dynamic> map) {
     return ChannelConnection(
       id: map['id']?.toString() ?? '',
       propertyId: map['property_id'] ?? 0,
-      channelId: map['channel_id'] ?? 0,
-      channelName: map['channel_name'] ?? '',
-      hotelIdOnChannel: map['hotel_id_on_channel']?.toString() ?? '',
+      channelCode: map['channel_code'] ?? '', // PERFECT MATCH
       status: map['status'] ?? 'inactive',
-      lastSync:
-          map['last_sync'] != null ? DateTime.tryParse(map['last_sync']) : null,
+      credentialsJson: map['credentials_json'] != null
+          ? Map<String, dynamic>.from(map['credentials_json'])
+          : {},
+      settingsJson: map['settings_json'] != null
+          ? Map<String, dynamic>.from(map['settings_json'])
+          : {},
+      pollingEnabled: map['polling_enabled'] ?? true,
+      lastSuccessAt: map['last_success_at'] != null
+          ? DateTime.tryParse(map['last_success_at'])
+          : null,
+      lastErrorAt: map['last_error_at'] != null
+          ? DateTime.tryParse(map['last_error_at'])
+          : null,
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'])
+          : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'])
+          : null,
     );
+  }
+
+  factory ChannelConnection.fromMap(String id, Map<String, dynamic> map) {
+    final conn = ChannelConnection.fromResMap(map);
+    return conn.copyWith(id: id);
   }
 
   String toJson() => json.encode(toMap());
@@ -86,7 +115,7 @@ class ChannelConnection {
 
   @override
   String toString() {
-    return 'ChannelConnection(id: $id, propertyId: $propertyId, channelId: $channelId, channelName: $channelName, hotelIdOnChannel: $hotelIdOnChannel, status: $status, lastSync: $lastSync)';
+    return 'ChannelConnection(id: $id, propertyId: $propertyId, channelCode: $channelCode, status: $status)';
   }
 
   @override
@@ -96,21 +125,15 @@ class ChannelConnection {
     return other is ChannelConnection &&
         other.id == id &&
         other.propertyId == propertyId &&
-        other.channelId == channelId &&
-        other.channelName == channelName &&
-        other.hotelIdOnChannel == hotelIdOnChannel &&
-        other.status == status &&
-        other.lastSync == lastSync;
+        other.channelCode == channelCode &&
+        other.status == status;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
         propertyId.hashCode ^
-        channelId.hashCode ^
-        channelName.hashCode ^
-        hotelIdOnChannel.hashCode ^
-        status.hashCode ^
-        lastSync.hashCode;
+        channelCode.hashCode ^
+        status.hashCode;
   }
 }

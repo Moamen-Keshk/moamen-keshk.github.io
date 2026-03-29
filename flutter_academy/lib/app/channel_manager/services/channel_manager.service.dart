@@ -38,8 +38,7 @@ class ChannelManagerService {
 
   Future<bool> connectChannel({
     required int propertyId,
-    required int channelId,
-    required String channelName,
+    required String channelCode, // NEW: Expecting the code, not ID or Name
     required String hotelIdOnChannel,
     required String username,
     required String password,
@@ -47,11 +46,14 @@ class ChannelManagerService {
     return await sendPostRequest(
       {
         'property_id': propertyId,
-        'channel_id': channelId,
-        'channel_name': channelName,
-        'hotel_id_on_channel': hotelIdOnChannel,
-        'username': username,
-        'password': password,
+        'channel_code': channelCode, // Pass the code here
+        'status': 'active',
+        // Structure the credentials as JSON to match your Flask backend model
+        'credentials_json': {
+          'hotel_id': hotelIdOnChannel,
+          'username': username,
+          'password': password,
+        }
       },
       await _getToken(),
       '$basePath/connections',
@@ -183,13 +185,14 @@ class ChannelManagerService {
   Future<List<SupportedChannel>> getSupportedChannels() async {
     final response = await sendGetRequest(
       await _getToken(),
-      '$basePath/supported-channels',
+      '$basePath/supported_channels',
     );
 
-    // Note: Assuming your backend returns a raw JSON list [ {..}, {..} ]
-    // rather than wrapped in a 'data' object like the other endpoints.
-    if (response != null && response is List) {
-      return response.map((item) => SupportedChannel.fromMap(item)).toList();
+    // UPDATED: Now expects the 'data' wrapper to match your Flask backend
+    if (response != null && response['data'] is List) {
+      return (response['data'] as List)
+          .map((item) => SupportedChannel.fromMap(item))
+          .toList();
     }
     throw Exception('Failed to fetch supported channels.');
   }
@@ -198,7 +201,7 @@ class ChannelManagerService {
     return await sendPostRequest(
       payload,
       await _getToken(),
-      '$basePath/supported-channels',
+      '$basePath/supported_channels',
     );
   }
 }

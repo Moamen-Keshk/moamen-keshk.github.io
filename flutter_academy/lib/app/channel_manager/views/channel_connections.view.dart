@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart'; // For formatting the lastSync date
+import 'package:intl/intl.dart'; // For formatting the last sync date
 import 'package:flutter_academy/app/channel_manager/view_models/channel_connection_list.vm.dart';
 
 class ChannelConnectionsView extends ConsumerWidget {
@@ -32,9 +32,9 @@ class ChannelConnectionsView extends ConsumerWidget {
                   ? Colors.green
                   : Colors.orange;
 
-              // Format the last sync time
-              final lastSyncText = conn.lastSync != null
-                  ? DateFormat('MMM dd, h:mm a').format(conn.lastSync!)
+              // Format the last successful sync time
+              final lastSyncText = conn.lastSuccessAt != null
+                  ? DateFormat('MMM dd, h:mm a').format(conn.lastSuccessAt!)
                   : 'Never synced';
 
               return Card(
@@ -46,7 +46,7 @@ class ChannelConnectionsView extends ConsumerWidget {
                     child: const Icon(Icons.public, color: Colors.blue),
                   ),
                   title: Text(
-                    conn.channelName,
+                    conn.channelCode,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Column(

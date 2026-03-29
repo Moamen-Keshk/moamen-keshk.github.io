@@ -276,7 +276,7 @@ class _ChannelRoomMappingViewState
                                     final channelCode = matchingConnection ==
                                             null
                                         ? ''
-                                        : matchingConnection.channelName
+                                        : matchingConnection.channelCode
                                             .toLowerCase()
                                             .replaceAll(
                                                 RegExp(r'[^a-z0-9]+'), '_')

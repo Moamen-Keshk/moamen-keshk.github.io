@@ -194,8 +194,8 @@ class _ChannelRateMappingViewState
                           items: localRates.map((rate) {
                             return DropdownMenuItem<String>(
                               value: rate.id,
-                              child: Text(
-                                  rate.name), // Adjust based on your Local Rate Plan model
+                              child: Text(rate
+                                  .name), // Adjust based on your Local Rate Plan model
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -271,11 +271,11 @@ class _ChannelRateMappingViewState
                                       }
                                     }
 
-                                    // Safely derive the channel_code from the channelName (e.g. "Booking.com" -> "booking_com")
+                                    // Safely derive the channel_code from the channelCode (e.g. "Booking.com" -> "booking_com")
                                     final channelCode = matchingConnection ==
                                             null
                                         ? ''
-                                        : matchingConnection.channelName
+                                        : matchingConnection.channelCode
                                             .toLowerCase()
                                             .replaceAll(
                                                 RegExp(r'[^a-z0-9]+'), '_')
