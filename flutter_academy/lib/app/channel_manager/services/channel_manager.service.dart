@@ -7,6 +7,7 @@ import 'package:flutter_academy/app/channel_manager/models/channel_room_map.dart
 import 'package:flutter_academy/app/channel_manager/models/channel_rate_plan_map.dart';
 import 'package:flutter_academy/app/channel_manager/models/external_room.dart';
 import 'package:flutter_academy/app/channel_manager/models/external_rate_plan.dart';
+import 'package:flutter_academy/app/channel_manager/models/supported_channel.dart';
 
 class ChannelManagerService {
   final String basePath = '/channel_manager';
@@ -33,6 +34,28 @@ class ChannelManagerService {
           .toList();
     }
     throw Exception('Failed to load channel connections.');
+  }
+
+  Future<bool> connectChannel({
+    required int propertyId,
+    required int channelId,
+    required String channelName,
+    required String hotelIdOnChannel,
+    required String username,
+    required String password,
+  }) async {
+    return await sendPostRequest(
+      {
+        'property_id': propertyId,
+        'channel_id': channelId,
+        'channel_name': channelName,
+        'hotel_id_on_channel': hotelIdOnChannel,
+        'username': username,
+        'password': password,
+      },
+      await _getToken(),
+      '$basePath/connections',
+    );
   }
 
   Future<bool> disconnectChannel(String connectionId) async {
@@ -151,5 +174,31 @@ class ChannelManagerService {
           .toList();
     }
     throw Exception('Failed to fetch external rate plans.');
+  }
+
+// ==========================================
+  // SUPPORTED CHANNELS ENDPOINTS
+  // ==========================================
+
+  Future<List<SupportedChannel>> getSupportedChannels() async {
+    final response = await sendGetRequest(
+      await _getToken(),
+      '$basePath/supported-channels',
+    );
+
+    // Note: Assuming your backend returns a raw JSON list [ {..}, {..} ]
+    // rather than wrapped in a 'data' object like the other endpoints.
+    if (response != null && response is List) {
+      return response.map((item) => SupportedChannel.fromMap(item)).toList();
+    }
+    throw Exception('Failed to fetch supported channels.');
+  }
+
+  Future<bool> addSupportedChannel(Map<String, dynamic> payload) async {
+    return await sendPostRequest(
+      payload,
+      await _getToken(),
+      '$basePath/supported-channels',
+    );
   }
 }

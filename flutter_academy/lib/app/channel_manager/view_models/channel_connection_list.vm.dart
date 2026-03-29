@@ -21,6 +21,32 @@ class ChannelConnectionListNotifier
     return await service.getChannelConnections(propertyId);
   }
 
+  Future<bool> connectChannel({
+    required int propertyId,
+    required int channelId,
+    required String channelName,
+    required String hotelIdOnChannel,
+    required String username,
+    required String password,
+  }) async {
+    final service = ref.read(channelManagerServiceProvider);
+    final success = await service.connectChannel(
+      propertyId: propertyId,
+      channelId: channelId,
+      channelName: channelName,
+      hotelIdOnChannel: hotelIdOnChannel,
+      username: username,
+      password: password,
+    );
+
+    if (success) {
+      ref.invalidateSelf();
+      await future;
+    }
+
+    return success;
+  }
+
   /// Disconnects an OTA from the property
   Future<bool> disconnectChannel(String connectionId) async {
     final service = ref.read(channelManagerServiceProvider);
