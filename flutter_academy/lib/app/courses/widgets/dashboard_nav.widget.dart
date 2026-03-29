@@ -158,7 +158,21 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 child: const Text("Bookings"),
               ),
 
-              /// 💡 NEW: Settings Dropdown
+              // 💡 OPTION 1: Standalone TextButton for Channels
+              if (selectedProperty !=
+                  null) // Only show if a property is selected
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor:
+                        Colors.blueAccent, // Highlighting it slightly
+                  ),
+                  onPressed: () {
+                    ref.read(routerProvider).push('channel_manager');
+                  },
+                  child: const Text("Channels"),
+                ),
+
+              /// 💡 Settings Dropdown (Includes OPTION 2 for Channels)
               PopupMenuButton<String>(
                 icon: const Icon(Icons.settings),
                 onSelected: (value) {
@@ -176,6 +190,9 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     case 'seasons':
                       router.push('hotel_seasons');
                       break;
+                    case 'channels':
+                      router.push('channel_manager');
+                      break;
                   }
                 },
                 itemBuilder: (context) => const [
@@ -183,6 +200,9 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   PopupMenuItem(value: 'rate_plans', child: Text('Rate Plans')),
                   PopupMenuItem(value: 'categories', child: Text('Categories')),
                   PopupMenuItem(value: 'seasons', child: Text('Seasons')),
+                  PopupMenuItem(
+                      value: 'channels',
+                      child: Text('Channel Manager')), // 💡 Added here
                 ],
               ),
 

@@ -27,6 +27,7 @@ import 'package:flutter_academy/app/courses/pages/edit_rate_plan.page.dart';
 import 'package:flutter_academy/app/courses/pages/hotel_rate_plan.page.dart';
 import 'package:flutter_academy/app/courses/pages/rate_plan.page.dart';
 import 'package:flutter_academy/app/courses/pages/all_notifications.page.dart';
+import 'package:flutter_academy/app/channel_manager/pages/channel_manager_dashboard.page.dart';
 
 class AppRouterDelegate extends RouterDelegate<Object>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<Object> {
@@ -116,6 +117,9 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'hotel_rate_plan':
         _pages.add(_page(const HotelRatePlansPage(), 'hotel_rate_plan'));
+        break;
+      case 'channel_manager':
+        _pages.add(_page(const ChannelManagerPage(), 'channel_manager'));
         break;
       case 'new_season':
         _pages.add(_page(const NewSeasonPage(), 'new_season'));
