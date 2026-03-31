@@ -18,12 +18,16 @@ class _RegisterViewState extends State<RegisterView> {
   final TextEditingController _password = TextEditingController();
   final TextEditingController _confirmPassword = TextEditingController();
 
+  // ---> NEW: Controller for the Invite Code <---
+  final TextEditingController _inviteCode = TextEditingController();
+
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _password.dispose();
     _confirmPassword.dispose();
+    _inviteCode.dispose(); // Dispose the new controller
     super.dispose();
   }
 
@@ -45,6 +49,12 @@ class _RegisterViewState extends State<RegisterView> {
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(labelText: "enter name"),
+                validator: (text) {
+                  if (text == null || text.isEmpty) {
+                    return 'Can\'t be empty';
+                  }
+                  return null;
+                },
               ),
               TextFormField(
                 controller: _email,
@@ -59,8 +69,9 @@ class _RegisterViewState extends State<RegisterView> {
                   if (text == null || text.isEmpty) {
                     return 'Can\'t be empty';
                   }
-                  if (text.length < 4) {
-                    return 'Too short';
+                  if (text.length < 6) {
+                    // Changed to 6 as Firebase requires 6 chars minimum
+                    return 'Too short, minimum 6 characters';
                   }
                   return null;
                 },
@@ -77,20 +88,45 @@ class _RegisterViewState extends State<RegisterView> {
                   return null;
                 },
               ),
+              const SizedBox(height: 10.0),
+
+              // ---> NEW: Optional Invite Code Field <---
+              TextFormField(
+                controller: _inviteCode,
+                decoration: const InputDecoration(
+                  labelText: "Invite Code (Optional)",
+                  helperText: "Enter the code emailed to you by your manager.",
+                ),
+              ),
+
               const SizedBox(height: 20.0),
-              Consumer(builder: (context, ref, child) {
+              Consumer(builder: (_, ref, child) {
                 return ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      if (await ref.read(authVM).register(
-                          name: _name.text,
-                          email: _email.text,
-                          password: _password.text)) {
-                        //logged in
+                      final authState = ref.read(authVM);
+
+                      // ---> PASS INVITE CODE TO VIEWMODEL <---
+                      bool success = await authState.register(
+                        name: _name.text.trim(),
+                        email: _email.text.trim(),
+                        password: _password.text,
+                        inviteCode: _inviteCode.text.trim(),
+                      );
+
+                      if (!mounted) return;
+
+                      if (success) {
+                        // Registration & Backend sync succeeded
                         ref.read(routerProvider).push('email_verification');
                       } else {
-                        // error
-                        debugPrint(ref.read(authVM).error);
+                        // Display error message to the user
+                        debugPrint(authState.error);
+                        ScaffoldMessenger.of(this.context)
+                            .showSnackBar(SnackBar(
+                          content: Text(authState.error),
+                          backgroundColor: Colors.red,
+                        ));
                       }
                     }
                   },
@@ -112,7 +148,7 @@ class _RegisterViewState extends State<RegisterView> {
         r'x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])';
     final regex = RegExp(pattern);
 
-    return value!.isNotEmpty && !regex.hasMatch(value)
+    return value != null && value.isNotEmpty && !regex.hasMatch(value)
         ? 'Enter a valid email address'
         : null;
   }

@@ -49,24 +49,64 @@ class _LoginViewState extends ConsumerState<LoginView> {
               obscureText: true,
             ),
             const SizedBox(height: 20.0),
-            Consumer(builder: (context, ref, child) {
+            Consumer(builder: (_, ref, child) {
               return ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    if (await ref
+                    // 1. Authenticate with Firebase
+                    bool success = await ref
                         .read(authVM)
-                        .login(email: _email.text, password: _password.text)) {
-                      if (ref.read(authVM).isEmailVerified) {
-                        ref.read(routerProvider).replaceAllWith('dashboard');
-                      } else {
-                        ref.read(authVM).verifyEmailVerfication();
+                        .login(email: _email.text, password: _password.text);
+
+                    if (!mounted) return;
+
+                    if (success) {
+                      final authState = ref.read(authVM);
+
+                      // 2. Check Firebase Email Verification
+                      if (!authState.isEmailVerified) {
+                        authState.verifyEmailVerfication();
                         ref.read(routerProvider).push('email_verification');
+                        return;
                       }
 
-                      //logged in
+                      // 3. Sync with Python Backend for Role & Status
+                      // We await this explicitly to ensure data is loaded before routing
+                      await authState.syncWithBackend();
+
+                      if (!mounted) return;
+
+                      // 4. Enforce Role Hierarchy & Status Rules
+                      final statusId = authState.user?.accountStatusId;
+
+                      if (statusId == 1) {
+                        // 1 = Pending
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    "Your account is Pending approval from an Admin.")));
+                        // Optionally: ref.read(routerProvider).push('pending_approval_page');
+                      } else if (statusId == 3) {
+                        // 3 = Suspended
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    "Your account is Suspended. Please contact management.")));
+                      } else if (statusId == 2) {
+                        // 2 = Active -> Safe to enter the app
+                        ref.read(routerProvider).replaceAllWith('dashboard');
+                      } else {
+                        // Unknown/Cancelled/Error
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    "Account status is invalid or cancelled.")));
+                      }
                     } else {
-                      // error
+                      // error: Firebase login failed
                       debugPrint(ref.read(authVM).error);
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                          SnackBar(content: Text(ref.read(authVM).error)));
                     }
                   }
                 },

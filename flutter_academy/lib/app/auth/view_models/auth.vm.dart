@@ -35,17 +35,31 @@ class AuthVM extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(
-      {required String name,
-      required String email,
-      required String password}) async {
+  // UPDATED: Now accepts an optional inviteCode
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    String? inviteCode,
+  }) async {
     try {
       await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
+
+      // Build the request body dynamically
+      final Map<String, dynamic> body = {
+        "username": name,
+        "email": email,
+        "password": password
+      };
+
+      // If an invite code was provided, attach it to the backend payload
+      if (inviteCode != null && inviteCode.isNotEmpty) {
+        body["invite_code"] = inviteCode;
+      }
+
       if (!await sendPostRequest(
-          {"username": name, "email": email, "password": password},
-          await _auth.currentUser?.getIdToken(),
-          "/auth/register")) {
+          body, await _auth.currentUser?.getIdToken(), "/auth/register")) {
         _auth.currentUser?.delete();
         isLoggedIn = false;
         notifyListeners();
@@ -114,20 +128,53 @@ class AuthVM extends ChangeNotifier {
   }
 
   Future<void> subscribe() async {
-    _subscription = _auth.authStateChanges().listen((user) {
+    _subscription = _auth.authStateChanges().listen((user) async {
       if (user == null) {
         isLoggedIn = false;
         this.user = null;
         notifyListeners();
       } else {
+        // 1. Initial assignment with Firebase data
         this.user = UserVM(
             email: user.email ?? 'N/A',
             name: user.displayName ?? 'N/A',
             id: user.uid);
+
         isLoggedIn = true;
         notifyListeners();
+
+        // 2. Fetch extended user data (Role, Account Status) from your backend
+        await syncWithBackend();
       }
     });
+  }
+
+  Future<void> syncWithBackend() async {
+    if (_auth.currentUser == null) return;
+
+    try {
+      String? token = await _auth.currentUser?.getIdToken();
+
+      // Assumes you have a sendGetRequest in request.dart similar to sendPostRequest
+      // Adjust this call if your request.dart uses a slightly different signature
+      final response = await sendGetRequest(token, "/users");
+
+      if (response != null && response['status'] == 'success') {
+        final data = response['data'];
+
+        // Update the user with the properties fetched from your Flask backend
+        user = user?.copyWith(
+          accountStatusId:
+              data['account_status_id'] ?? 1, // Default to Pending (1)
+          role: data['role_name'],
+          propertyId: data['property_id'],
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      error = "Failed to sync with backend: $e";
+      notifyListeners();
+    }
   }
 
   Future<bool> logout() async {

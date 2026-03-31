@@ -1,7 +1,21 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
-const String baseURL = "http://127.0.0.1:5000";
+// 1. DYNAMIC BASE URL FIX
+// Automatically uses the correct localhost IP depending on the device running the app
+String getBaseUrl() {
+  if (kIsWeb) {
+    return "http://127.0.0.1:5000";
+  } else if (Platform.isAndroid) {
+    return "http://10.0.2.2:5000"; // Android Emulator host IP
+  } else {
+    return "http://127.0.0.1:5000"; // iOS Simulator or Desktop
+  }
+}
+
+final String baseURL = getBaseUrl();
 final List<Object> resData = <Object>[];
 
 Future<bool> sendPostRequest(
@@ -19,7 +33,8 @@ Future<bool> sendPostRequest(
       body: jsonEncode(body),
     );
 
-    return response.statusCode == 201;
+    // 2. STATUS CODE FIX: Accept 200 (OK) and 201 (Created)
+    return response.statusCode == 200 || response.statusCode == 201;
   } catch (_) {
     return false;
   }
@@ -51,8 +66,12 @@ Future<dynamic> sendGetWithParamsRequest(
   Map<String, String?> queryParams,
 ) async {
   try {
+    // Clean out null values from queryParams, as Uri.replace doesn't like null strings
+    final Map<String, dynamic> cleanParams = {}..addAll(queryParams);
+    cleanParams.removeWhere((key, value) => value == null);
+
     final Uri url = Uri.parse(baseURL + apiURL);
-    final Uri uriWithParams = url.replace(queryParameters: queryParams);
+    final Uri uriWithParams = url.replace(queryParameters: cleanParams);
 
     final http.Response query = await http.get(
       uriWithParams,
@@ -87,7 +106,10 @@ Future<bool> sendPutRequest(
       body: jsonEncode(body),
     );
 
-    return response.statusCode == 201 || response.statusCode == 204;
+    // 2. STATUS CODE FIX: Added 200, as our backend returns 200 for successful PUTs
+    return response.statusCode == 200 ||
+        response.statusCode == 201 ||
+        response.statusCode == 204;
   } catch (_) {
     return false;
   }
@@ -103,7 +125,11 @@ Future<dynamic> sendDeleteRequest(String? idToken, String apiURL) async {
       },
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
+    if (response.statusCode == 200 ||
+        response.statusCode == 201 ||
+        response.statusCode == 204) {
+      // Sometimes DELETE returns 204 No Content with an empty body, which breaks jsonDecode
+      if (response.body.isEmpty) return true;
       return jsonDecode(response.body);
     }
     return null;
