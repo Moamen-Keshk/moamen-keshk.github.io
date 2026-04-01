@@ -5,7 +5,7 @@ class StaffManagementService {
   final _auth = FirebaseAuth.instance;
 
   // --- GET ALL STAFF ---
-  Future<List<Map<String, dynamic>>> getStaffMembers(int propertyId) async {
+  Future<List<dynamic>> getStaffMembers(int propertyId) async {
     try {
       final response = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
@@ -13,15 +13,7 @@ class StaffManagementService {
       );
 
       if (response != null && response['status'] == 'success') {
-        final data = response['data'];
-        if (data is List) {
-          return data
-              .whereType<Map>()
-              .map((entry) => entry.map(
-                    (key, value) => MapEntry(key.toString(), value),
-                  ))
-              .toList();
-        }
+        return response['data'] as List<dynamic>;
       }
       return [];
     } catch (e) {
@@ -65,7 +57,25 @@ class StaffManagementService {
     }
   }
 
-  // --- REMOVE STAFF MEMBER ---
+  // --- UPDATE STAFF STATUS (SOFT DELETE / DEACTIVATE) ---
+  Future<bool> updateStaffStatus(
+      int propertyId, String userId, int statusId) async {
+    final payload = {
+      "status_id": statusId,
+    };
+
+    try {
+      return await sendPutRequest(
+        payload,
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/properties/$propertyId/staff/$userId/status",
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- REMOVE STAFF MEMBER (HARD DELETE - Kept for future Super Admin use) ---
   Future<bool> removeStaff(int propertyId, String userId) async {
     try {
       final dynamic response = await sendDeleteRequest(

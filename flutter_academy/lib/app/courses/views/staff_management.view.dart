@@ -108,16 +108,15 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
               onPressed: () async {
                 if (_formKey.currentState!.validate() &&
                     _selectedRoleId != null) {
-                  final navigator = Navigator.of(ctx);
-                  final messenger = ScaffoldMessenger.of(ctx);
                   final success = await ref.read(staffManagementVM).sendInvite(
                         propertyId: propertyId,
                         email: _emailController.text.trim(),
                         roleId: _selectedRoleId!,
                       );
 
-                  if (!mounted) return;
-                  navigator.pop();
+                  if (!ctx.mounted) return;
+                  Navigator.of(ctx).pop();
+                  final messenger = ScaffoldMessenger.of(ctx);
 
                   if (success) {
                     messenger.showSnackBar(const SnackBar(
@@ -187,16 +186,15 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                   ? null
                   : () async {
                       if (editRoleId != null) {
-                        final navigator = Navigator.of(ctx);
-                        final messenger = ScaffoldMessenger.of(ctx);
                         final success =
                             await ref.read(staffManagementVM).updateRole(
                                   propertyId: propertyId,
                                   targetUserId: member.userUid,
                                   newRoleId: editRoleId!,
                                 );
-                        if (!mounted) return;
-                        navigator.pop();
+                        if (!ctx.mounted) return;
+                        Navigator.of(ctx).pop();
+                        final messenger = ScaffoldMessenger.of(ctx);
                         if (success) {
                           messenger.showSnackBar(const SnackBar(
                               content: Text('Role updated!'),
@@ -216,34 +214,41 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
     );
   }
 
-  // Dialog for Removing Staff
-  void _showRemoveDialog(
+  // Dialog for Suspending/Reactivating Staff (Soft Delete)
+  void _showToggleStatusDialog(
       BuildContext context, int propertyId, StaffMember member) {
+    // Assuming Status 1 = Pending, 2 = Active, 3 = Suspended.
+    // If they are anything other than Suspended (3), the button will Suspend them.
+    final bool isCurrentlyActive = member.statusId != 3;
+    final int targetStatusId = isCurrentlyActive ? 3 : 2;
+    final String actionWord = isCurrentlyActive ? 'Suspend' : 'Reactivate';
+    final Color actionColor = isCurrentlyActive ? Colors.orange : Colors.green;
+
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Remove User'),
+          title: Text('$actionWord Access'),
           content: Text(
-              'Are you sure you want to remove ${member.username} from this property?'),
+              'Are you sure you want to $actionWord ${member.username}\'s access to this property?'),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text("Cancel")),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: actionColor),
               onPressed: () async {
-                final navigator = Navigator.of(ctx);
-                final messenger = ScaffoldMessenger.of(ctx);
-                final success = await ref.read(staffManagementVM).removeStaff(
+                final success = await ref.read(staffManagementVM).updateStatus(
                       propertyId: propertyId,
                       targetUserId: member.userUid,
+                      newStatusId: targetStatusId,
                     );
-                if (!mounted) return;
-                navigator.pop();
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+                final messenger = ScaffoldMessenger.of(ctx);
                 if (success) {
-                  messenger.showSnackBar(const SnackBar(
-                      content: Text('User removed'),
+                  messenger.showSnackBar(SnackBar(
+                      content: Text('User access updated to $actionWord'),
                       backgroundColor: Colors.green));
                 } else {
                   messenger.showSnackBar(SnackBar(
@@ -252,7 +257,7 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                 }
               },
               child:
-                  const Text("Remove", style: TextStyle(color: Colors.white)),
+                  Text(actionWord, style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -304,20 +309,32 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                     itemCount: staffVM.staffList.length,
                     itemBuilder: (context, index) {
                       final staff = staffVM.staffList[index];
+                      final bool isSuspended = staff.statusId == 3;
+
                       return Card(
+                        color: isSuspended
+                            ? Colors.grey.shade200
+                            : Colors.white, // Grey out suspended users slightly
                         margin: const EdgeInsets.only(bottom: 12.0),
                         child: ListTile(
                           leading: CircleAvatar(
-                            child: Text(staff.username.isNotEmpty
-                                ? staff.username[0].toUpperCase()
-                                : '?'),
+                            backgroundColor:
+                                isSuspended ? Colors.grey : Colors.blue,
+                            child: Text(
+                                staff.username.isNotEmpty
+                                    ? staff.username[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(color: Colors.white)),
                           ),
                           title: Text(
                               staff.username.isEmpty
                                   ? staff.email
                                   : staff.username,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSuspended
+                                      ? Colors.grey
+                                      : Colors.black)),
                           subtitle: Text(
                               '${staff.roleName} • Status: ${staff.statusName}'),
                           trailing: staff.canManage
@@ -326,8 +343,8 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                                     if (value == 'edit') {
                                       _showEditRoleDialog(context, propertyId!,
                                           staff, allowedRoles);
-                                    } else if (value == 'delete') {
-                                      _showRemoveDialog(
+                                    } else if (value == 'toggle_status') {
+                                      _showToggleStatusDialog(
                                           context, propertyId!, staff);
                                     }
                                   },
@@ -342,22 +359,33 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                                         ],
                                       ),
                                     ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
+                                    PopupMenuItem(
+                                      value: 'toggle_status',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.delete,
-                                              color: Colors.red, size: 18),
-                                          SizedBox(width: 8),
-                                          Text('Remove Access',
-                                              style:
-                                                  TextStyle(color: Colors.red))
+                                          Icon(
+                                              isSuspended
+                                                  ? Icons.check_circle
+                                                  : Icons.block,
+                                              color: isSuspended
+                                                  ? Colors.green
+                                                  : Colors.orange,
+                                              size: 18),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                              isSuspended
+                                                  ? 'Reactivate Access'
+                                                  : 'Suspend Access',
+                                              style: TextStyle(
+                                                  color: isSuspended
+                                                      ? Colors.green
+                                                      : Colors.orange))
                                         ],
                                       ),
                                     ),
                                   ],
                                 )
-                              : null, // Return null if the user isn't allowed to edit this staff member
+                              : null,
                         ),
                       );
                     },

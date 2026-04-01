@@ -56,7 +56,9 @@ class StaffManagementVM extends ChangeNotifier {
 
     try {
       final data = await _service.getStaffMembers(propertyId);
-      staffList = data.map(StaffMember.fromMap).toList();
+      staffList = data
+          .map((e) => StaffMember.fromMap(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       error = 'Failed to load staff members.';
     } finally {
@@ -112,7 +114,31 @@ class StaffManagementVM extends ChangeNotifier {
     }
   }
 
-  // --- REMOVE STAFF ---
+  // --- UPDATE STATUS (DEACTIVATE/ACTIVATE) ---
+  Future<bool> updateStatus({
+    required int propertyId,
+    required String targetUserId,
+    required int newStatusId,
+  }) async {
+    isLoading = true;
+    error = '';
+    notifyListeners();
+
+    final success =
+        await _service.updateStaffStatus(propertyId, targetUserId, newStatusId);
+
+    if (success) {
+      await fetchStaff(propertyId); // Refresh the list
+      return true;
+    } else {
+      error = 'Failed to update user status.';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // --- REMOVE STAFF (HARD DELETE) ---
   Future<bool> removeStaff({
     required int propertyId,
     required String targetUserId,
