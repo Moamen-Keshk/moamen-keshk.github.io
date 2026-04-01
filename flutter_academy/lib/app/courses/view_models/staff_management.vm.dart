@@ -1,13 +1,71 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:flutter_academy/app/req/request.dart'; // Using your existing request utility
+import 'package:flutter_academy/infrastructure/courses/res/staff_management.service.dart';
+
+// Model to represent a staff member parsed from the backend
+class StaffMember {
+  final String userUid;
+  final String username;
+  final String email;
+  final int roleId;
+  final String roleName;
+  final int statusId;
+  final String statusName;
+  final bool canManage;
+  final bool isCurrentUser;
+
+  StaffMember({
+    required this.userUid,
+    required this.username,
+    required this.email,
+    required this.roleId,
+    required this.roleName,
+    required this.statusId,
+    required this.statusName,
+    required this.canManage,
+    required this.isCurrentUser,
+  });
+
+  factory StaffMember.fromMap(Map<String, dynamic> map) {
+    return StaffMember(
+      userUid: map['user_uid'] ?? '',
+      username: map['username'] ?? '',
+      email: map['email'] ?? '',
+      roleId: map['role_id'] ?? 0,
+      roleName: map['role_name'] ?? '',
+      statusId: map['status_id'] ?? 0,
+      statusName: map['status_name'] ?? '',
+      canManage: map['can_manage'] ?? false,
+      isCurrentUser: map['is_current_user'] ?? false,
+    );
+  }
+}
 
 class StaffManagementVM extends ChangeNotifier {
-  final _auth = FirebaseAuth.instance;
+  final StaffManagementService _service = StaffManagementService();
+
   bool isLoading = false;
   String error = '';
+  List<StaffMember> staffList = [];
 
+  // --- FETCH STAFF ---
+  Future<void> fetchStaff(int propertyId) async {
+    isLoading = true;
+    error = '';
+    notifyListeners();
+
+    try {
+      final data = await _service.getStaffMembers(propertyId);
+      staffList = data.map(StaffMember.fromMap).toList();
+    } catch (e) {
+      error = 'Failed to load staff members.';
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // --- SEND INVITE ---
   Future<bool> sendInvite({
     required int propertyId,
     required String email,
@@ -17,29 +75,59 @@ class StaffManagementVM extends ChangeNotifier {
     error = '';
     notifyListeners();
 
-    try {
-      final token = await _auth.currentUser?.getIdToken();
-      final success = await sendPostRequest(
-        {
-          'email': email,
-          'role_id': roleId,
-        },
-        token,
-        '/api/v1/properties/$propertyId/invites',
-      );
+    final success = await _service.sendInvite(propertyId, email, roleId);
 
+    isLoading = false;
+    if (success) {
+      notifyListeners();
+      return true;
+    } else {
+      error = 'Failed to send invite.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // --- UPDATE ROLE ---
+  Future<bool> updateRole({
+    required int propertyId,
+    required String targetUserId,
+    required int newRoleId,
+  }) async {
+    isLoading = true;
+    error = '';
+    notifyListeners();
+
+    final success =
+        await _service.updateStaffRole(propertyId, targetUserId, newRoleId);
+
+    if (success) {
+      await fetchStaff(propertyId); // Refresh the list
+      return true;
+    } else {
+      error = 'Failed to update role.';
       isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 
-      if (success) {
-        notifyListeners();
-        return true;
-      } else {
-        error = 'Failed to send invite';
-        notifyListeners();
-        return false;
-      }
-    } catch (e) {
-      error = 'A network error occurred while sending the invite.';
+  // --- REMOVE STAFF ---
+  Future<bool> removeStaff({
+    required int propertyId,
+    required String targetUserId,
+  }) async {
+    isLoading = true;
+    error = '';
+    notifyListeners();
+
+    final success = await _service.removeStaff(propertyId, targetUserId);
+
+    if (success) {
+      await fetchStaff(propertyId); // Refresh the list
+      return true;
+    } else {
+      error = 'Failed to remove user.';
       isLoading = false;
       notifyListeners();
       return false;

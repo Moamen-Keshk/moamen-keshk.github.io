@@ -16,11 +16,28 @@ class StaffListVM extends StateNotifier<List<UserVM>> {
     if (propertyId == null || propertyId == 0) return;
 
     // Fetches the list of staff from the backend using the service
-    final staffMembers =
+    final staffMembersData =
         await StaffManagementService().getStaffMembers(propertyId!);
 
     // Updates the Riverpod state
-    state = staffMembers;
+    state = staffMembersData
+        .map(
+          (member) => UserVM(
+            email: member['email']?.toString() ?? '',
+            name: member['username']?.toString() ?? '',
+            id: member['user_uid']?.toString() ?? '',
+            accountStatusId: _asInt(member['status_id']),
+            role: member['role_name']?.toString(),
+            propertyId: _asInt(member['property_id']) ?? propertyId,
+          ),
+        )
+        .toList();
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   Future<bool> updateStaffRole(String userId, int newRoleId) async {

@@ -1,12 +1,35 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/app/req/request.dart';
-import 'package:flutter_academy/app/users/view_models/user.vm.dart';
 
 class StaffManagementService {
   final _auth = FirebaseAuth.instance;
 
+  // --- GET ALL STAFF ---
+  Future<List<Map<String, dynamic>>> getStaffMembers(int propertyId) async {
+    try {
+      final response = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/properties/$propertyId/staff",
+      );
+
+      if (response != null && response['status'] == 'success') {
+        final data = response['data'];
+        if (data is List) {
+          return data
+              .whereType<Map>()
+              .map((entry) => entry.map(
+                    (key, value) => MapEntry(key.toString(), value),
+                  ))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   // --- SEND INVITE ---
-  // Uses the endpoint from your Python backend: POST /properties/<id>/invites
   Future<bool> sendInvite(int propertyId, String email, int roleId) async {
     final payload = {
       "email": email,
@@ -17,43 +40,10 @@ class StaffManagementService {
       return await sendPostRequest(
         payload,
         await _auth.currentUser?.getIdToken(),
-        "/properties/$propertyId/invites",
+        "/api/v1/properties/$propertyId/invites",
       );
     } catch (e) {
       return false;
-    }
-  }
-
-  // --- GET ALL STAFF ---
-  Future<List<UserVM>> getStaffMembers(int propertyId) async {
-    try {
-      await sendGetRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff", // Adjust endpoint prefix if needed
-      );
-
-      // Note: You will need to add a factory like `UserVM.fromResMap(e)` to your UserVM class
-      // return (query['data'] as List).map((e) => UserVM.fromResMap(e)).toList();
-
-      // Temporary return until fromResMap is added:
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  // --- GET SPECIFIC STAFF MEMBER ---
-  Future<UserVM?> getStaffMemberById(int propertyId, String userId) async {
-    try {
-      await sendGetRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff/$userId",
-      );
-
-      // return UserVM.fromResMap(query['data']);
-      return null; // Temporary return until fromResMap is added
-    } catch (e) {
-      return null;
     }
   }
 
@@ -68,7 +58,7 @@ class StaffManagementService {
       return await sendPutRequest(
         payload,
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff/$userId",
+        "/api/v1/properties/$propertyId/staff/$userId/role",
       );
     } catch (e) {
       return false;
