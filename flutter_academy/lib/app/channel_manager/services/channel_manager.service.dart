@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/app/req/request.dart';
+import 'package:flutter/foundation.dart'; // For debugPrint
 
 // Models
 import 'package:flutter_academy/app/channel_manager/models/channel_connection.dart';
@@ -22,33 +23,35 @@ class ChannelManagerService {
   // ==========================================
 
   Future<List<ChannelConnection>> getChannelConnections(int propertyId) async {
-    final response = await sendGetWithParamsRequest(
-      await _getToken(), // Fetch fresh token here!
-      '$basePath/connections',
-      {'property_id': propertyId.toString()},
+    // ⬇️ FIX: Moved propertyId from Query Params to the URL Path
+    final response = await sendGetRequest(
+      await _getToken(),
+      '$basePath/properties/$propertyId/connections',
     );
+    debugPrint("🔥 RAW BACKEND DATA: $response");
 
     if (response != null && response['data'] is List) {
       return (response['data'] as List)
           .map((item) => ChannelConnection.fromResMap(item))
           .toList();
     }
-    throw Exception('Failed to load channel connections.');
+    debugPrint('Failed to load channel connections or list is empty.');
+    return [];
   }
 
   Future<bool> connectChannel({
     required int propertyId,
-    required String channelCode, // NEW: Expecting the code, not ID or Name
+    required String channelCode,
     required String hotelIdOnChannel,
     required String username,
     required String password,
   }) async {
+    // ⬇️ FIX: Added propertyId to the URL Path
     return await sendPostRequest(
       {
         'property_id': propertyId,
-        'channel_code': channelCode, // Pass the code here
+        'channel_code': channelCode,
         'status': 'active',
-        // Structure the credentials as JSON to match your Flask backend model
         'credentials_json': {
           'hotel_id': hotelIdOnChannel,
           'username': username,
@@ -56,23 +59,28 @@ class ChannelManagerService {
         }
       },
       await _getToken(),
-      '$basePath/connections',
+      '$basePath/properties/$propertyId/connections',
     );
   }
 
-  Future<bool> disconnectChannel(String connectionId) async {
+  // ⬇️ FIX: Added propertyId to parameters to fulfill the backend URL requirement
+  Future<bool> disconnectChannel(int propertyId, String connectionId) async {
     final response = await sendDeleteRequest(
       await _getToken(),
-      '$basePath/connections/$connectionId',
+      '$basePath/properties/$propertyId/connections/$connectionId',
     );
-    return response != null;
+
+    if (response == null) return false;
+    if (response is bool) return response;
+    return response['status'] == 'success';
   }
 
-  Future<bool> forceSync(String connectionId) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<bool> forceSync(int propertyId, String connectionId) async {
     return await sendPostRequest(
       {},
       await _getToken(),
-      '$basePath/connections/$connectionId/sync',
+      '$basePath/properties/$propertyId/connections/$connectionId/sync',
     );
   }
 
@@ -81,10 +89,10 @@ class ChannelManagerService {
   // ==========================================
 
   Future<List<ChannelRoomMap>> getRoomMappings(int propertyId) async {
-    final response = await sendGetWithParamsRequest(
+    // ⬇️ FIX: Moved propertyId from Query Params to the URL Path
+    final response = await sendGetRequest(
       await _getToken(),
-      '$basePath/room_maps',
-      {'property_id': propertyId.toString()},
+      '$basePath/properties/$propertyId/room_maps',
     );
 
     if (response != null && response['data'] is List) {
@@ -92,23 +100,28 @@ class ChannelManagerService {
           .map((item) => ChannelRoomMap.fromResMap(item))
           .toList();
     }
-    throw Exception('Failed to load room mappings.');
+    return [];
   }
 
-  Future<bool> addRoomMapping(ChannelRoomMap mapping) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<bool> addRoomMapping(int propertyId, ChannelRoomMap mapping) async {
     return await sendPostRequest(
       mapping.toMap(),
       await _getToken(),
-      '$basePath/room_maps',
+      '$basePath/properties/$propertyId/room_maps',
     );
   }
 
-  Future<bool> deleteRoomMapping(String mappingId) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<bool> deleteRoomMapping(int propertyId, String mappingId) async {
     final response = await sendDeleteRequest(
       await _getToken(),
-      '$basePath/room_maps/$mappingId',
+      '$basePath/properties/$propertyId/room_maps/$mappingId',
     );
-    return response != null;
+
+    if (response == null) return false;
+    if (response is bool) return response;
+    return response['status'] == 'success';
   }
 
   // ==========================================
@@ -116,10 +129,10 @@ class ChannelManagerService {
   // ==========================================
 
   Future<List<ChannelRatePlanMap>> getRatePlanMappings(int propertyId) async {
-    final response = await sendGetWithParamsRequest(
+    // ⬇️ FIX: Moved propertyId from Query Params to the URL Path
+    final response = await sendGetRequest(
       await _getToken(),
-      '$basePath/rate_maps',
-      {'property_id': propertyId.toString()},
+      '$basePath/properties/$propertyId/rate_maps',
     );
 
     if (response != null && response['data'] is List) {
@@ -127,33 +140,41 @@ class ChannelManagerService {
           .map((item) => ChannelRatePlanMap.fromResMap(item))
           .toList();
     }
-    throw Exception('Failed to load rate plan mappings.');
+    return [];
   }
 
-  Future<bool> addRatePlanMapping(ChannelRatePlanMap mapping) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<bool> addRatePlanMapping(
+      int propertyId, ChannelRatePlanMap mapping) async {
     return await sendPostRequest(
       mapping.toMap(),
       await _getToken(),
-      '$basePath/rate_maps',
+      '$basePath/properties/$propertyId/rate_maps',
     );
   }
 
-  Future<bool> deleteRatePlanMapping(String mappingId) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<bool> deleteRatePlanMapping(int propertyId, String mappingId) async {
     final response = await sendDeleteRequest(
       await _getToken(),
-      '$basePath/rate_maps/$mappingId',
+      '$basePath/properties/$propertyId/rate_maps/$mappingId',
     );
-    return response != null;
+
+    if (response == null) return false;
+    if (response is bool) return response;
+    return response['status'] == 'success';
   }
 
   // ==========================================
   // EXTERNAL CHANNEL DATA (For Dropdowns)
   // ==========================================
 
-  Future<List<ExternalRoom>> getExternalRooms(int connectionId) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<List<ExternalRoom>> getExternalRooms(
+      int propertyId, int connectionId) async {
     final response = await sendGetRequest(
       await _getToken(),
-      '$basePath/connections/$connectionId/external_rooms',
+      '$basePath/properties/$propertyId/connections/$connectionId/external_rooms',
     );
 
     if (response != null && response['data'] is List) {
@@ -161,13 +182,15 @@ class ChannelManagerService {
           .map((item) => ExternalRoom.fromResMap(item))
           .toList();
     }
-    throw Exception('Failed to fetch external rooms.');
+    return [];
   }
 
-  Future<List<ExternalRatePlan>> getExternalRatePlans(int connectionId) async {
+  // ⬇️ FIX: Added propertyId to parameters
+  Future<List<ExternalRatePlan>> getExternalRatePlans(
+      int propertyId, int connectionId) async {
     final response = await sendGetRequest(
       await _getToken(),
-      '$basePath/connections/$connectionId/external_rate_plans',
+      '$basePath/properties/$propertyId/connections/$connectionId/external_rate_plans',
     );
 
     if (response != null && response['data'] is List) {
@@ -175,12 +198,14 @@ class ChannelManagerService {
           .map((item) => ExternalRatePlan.fromResMap(item))
           .toList();
     }
-    throw Exception('Failed to fetch external rate plans.');
+    return [];
   }
 
-// ==========================================
-  // SUPPORTED CHANNELS ENDPOINTS
   // ==========================================
+  // SUPPORTED CHANNELS ENDPOINTS (Global)
+  // ==========================================
+
+  // These remain untouched because they are globally scoped in your Python backend!
 
   Future<List<SupportedChannel>> getSupportedChannels() async {
     final response = await sendGetRequest(
@@ -188,13 +213,26 @@ class ChannelManagerService {
       '$basePath/supported_channels',
     );
 
-    // UPDATED: Now expects the 'data' wrapper to match your Flask backend
-    if (response != null && response['data'] is List) {
-      return (response['data'] as List)
-          .map((item) => SupportedChannel.fromMap(item))
-          .toList();
+    // 1. If the API completely fails, fail gracefully.
+    if (response == null) return [];
+
+    try {
+      if (response['data'] != null) {
+        // 2. List.from() safely forces Dart to treat the JS Array as a standard List
+        final List dataList = List.from(response['data']);
+        return dataList
+            .map((item) =>
+                SupportedChannel.fromMap(item as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (e) {
+      // 3. If your SupportedChannel.fromMap ever crashes due to a typo, it will print here!
+      debugPrint("❌ PARSING ERROR: $e");
     }
-    throw Exception('Failed to fetch supported channels.');
+
+    // 4. Gracefully return an empty list instead of throwing a hard exception.
+    // This allows the UI to render the "No supported channels available. Add one!" screen.
+    return [];
   }
 
   Future<bool> addSupportedChannel(Map<String, dynamic> payload) async {

@@ -13,7 +13,7 @@ import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-String? selectedProperty;
+// ❌ REMOVED: String? selectedProperty;
 
 class DashboardNav extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
@@ -31,6 +31,14 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ ADDED: Get the selected property directly from Riverpod!
+    final int? currentPropertyId = ref.watch(selectedPropertyVM);
+    // Convert to string for the dropdown, but handle 0 or null cleanly
+    final String? dropdownValue =
+        (currentPropertyId == null || currentPropertyId == 0)
+            ? null
+            : currentPropertyId.toString();
+
     return AppBar(
       title: const Text('Lotel'),
       elevation: kIsWeb ? 0 : null,
@@ -78,9 +86,12 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 );
               }),
               const SizedBox(width: 10.0),
+
+              // THE DROPDOWN FIX
               Consumer(builder: (context, ref, child) {
                 final properties = ref.watch(propertyListVM);
                 propertiesMapping = propertyMapping(properties);
+
                 return Container(
                   width: 130,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -90,20 +101,18 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     border: Border.all(color: Colors.grey, width: 1),
                   ),
                   child: DropdownButton<String>(
-                    value: selectedProperty,
+                    value: dropdownValue, // ✅ Driven entirely by Riverpod
                     hint: const Text("Property"),
                     isExpanded: true,
                     underline: const SizedBox(),
                     onChanged: (newValue) {
                       if (newValue == 'add') {
                         ref.read(routerProvider).push('new_property');
-                      } else {
-                        setState(() {
-                          selectedProperty = newValue;
-                          ref
-                              .read(selectedPropertyVM.notifier)
-                              .updateProperty(int.parse(selectedProperty!));
-                        });
+                      } else if (newValue != null) {
+                        // ✅ Tell Riverpod to update. The UI will automatically rebuild!
+                        ref
+                            .read(selectedPropertyVM.notifier)
+                            .updateProperty(int.parse(newValue));
                       }
                     },
                     items: properties
@@ -159,12 +168,11 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
               ),
 
               // 💡 OPTION 1: Standalone TextButton for Channels
-              if (selectedProperty !=
-                  null) // Only show if a property is selected
+              if (currentPropertyId != null &&
+                  currentPropertyId != 0) // ✅ Now uses Riverpod's state safely
                 TextButton(
                   style: TextButton.styleFrom(
-                    foregroundColor:
-                        Colors.blueAccent, // Highlighting it slightly
+                    foregroundColor: Colors.blueAccent,
                   ),
                   onPressed: () {
                     ref.read(routerProvider).push('channel_manager');
@@ -201,12 +209,11 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   PopupMenuItem(value: 'categories', child: Text('Categories')),
                   PopupMenuItem(value: 'seasons', child: Text('Seasons')),
                   PopupMenuItem(
-                      value: 'channels',
-                      child: Text('Channel Manager')), // 💡 Added here
+                      value: 'channels', child: Text('Channel Manager')),
                 ],
               ),
 
-              const NotificationsView(),
+              const NotificationsView(), // ✅ Your global notification widget!
 
               Consumer(builder: (context, ref, child) {
                 return IconButton(

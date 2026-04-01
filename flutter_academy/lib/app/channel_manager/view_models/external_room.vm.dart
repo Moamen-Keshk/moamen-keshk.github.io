@@ -1,4 +1,5 @@
 import 'package:flutter_academy/app/channel_manager/view_models/channel_rate_mapping.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/channel_manager/models/external_room.dart';
 
@@ -23,13 +24,14 @@ class ExternalRoomNotifier extends AsyncNotifier<List<ExternalRoom>> {
   @override
   Future<List<ExternalRoom>> build() async {
     // Automatically rebuilds when the user selects a different channel
+    final propertyId = ref.watch(selectedPropertyVM) ?? 0;
     final channelId = ref.watch(selectedChannelIdVM) ?? 0;
 
-    if (channelId == 0) return [];
+    if (propertyId == 0 || channelId == 0) return [];
 
     // This now securely uses your authenticated Flask backend!
     final service = ref.read(channelManagerServiceProvider);
-    return await service.getExternalRooms(channelId);
+    return await service.getExternalRooms(propertyId, channelId);
   }
 
   // Force a manual refresh if you need to pull fresh data from the OTA

@@ -6,6 +6,7 @@ import 'package:flutter_academy/infrastructure/courses/model/booking.model.dart'
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 
 final roomMappingProvider = Provider<Map<int, String>>((ref) {
   final rooms = ref.watch(roomListVM);
@@ -27,6 +28,7 @@ class BookingView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookingId = ref.watch(bookingIdProvider);
+    final propertyId = ref.watch(selectedPropertyVM) ?? 0;
     final roomMapping = ref.watch(roomMappingProvider);
     final paymentStatusMappingAsync = ref.watch(paymentStatusMappingProvider);
 
@@ -39,7 +41,10 @@ class BookingView extends ConsumerWidget {
       error: (err, _) => Center(child: Text("Error: $err")),
       data: (paymentStatusMapping) {
         return FutureBuilder<Booking?>(
-          future: BookingService().getBookingById(bookingId.toString()),
+          future: BookingService().getBookingById(
+            propertyId,
+            bookingId.toString(),
+          ),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(child: Text("Error: ${snapshot.error}"));

@@ -37,7 +37,8 @@ class RoomListVM extends StateNotifier<List<RoomVM>> {
   }
 
   Future<bool> deleteRoom(int roomId) async {
-    final result = await RoomService().deleteRoom(roomId);
+    if (propertyId == null) return false;
+    final result = await RoomService().deleteRoom(propertyId!, roomId);
     if (result) {
       state = state.where((room) => room.id != roomId.toString()).toList();
       return true;

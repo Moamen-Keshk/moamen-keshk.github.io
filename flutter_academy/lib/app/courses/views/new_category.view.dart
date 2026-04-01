@@ -52,7 +52,7 @@ class _NewCategoryViewState extends ConsumerState<NewCategoryView> {
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: () async {
-                  if (await CategoryListVM().addToCategories(
+                  if (await ref.read(categoryListVM.notifier).addToCategories(
                       name: _name.text, description: _description.text)) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

@@ -157,7 +157,7 @@ class AuthVM extends ChangeNotifier {
 
       // Assumes you have a sendGetRequest in request.dart similar to sendPostRequest
       // Adjust this call if your request.dart uses a slightly different signature
-      final response = await sendGetRequest(token, "/users");
+      final response = await sendGetRequest(token, "/api/v1/users");
 
       if (response != null && response['status'] == 'success') {
         final data = response['data'];

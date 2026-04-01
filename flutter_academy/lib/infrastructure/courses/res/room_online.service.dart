@@ -79,11 +79,15 @@ class RoomOnlineService {
   /// Delete a room rate by ID
   Future<bool> deleteRoomOnline(String roomOnlineId) async {
     try {
-      final response = await sendDeleteRequest(
+      final dynamic response = await sendDeleteRequest(
         await _auth.currentUser?.getIdToken(),
         "/api/v1/delete_room_online/$roomOnlineId",
       );
-      return response['status'] == 'success';
+      if (response is bool) return response;
+      if (response is Map<String, dynamic>) {
+        return response['status'] == 'success';
+      }
+      return false;
     } catch (e) {
       return false;
     }

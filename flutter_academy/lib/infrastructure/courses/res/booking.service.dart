@@ -1,99 +1,133 @@
 import 'package:flutter_academy/app/req/request.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/infrastructure/courses/model/booking.model.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 class BookingService {
   final _auth = FirebaseAuth.instance;
-  Future<List<Booking>> getBooking() async {
-    final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/bookings");
+
+  // Note: Added propertyId to match the new backend security requirements
+  Future<List<Booking>> getBooking(int propertyId) async {
+    final token = await _auth.currentUser?.getIdToken();
+    final query =
+        await sendGetRequest(token, "/api/v1/properties/$propertyId/bookings");
+
+    // 👉 SAFETY NET
+    if (query == null || !query.containsKey('data')) return [];
+
     return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
   }
 
   Future<List<Booking>> getAllBookings(
       int propertyId, int year, int month) async {
+    final token = await _auth.currentUser?.getIdToken();
+    // 👉 NEW URL PATTERN
     final query = await sendGetWithParamsRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/all-bookings", {
-      'property_id': propertyId.toString(),
-      'check_in_year': year.toString(),
-      'check_in_month': month.toString()
-    });
+        token,
+        "/api/v1/properties/$propertyId/bookings",
+        {'check_in_year': year.toString(), 'check_in_month': month.toString()});
+
+    // 👉 SAFETY NET
+    if (query == null || !query.containsKey('data')) return [];
+
     return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
   }
 
-  Future<bool> addBooking(Map<String, dynamic> booking) async {
+  Future<bool> addBooking(int propertyId, Map<String, dynamic> booking) async {
+    final token = await _auth.currentUser?.getIdToken();
+    // 👉 NEW URL PATTERN
     return await sendPostRequest(
-        booking, await _auth.currentUser?.getIdToken(), "/api/v1/new_booking");
+        booking, token, "/api/v1/properties/$propertyId/bookings");
   }
 
-  Future<bool> editBooking(
-      int bookingId, Map<String, dynamic> updatedBookingData) async {
+  Future<bool> editBooking(int propertyId, int bookingId,
+      Map<String, dynamic> updatedBookingData) async {
     try {
-      final response = await sendPutRequest(
+      final token = await _auth.currentUser?.getIdToken();
+      // 👉 NEW URL PATTERN
+      return await sendPutRequest(
         updatedBookingData,
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/edit_booking/$bookingId",
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId",
       );
-      return response; // Assuming the API returns a 'success' key
     } catch (e) {
+      debugPrint("Error editing booking: $e");
       return false;
     }
   }
 
-  Future<bool> deleteBooking(String bookingId) async {
+  Future<bool> deleteBooking(int propertyId, String bookingId) async {
     try {
-      final response = await sendDeleteRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/delete_booking/$bookingId",
+      final token = await _auth.currentUser?.getIdToken();
+      // 👉 NEW URL PATTERN
+      final dynamic response = await sendDeleteRequest(
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId",
       );
 
-      // Ensure a boolean is returned
-      return response['status'] == 'success';
+      // 👉 BOOLEAN FIX
+      if (response == null) return false;
+      if (response is bool) return response;
+      if (response is Map<String, dynamic>) {
+        return response['status'] == 'success';
+      }
+      return false;
     } catch (e) {
-      // Log or handle error
-      return false; // fallback so it never returns null
+      debugPrint("Error deleting booking: $e");
+      return false;
     }
   }
 
-  Future<bool> checkInBooking(int bookingId) async {
+  Future<bool> checkInBooking(int propertyId, int bookingId) async {
     try {
-      final response = await sendPostRequest(
+      final token = await _auth.currentUser?.getIdToken();
+      // 👉 NEW URL PATTERN
+      return await sendPostRequest(
         {}, // No body needed
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/check_in_booking/$bookingId",
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId/check_in",
       );
-      return response;
     } catch (e) {
-      // You can optionally log the error
+      debugPrint("Error checking in booking: $e");
       return false;
     }
   }
 
   Future<List<Booking>> getBookingsByDate(
       int propertyId, DateTime date, String bookingState) async {
+    final token = await _auth.currentUser?.getIdToken();
+    // 👉 NEW URL PATTERN
     final query = await sendGetWithParamsRequest(
-      await _auth.currentUser?.getIdToken(),
-      "/api/v1/bookings_by_date_and_state",
+      token,
+      "/api/v1/properties/$propertyId/bookings/by_state",
       {
-        'property_id': propertyId.toString(),
         'date': date.toIso8601String().split('T')[0], // format as YYYY-MM-DD
         'booking_state':
-            bookingState, // e.g., "arrivals", "departures", "in_house"
+            bookingState, // e.g., "arrivals", "departures", "inhouse"
       },
     );
+
+    // 👉 SAFETY NET
+    if (query == null || !query.containsKey('data')) return [];
 
     return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
   }
 
-  Future<Booking?> getBookingById(String bookingId) async {
+  Future<Booking?> getBookingById(int propertyId, String bookingId) async {
     try {
+      final token = await _auth.currentUser?.getIdToken();
+      // 👉 NEW URL PATTERN
       final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/booking/$bookingId",
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId",
       );
+
+      // 👉 SAFETY NET
+      if (query == null || !query.containsKey('data')) return null;
+
       return Booking.fromResMap(query['data']);
     } catch (e) {
-      // Handle error or log
+      debugPrint("Error fetching booking by ID: $e");
       return null;
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_academy/app/channel_manager/view_models/channel_rate_mapping.vm.dart';
+import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/channel_manager/models/external_rate_plan.dart';
 
@@ -13,13 +14,14 @@ class ExternalRatePlanNotifier extends AsyncNotifier<List<ExternalRatePlan>> {
   @override
   Future<List<ExternalRatePlan>> build() async {
     // Automatically rebuilds and fetches when the user selects a different channel.
+    final propertyId = ref.watch(selectedPropertyVM) ?? 0;
     final channelId = ref.watch(selectedChannelIdVM) ?? 0;
 
-    if (channelId == 0) return [];
+    if (propertyId == 0 || channelId == 0) return [];
 
     // This now securely uses your authenticated Flask backend!
     final service = ref.read(channelManagerServiceProvider);
-    return await service.getExternalRatePlans(channelId);
+    return await service.getExternalRatePlans(propertyId, channelId);
   }
 
   // Force a manual refresh if you need to pull fresh data from the OTA

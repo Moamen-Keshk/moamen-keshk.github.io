@@ -2,50 +2,75 @@ import 'package:flutter_academy/app/req/request.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/infrastructure/courses/model/floor.model.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 class FloorService {
   final _auth = FirebaseAuth.instance;
-  Future<List<Floor>> getFloor() async {
-    final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(), "/api/v1/floors");
-    return (query['data'] as List).map((e) => Floor.fromResMap(e)).toList();
-  }
 
+  // 1. GET ALL FLOORS
   Future<List<Floor>> getAllFloors(int propertyId) async {
-    final query = await sendGetRequest(await _auth.currentUser?.getIdToken(),
-        "/api/v1/all-floors/$propertyId");
+    final token = await _auth.currentUser?.getIdToken();
+    // 👉 Updated to match the new Python backend route
+    final query =
+        await sendGetRequest(token, "/api/v1/properties/$propertyId/floors");
+
+    // 👉 The Safety Net to prevent the 'null' crash
+    if (query == null || !query.containsKey('data')) {
+      debugPrint("Failed to fetch floors. Returning empty list.");
+      return [];
+    }
+
     return (query['data'] as List).map((e) => Floor.fromResMap(e)).toList();
   }
 
+  // 2. ADD FLOOR
   Future<bool> addFloor(int number, int propertyId, List<Room>? rooms) async {
+    final token = await _auth.currentUser?.getIdToken();
+    // 👉 Updated to match the new Python backend route
     return await sendPostRequest(
         {"floor_number": number, "property_id": propertyId, "rooms": rooms},
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/new-floor");
+        token,
+        "/api/v1/properties/$propertyId/floors");
   }
 
-  Future<bool> editFloor(
-      int floorId, Map<String, dynamic> updatedFloorData) async {
+  // 3. EDIT FLOOR (Requires propertyId for backend permissions)
+  Future<bool> editFloor(int propertyId, int floorId,
+      Map<String, dynamic> updatedFloorData) async {
     try {
-      final response = await sendPutRequest(
+      final token = await _auth.currentUser?.getIdToken();
+      // 👉 Updated to match the new Python backend route
+      return await sendPutRequest(
         updatedFloorData,
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/edit_floor/$floorId",
+        token,
+        "/api/v1/properties/$propertyId/floors/$floorId",
       );
-      return response; // Assuming the API returns a 'success' key
     } catch (e) {
+      debugPrint("Error editing floor: $e");
       return false;
     }
   }
 
-  Future<bool> deleteFloor(int floorId) async {
+  // 4. DELETE FLOOR (Requires propertyId for backend permissions)
+  Future<bool> deleteFloor(int propertyId, int floorId) async {
     try {
-      final response = await sendDeleteRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/delete_floor/$floorId",
+      final token = await _auth.currentUser?.getIdToken();
+      // 👉 Updated to match the new Python backend route
+      final dynamic response = await sendDeleteRequest(
+        token,
+        "/api/v1/properties/$propertyId/floors/$floorId",
       );
-      return response['status'] == 'success';
+
+      if (response == null) return false;
+
+      // 👉 The boolean fix
+      if (response is bool) return response;
+
+      if (response is Map<String, dynamic>) {
+        return response['status'] == 'success';
+      }
+      return false;
     } catch (e) {
+      debugPrint("Error deleting floor: $e");
       return false;
     }
   }

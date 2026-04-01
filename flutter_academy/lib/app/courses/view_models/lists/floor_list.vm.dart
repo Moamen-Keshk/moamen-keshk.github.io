@@ -35,8 +35,10 @@ class FloorListVM extends StateNotifier<List<FloorVM>> {
   }
 
   Future<bool> editFloor(int floorId, Map<String, dynamic> updatedData) async {
+    if (propertyId == null) return false;
     try {
-      final success = await floorService.editFloor(floorId, updatedData);
+      final success =
+          await floorService.editFloor(propertyId!, floorId, updatedData);
       if (success) {
         await fetchFloors();
         return true;
@@ -48,8 +50,9 @@ class FloorListVM extends StateNotifier<List<FloorVM>> {
   }
 
   Future<bool> deleteFloor(int floorId) async {
+    if (propertyId == null) return false;
     try {
-      final success = await floorService.deleteFloor(floorId);
+      final success = await floorService.deleteFloor(propertyId!, floorId);
       if (success) {
         await fetchFloors(); // Refresh state
         return true;

@@ -33,7 +33,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   }
 
   Future<bool> addToBookings(Map<String, dynamic> booking) async {
-    if (await bookingService.addBooking(booking)) {
+    if (await bookingService.addBooking(propertyId, booking)) {
       await fetchBookings();
       return true;
     }
@@ -45,7 +45,8 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     Map<String, dynamic> updatedData,
   ) async {
     try {
-      final success = await bookingService.editBooking(bookingId, updatedData);
+      final success =
+          await bookingService.editBooking(propertyId, bookingId, updatedData);
       if (success) {
         await fetchBookings();
         return true;
@@ -55,7 +56,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   }
 
   Future<bool> deleteBooking(String bookingId) async {
-    final success = await bookingService.deleteBooking(bookingId);
+    final success = await bookingService.deleteBooking(propertyId, bookingId);
     if (success) {
       state = state.where((b) => b.booking.id != bookingId).toList();
     }
@@ -63,7 +64,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   }
 
   Future<bool> checkInBooking(int bookingId) async {
-    final success = await bookingService.checkInBooking(bookingId);
+    final success = await bookingService.checkInBooking(propertyId, bookingId);
     if (success) {
       await fetchBookings();
     }
@@ -71,7 +72,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   }
 
   Future<BookingVM?> getBookingById(String bookingId) async {
-    final booking = await bookingService.getBookingById(bookingId);
+    final booking = await bookingService.getBookingById(propertyId, bookingId);
     if (booking != null) {
       return BookingVM(booking);
     }

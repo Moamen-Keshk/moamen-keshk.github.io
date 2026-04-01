@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
+
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show Provider;
 
 final ScrollController scrollController1 = ScrollController();
 final ScrollController scrollController2 = ScrollController();
@@ -19,18 +21,12 @@ class SelectedMonthVM extends StateNotifier<DateTime> {
 }
 
 /// Selected Property State Management
-class SelectedPropertyVM extends StateNotifier<int> {
-  SelectedPropertyVM() : super(0);
+// ✅ FIXED: Now safely extends StateNotifier<int?> to match your UI logic
+class SelectedPropertyVM extends StateNotifier<int?> {
+  SelectedPropertyVM() : super(null); // Defaults to null (no property selected)
 
-  void updateProperty(int newProperty) => state = newProperty;
-  void clear() => state = 0;
-}
-
-/// Number of Days in Selected Month
-class NumberOfDaysVM extends StateNotifier<int> {
-  NumberOfDaysVM(DateTime selectedMonth) : super(getDaysInMonth(selectedMonth));
-
-  void updateDays(int newDays) => state = newDays;
+  void updateProperty(int? newProperty) => state = newProperty;
+  void clear() => state = null;
 }
 
 /// Highlighted Day State Management
@@ -71,16 +67,23 @@ class SeasonToEditVM extends StateNotifier<SeasonVM?> {
   void clear() => state = null;
 }
 
-/// Providers
+// ==========================================
+// PROVIDERS
+// ==========================================
+
 final selectedMonthVM = StateNotifierProvider<SelectedMonthVM, DateTime>(
     (ref) => SelectedMonthVM());
 
 final selectedPropertyVM = StateNotifierProvider<SelectedPropertyVM, int?>(
     (ref) => SelectedPropertyVM());
 
-final numberOfDaysVM = StateNotifierProvider<NumberOfDaysVM, int>((ref) {
+// 💡 PRO-TIP OPTIMIZATION:
+// Since the number of days is purely derived from the selected month,
+// you don't need a heavy StateNotifier for it! A simple Provider is faster
+// and will automatically update whenever the month changes.
+final numberOfDaysVM = Provider<int>((ref) {
   final selectedMonth = ref.watch(selectedMonthVM);
-  return NumberOfDaysVM(selectedMonth);
+  return getDaysInMonth(selectedMonth);
 });
 
 final highlightedDayVM =

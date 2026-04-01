@@ -20,7 +20,7 @@ class BlockListVM extends StateNotifier<List<BlockVM>> {
   }
 
   Future<bool> addToBlocks(Map<String, dynamic> blockData) async {
-    if (await blockService.addBlock(blockData)) {
+    if (await blockService.addBlock(propertyId, blockData)) {
       await fetchBlocks();
       return true;
     }
@@ -29,7 +29,8 @@ class BlockListVM extends StateNotifier<List<BlockVM>> {
 
   Future<bool> editBlock(int blockId, Map<String, dynamic> updatedData) async {
     try {
-      final success = await blockService.editBlock(blockId, updatedData);
+      final success =
+          await blockService.editBlock(propertyId, blockId, updatedData);
       if (success) {
         await fetchBlocks();
         return true;
@@ -41,7 +42,7 @@ class BlockListVM extends StateNotifier<List<BlockVM>> {
   }
 
   Future<bool> deleteBlock(String blockId) async {
-    final success = await blockService.deleteBlock(blockId);
+    final success = await blockService.deleteBlock(propertyId, blockId);
     if (success) {
       state = state.where((b) => b.block.id != blockId).toList();
     }

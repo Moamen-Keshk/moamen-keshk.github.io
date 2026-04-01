@@ -81,11 +81,15 @@ class RatePlanService {
 
   Future<bool> deleteRatePlan(String ratePlanId) async {
     try {
-      final response = await sendDeleteRequest(
+      final dynamic response = await sendDeleteRequest(
         await _auth.currentUser?.getIdToken(),
         "/api/v1/delete_rate_plan/$ratePlanId",
       );
-      return response['status'] == 'success';
+      if (response is bool) return response;
+      if (response is Map<String, dynamic>) {
+        return response['status'] == 'success';
+      }
+      return false;
     } catch (e) {
       return false;
     }

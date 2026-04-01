@@ -128,8 +128,11 @@ Future<dynamic> sendDeleteRequest(String? idToken, String apiURL) async {
     if (response.statusCode == 200 ||
         response.statusCode == 201 ||
         response.statusCode == 204) {
-      // Sometimes DELETE returns 204 No Content with an empty body, which breaks jsonDecode
-      if (response.body.isEmpty) return true;
+      // Normalize successful DELETE responses so callers can safely read
+      // the same shape even when the backend returns 204 No Content.
+      if (response.body.isEmpty) {
+        return {'status': 'success'};
+      }
       return jsonDecode(response.body);
     }
     return null;

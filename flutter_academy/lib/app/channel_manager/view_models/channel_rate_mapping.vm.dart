@@ -24,9 +24,11 @@ class ChannelRateMappingNotifier
   /// Adds a new rate plan mapping
   Future<bool> addRatePlanMapping(ChannelRatePlanMap mapping) async {
     final service = ref.read(channelManagerServiceProvider);
+    final propertyId = ref.read(selectedPropertyVM) ?? 0;
 
-    // You'll need to add this method to your service file
-    final success = await service.addRatePlanMapping(mapping);
+    if (propertyId == 0) return false;
+
+    final success = await service.addRatePlanMapping(propertyId, mapping);
     if (success) {
       // Refresh the list from the server to get the generated ID
       ref.invalidateSelf();
@@ -37,9 +39,11 @@ class ChannelRateMappingNotifier
   /// Deletes an existing rate plan mapping
   Future<bool> deleteRatePlanMapping(String mappingId) async {
     final service = ref.read(channelManagerServiceProvider);
+    final propertyId = ref.read(selectedPropertyVM) ?? 0;
 
-    // You'll need to add this method to your service file
-    final success = await service.deleteRatePlanMapping(mappingId);
+    if (propertyId == 0) return false;
+
+    final success = await service.deleteRatePlanMapping(propertyId, mappingId);
     if (success && state.hasValue) {
       // Optimistic UI update: instantly remove the deleted mapping
       state = AsyncData(

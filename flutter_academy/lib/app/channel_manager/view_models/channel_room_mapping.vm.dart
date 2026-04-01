@@ -23,9 +23,11 @@ class ChannelRoomMappingNotifier extends AsyncNotifier<List<ChannelRoomMap>> {
   /// Adds a new room mapping
   Future<bool> addRoomMapping(ChannelRoomMap mapping) async {
     final service = ref.read(channelManagerServiceProvider);
+    final propertyId = ref.read(selectedPropertyVM) ?? 0;
 
-    // You'll need to add this method to your service file
-    final success = await service.addRoomMapping(mapping);
+    if (propertyId == 0) return false;
+
+    final success = await service.addRoomMapping(propertyId, mapping);
     if (success) {
       // Refresh the list from the server to get the generated ID
       ref.invalidateSelf();
@@ -36,9 +38,11 @@ class ChannelRoomMappingNotifier extends AsyncNotifier<List<ChannelRoomMap>> {
   /// Deletes an existing room mapping
   Future<bool> deleteRoomMapping(String mappingId) async {
     final service = ref.read(channelManagerServiceProvider);
+    final propertyId = ref.read(selectedPropertyVM) ?? 0;
 
-    // You'll need to add this method to your service file
-    final success = await service.deleteRoomMapping(mappingId);
+    if (propertyId == 0) return false;
+
+    final success = await service.deleteRoomMapping(propertyId, mappingId);
     if (success && state.hasValue) {
       // Optimistic UI update: instantly remove the deleted mapping
       state = AsyncData(

@@ -203,10 +203,6 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                             ref
                                 .read(selectedMonthVM.notifier)
                                 .updateMonth(picked);
-                            ref.read(numberOfDaysVM.notifier).updateDays(
-                                  DateTime(picked.year, picked.month + 1, 0)
-                                      .day,
-                                );
                           }
                         },
                         child: Text(

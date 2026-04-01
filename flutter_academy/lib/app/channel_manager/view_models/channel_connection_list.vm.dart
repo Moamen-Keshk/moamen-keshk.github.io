@@ -48,9 +48,11 @@ class ChannelConnectionListNotifier
   /// Disconnects an OTA from the property
   Future<bool> disconnectChannel(String connectionId) async {
     final service = ref.read(channelManagerServiceProvider);
+    final propertyId = ref.read(selectedPropertyVM) ?? 0;
 
-    // You'll need to add this method to your service file
-    final success = await service.disconnectChannel(connectionId);
+    if (propertyId == 0) return false;
+
+    final success = await service.disconnectChannel(propertyId, connectionId);
     if (success && state.hasValue) {
       // Optimistic UI update: instantly remove the disconnected channel
       state = AsyncData(
@@ -63,9 +65,11 @@ class ChannelConnectionListNotifier
   /// Triggers a manual sync for a specific channel
   Future<bool> forceSync(String connectionId) async {
     final service = ref.read(channelManagerServiceProvider);
+    final propertyId = ref.read(selectedPropertyVM) ?? 0;
 
-    // You'll need to add this method to your service file
-    final success = await service.forceSync(connectionId);
+    if (propertyId == 0) return false;
+
+    final success = await service.forceSync(propertyId, connectionId);
     if (success) {
       // Refresh the list to get the updated 'lastSync' timestamp
       ref.invalidateSelf();
