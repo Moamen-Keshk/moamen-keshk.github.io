@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import 'package:flutter_academy/app/courses/view_models/notification.vm.dart';
@@ -7,15 +6,7 @@ import 'package:flutter_academy/infrastructure/courses/res/notification.service.
 class NotificationListVM extends StateNotifier<List<NotificationVM>> {
   // 2. Removed propertyId from the constructor entirely!
   NotificationListVM() : super(const []) {
-    debugPrint(
-        "🟢 Riverpod BORN: NotificationListVM initialized! Fetching data...");
     fetchNotifications();
-  }
-
-  @override
-  void dispose() {
-    debugPrint("🔴 Riverpod MURDERED: NotificationListVM was destroyed!");
-    super.dispose();
   }
 
   Future<void> fetchNotifications() async {

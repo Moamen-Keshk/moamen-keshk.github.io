@@ -181,6 +181,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 ),
 
               /// 💡 Settings Dropdown (Includes OPTION 2 for Channels)
+              /// 💡 Settings Dropdown (Includes Staff Management)
               PopupMenuButton<String>(
                 icon: const Icon(Icons.settings),
                 onSelected: (value) {
@@ -201,6 +202,10 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     case 'channels':
                       router.push('channel_manager');
                       break;
+                    // ---> NEW: Route for Staff Management <---
+                    case 'staff':
+                      router.push('staff_management');
+                      break;
                   }
                 },
                 itemBuilder: (context) => const [
@@ -210,6 +215,8 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   PopupMenuItem(value: 'seasons', child: Text('Seasons')),
                   PopupMenuItem(
                       value: 'channels', child: Text('Channel Manager')),
+                  // ---> NEW: Dropdown item for Staff <---
+                  PopupMenuItem(value: 'staff', child: Text('Staff & Roles')),
                 ],
               ),
 

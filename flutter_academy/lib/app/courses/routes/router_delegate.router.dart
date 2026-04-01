@@ -21,6 +21,7 @@ import 'package:flutter_academy/app/courses/pages/new_category.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_season.page.dart';
+import 'package:flutter_academy/app/courses/pages/staff_management.page.dart';
 import 'package:flutter_academy/app/courses/pages/todays.page.dart';
 import 'package:flutter_academy/app/courses/pages/watchlist.page.dart';
 import 'package:flutter_academy/app/courses/pages/edit_rate_plan.page.dart';
@@ -138,6 +139,9 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'booking_search':
         _pages.add(_page(const BookingSearchPage(), 'booking_search'));
+        break;
+      case 'staff_management':
+        _pages.add(_page(const StaffManagementPage(), 'staff_management'));
         break;
       case 'watchlist':
         _pages.add(_page(const WatchlistPage(), 'watchlist'));
