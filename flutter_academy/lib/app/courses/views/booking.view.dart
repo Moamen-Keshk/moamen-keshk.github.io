@@ -25,6 +25,111 @@ final paymentStatusMappingProvider =
 class BookingView extends ConsumerWidget {
   const BookingView({super.key});
 
+  void _showSendMessageDialog(
+      BuildContext context, WidgetRef ref, int bookingId, Booking booking) {
+    final TextEditingController subjectController = TextEditingController();
+    final TextEditingController messageController = TextEditingController();
+    bool isSending = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Message ${booking.firstName} ${booking.lastName}'),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 400),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: subjectController,
+                      decoration: const InputDecoration(labelText: 'Subject'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: messageController,
+                      decoration: const InputDecoration(
+                        labelText: 'Message',
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 5,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isSending ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSending
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(dialogContext);
+
+                          if (subjectController.text.isEmpty ||
+                              messageController.text.isEmpty) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Subject and message are required.'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() => isSending = true);
+
+                          final success = await ref
+                              .read(bookingListVM.notifier)
+                              .sendGuestMessage(
+                                bookingId,
+                                subjectController.text,
+                                messageController.text,
+                              );
+
+                          setState(() => isSending = false);
+
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+
+                          if (success) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Message sent to guest successfully.'),
+                              ),
+                            );
+                          } else {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to send message.'),
+                              ),
+                            );
+                          }
+                        },
+                  child: isSending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Send'),
+                )
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookingId = ref.watch(bookingIdProvider);
@@ -59,39 +164,62 @@ class BookingView extends ConsumerWidget {
 
             return Padding(
               padding: const EdgeInsets.all(12),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _section("Guest Info", {
-                    "Name": "${booking.firstName} ${booking.lastName}",
-                    "Email": booking.email ?? "-",
-                    "Phone": booking.phone ?? "-",
-                    "Adults": "${booking.numberOfAdults}",
-                    "Children": "${booking.numberOfChildren}",
-                  }),
-                  _section("Dates", {
-                    "Check-in": format.format(booking.checkIn),
-                    "Check-out": format.format(booking.checkOut),
-                    "Created": format.format(booking.bookingDate),
-                  }),
-                  _section("Payment", {
-                    "Rate": "£${booking.rate.toStringAsFixed(2)}",
-                    "Status": paymentStatusMapping[booking.paymentStatusID] ??
-                        "Unknown",
-                  }),
-                  _section("Meta", {
-                    "Room":
-                        roomMapping[booking.roomID] ?? 'Room ${booking.roomID}',
-                    "Confirmation Number":
-                        booking.confirmationNumber.toString(),
-                  }),
-                  _section("Nightly Rates", {
-                    for (var rate in booking.bookingRates)
-                      DateFormat('dd MMM').format(rate.rateDate):
-                          "£${rate.nightlyRate.toStringAsFixed(2)}"
-                  }),
+                  // --- Guest Communication Action Bar ---
+                  if (booking.email != null && booking.email!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.email_outlined),
+                        label: const Text("Message Guest"),
+                        onPressed: () => _showSendMessageDialog(
+                            context, ref, bookingId, booking),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                        ),
+                      ),
+                    ),
+
+                  // --- Booking Details ---
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.start,
+                    children: [
+                      _section("Guest Info", {
+                        "Name": "${booking.firstName} ${booking.lastName}",
+                        "Email": booking.email ?? "-",
+                        "Phone": booking.phone ?? "-",
+                        "Adults": "${booking.numberOfAdults}",
+                        "Children": "${booking.numberOfChildren}",
+                      }),
+                      _section("Dates", {
+                        "Check-in": format.format(booking.checkIn),
+                        "Check-out": format.format(booking.checkOut),
+                        "Created": format.format(booking.bookingDate),
+                      }),
+                      _section("Payment", {
+                        "Rate": "£${booking.rate.toStringAsFixed(2)}",
+                        "Status":
+                            paymentStatusMapping[booking.paymentStatusID] ??
+                                "Unknown",
+                      }),
+                      _section("Meta", {
+                        "Room": roomMapping[booking.roomID] ??
+                            'Room ${booking.roomID}',
+                        "Confirmation Number":
+                            booking.confirmationNumber.toString(),
+                      }),
+                      _section("Nightly Rates", {
+                        for (var rate in booking.bookingRates)
+                          DateFormat('dd MMM').format(rate.rateDate):
+                              "£${rate.nightlyRate.toStringAsFixed(2)}"
+                      }),
+                    ],
+                  ),
                 ],
               ),
             );

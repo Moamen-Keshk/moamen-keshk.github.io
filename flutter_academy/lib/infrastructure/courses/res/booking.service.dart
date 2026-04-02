@@ -131,4 +131,23 @@ class BookingService {
       return null;
     }
   }
+
+  // Add this method to your BookingService class
+  Future<bool> sendGuestMessage(
+      int propertyId, int bookingId, String subject, String message) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      return await sendPostRequest(
+        {
+          'subject': subject,
+          'message': message,
+        },
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId/send_message",
+      );
+    } catch (e) {
+      debugPrint("Error sending message: $e");
+      return false;
+    }
+  }
 }

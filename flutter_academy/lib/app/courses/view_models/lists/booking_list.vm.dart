@@ -78,6 +78,21 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     }
     return null;
   }
+
+  Future<bool> sendGuestMessage(
+      int bookingId, String subject, String message) async {
+    try {
+      final success = await bookingService.sendGuestMessage(
+        propertyId,
+        bookingId,
+        subject,
+        message,
+      );
+      return success;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 final selectedBookingIdProvider = StateProvider<int?>((ref) => null);

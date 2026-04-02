@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_academy/app/courses/view_models/season.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/rate_plan.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/floor.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/property.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/property_list.vm.dart';
 
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Provider;
@@ -76,6 +78,23 @@ final selectedMonthVM = StateNotifierProvider<SelectedMonthVM, DateTime>(
 
 final selectedPropertyVM = StateNotifierProvider<SelectedPropertyVM, int?>(
     (ref) => SelectedPropertyVM());
+
+// Backwards-compatible provider for screens that expect the selected property.
+final selectedPropertyProvider = Provider<PropertyVM?>((ref) {
+  final selectedPropertyId = ref.watch(selectedPropertyVM);
+  if (selectedPropertyId == null) {
+    return null;
+  }
+
+  final properties = ref.watch(propertyListVM);
+  for (final property in properties) {
+    if (int.tryParse(property.id) == selectedPropertyId) {
+      return property;
+    }
+  }
+
+  return null;
+});
 
 // 💡 PRO-TIP OPTIMIZATION:
 // Since the number of days is purely derived from the selected month,
