@@ -44,7 +44,9 @@ class RoomOnlineListVM extends StateNotifier<List<RoomOnlineVM>> {
 
   /// Delete a room rate by ID
   Future<bool> deleteRoomOnline(String roomOnlineId) async {
-    final result = await roomOnlineService.deleteRoomOnline(roomOnlineId);
+    if (propertyId == null) return false;
+    final result =
+        await roomOnlineService.deleteRoomOnline(propertyId!, roomOnlineId);
     if (result) {
       state = state.where((rate) => rate.id != roomOnlineId).toList();
       await fetchRoomOnline();

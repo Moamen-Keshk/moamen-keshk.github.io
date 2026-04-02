@@ -42,7 +42,7 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
 
     if (overrideConflicts) {
       for (final plan in conflicts) {
-        await RatePlanService().deleteRatePlan(plan.id);
+        await RatePlanService().deleteRatePlan(plan.propertyId, plan.id);
       }
     }
 
@@ -56,7 +56,11 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
   }
 
   Future<bool> deleteRatePlan(String ratePlanId) async {
-    final success = await RatePlanService().deleteRatePlan(ratePlanId);
+    if (propertyId == null) return false;
+    final success = await RatePlanService().deleteRatePlan(
+      propertyId!,
+      ratePlanId,
+    );
     if (success) await fetchRatePlans();
     return success;
   }

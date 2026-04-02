@@ -8,7 +8,8 @@ class SeasonService {
   Future<List<Season>> getAllSeasons(int propertyId) async {
     final response = await sendGetRequest(
       await _auth.currentUser?.getIdToken(),
-      "/api/v1/all_seasons/$propertyId",
+      // UPDATED PATH:
+      "/api/v1/properties/$propertyId/seasons",
     );
 
     if (response == null || response['data'] == null) return [];
@@ -22,12 +23,16 @@ class SeasonService {
     required DateTime endDate,
     String? label,
   }) async {
-    return await sendPostRequest({
-      "property_id": propertyId,
-      "start_date": startDate.toIso8601String(),
-      "end_date": endDate.toIso8601String(),
-      if (label != null) "label": label,
-    }, await _auth.currentUser?.getIdToken(), "/api/v1/new_season");
+    return await sendPostRequest(
+        {
+          "property_id": propertyId,
+          "start_date": startDate.toIso8601String(),
+          "end_date": endDate.toIso8601String(),
+          if (label != null) "label": label,
+        },
+        await _auth.currentUser?.getIdToken(),
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/seasons");
   }
 
   Future<bool> updateSeason({
@@ -37,20 +42,25 @@ class SeasonService {
     required DateTime endDate,
     String? label,
   }) async {
-    return await sendPutRequest({
-      "property_id": propertyId,
-      "start_date": startDate.toIso8601String(),
-      "end_date": endDate.toIso8601String(),
-      if (label != null) "label": label,
-    }, await _auth.currentUser?.getIdToken(),
-        "/api/v1/update_season/$seasonId");
+    return await sendPutRequest(
+        {
+          "property_id": propertyId,
+          "start_date": startDate.toIso8601String(),
+          "end_date": endDate.toIso8601String(),
+          if (label != null) "label": label,
+        },
+        await _auth.currentUser?.getIdToken(),
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/seasons/$seasonId");
   }
 
-  Future<bool> deleteSeason(String seasonId) async {
+  /// UPDATED: Added `propertyId` parameter to match backend URL requirement
+  Future<bool> deleteSeason(int propertyId, String seasonId) async {
     try {
       final dynamic response = await sendDeleteRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/delete_season/$seasonId",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/seasons/$seasonId",
       );
       if (response is bool) return response;
       if (response is Map<String, dynamic>) {

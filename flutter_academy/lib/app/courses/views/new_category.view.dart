@@ -41,6 +41,13 @@ class _NewCategoryViewState extends ConsumerState<NewCategoryView> {
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(labelText: "enter name"),
+                // Add validation for the name field
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a name';
+                  }
+                  return null;
+                },
               ),
               TextFormField(
                 minLines: 3,
@@ -48,23 +55,35 @@ class _NewCategoryViewState extends ConsumerState<NewCategoryView> {
                 controller: _description,
                 decoration:
                     const InputDecoration(labelText: "enter description"),
+                // Add validation for the description field
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: () async {
-                  if (await ref.read(categoryListVM.notifier).addToCategories(
-                      name: _name.text, description: _description.text)) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Category added successfully.')),
-                      );
-                    }
-                    ref.read(routerProvider).replaceAllWith('dashboard');
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('An error occured, try again!')),
-                      );
+                  // Only proceed if the form fields pass the validation
+                  if (_formKey.currentState!.validate()) {
+                    if (await ref.read(categoryListVM.notifier).addToCategories(
+                        name: _name.text, description: _description.text)) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Category added successfully.')),
+                        );
+                      }
+                      ref.read(routerProvider).replaceAllWith('dashboard');
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('An error occured, try again!')),
+                        );
+                      }
                     }
                   }
                 },

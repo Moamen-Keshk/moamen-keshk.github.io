@@ -64,7 +64,7 @@ class SeasonListVM extends StateNotifier<List<SeasonVM>> {
 
     if (overrideConflicts) {
       for (final conflict in conflicts) {
-        await SeasonService().deleteSeason(conflict.id);
+        await SeasonService().deleteSeason(conflict.propertyId, conflict.id);
       }
     }
 
@@ -92,7 +92,8 @@ class SeasonListVM extends StateNotifier<List<SeasonVM>> {
   }
 
   Future<bool> deleteSeason(String seasonId) async {
-    final result = await SeasonService().deleteSeason(seasonId);
+    if (propertyId == null) return false;
+    final result = await SeasonService().deleteSeason(propertyId!, seasonId);
     if (result) {
       state = state.where((s) => s.id != seasonId).toList();
       return true;

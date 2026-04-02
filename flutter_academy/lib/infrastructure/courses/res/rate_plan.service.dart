@@ -6,20 +6,34 @@ class RatePlanService {
   final _auth = FirebaseAuth.instance;
 
   Future<List<RatePlan>> getRatePlans(int propertyId) async {
-    final query = await sendGetRequest(
-      await _auth.currentUser?.getIdToken(),
-      "/api/v1/all_rate_plans/$propertyId",
-    );
-    return (query['data'] as List).map((e) => RatePlan.fromResMap(e)).toList();
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/rate_plans",
+      );
+      return (query['data'] as List)
+          .map((e) => RatePlan.fromResMap(e))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<List<RatePlan>> getRatePlansByCategoryId(
       int propertyId, String categoryId) async {
-    final query = await sendGetRequest(
-      await _auth.currentUser?.getIdToken(),
-      "/api/v1/rate_plans_by_category/$propertyId/$categoryId",
-    );
-    return (query['data'] as List).map((e) => RatePlan.fromResMap(e)).toList();
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/categories/$categoryId/rate_plans",
+      );
+      return (query['data'] as List)
+          .map((e) => RatePlan.fromResMap(e))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<bool> addRatePlan(RatePlan ratePlan) async {
@@ -35,18 +49,25 @@ class RatePlanService {
       "is_active": ratePlan.isActive,
     };
 
-    return await sendPostRequest(
-      payload,
-      await _auth.currentUser?.getIdToken(),
-      "/api/v1/new_rate_plan",
-    );
+    try {
+      return await sendPostRequest(
+        payload,
+        await _auth.currentUser?.getIdToken(),
+        // UPDATED PATH:
+        "/api/v1/properties/${ratePlan.propertyId}/rate_plans",
+      );
+    } catch (e) {
+      return false;
+    }
   }
 
-  Future<RatePlan?> getRatePlanById(String id) async {
+  /// UPDATED: Added `propertyId` parameter to match the backend URL requirement
+  Future<RatePlan?> getRatePlanById(int propertyId, String id) async {
     try {
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/rate_plan/$id",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/rate_plans/$id",
       );
       return RatePlan.fromResMap(query['data']);
     } catch (e) {
@@ -72,18 +93,21 @@ class RatePlanService {
       return await sendPutRequest(
         payload,
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/edit_rate_plan/${ratePlan.id}",
+        // UPDATED PATH:
+        "/api/v1/properties/${ratePlan.propertyId}/rate_plans/${ratePlan.id}",
       );
     } catch (e) {
       return false;
     }
   }
 
-  Future<bool> deleteRatePlan(String ratePlanId) async {
+  /// UPDATED: Added `propertyId` parameter to match the backend URL requirement
+  Future<bool> deleteRatePlan(int propertyId, String ratePlanId) async {
     try {
       final dynamic response = await sendDeleteRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/delete_rate_plan/$ratePlanId",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/rate_plans/$ratePlanId",
       );
       if (response is bool) return response;
       if (response is Map<String, dynamic>) {

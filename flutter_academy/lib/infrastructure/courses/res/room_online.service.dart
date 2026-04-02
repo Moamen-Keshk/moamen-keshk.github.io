@@ -10,7 +10,8 @@ class RoomOnlineService {
     try {
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/all_room_online/$propertyId",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/room_online",
       );
       return (query['data'] as List)
           .map((e) => RoomOnline.fromResMap(e))
@@ -21,11 +22,13 @@ class RoomOnlineService {
   }
 
   /// Fetch user-specific room rates (if needed)
+  /// NOTE: Your backend room_online.py does not actually have a route for this
+  /// without a property_id. You might want to pass a propertyId here as well.
   Future<List<RoomOnline>> getRoomOnline() async {
     try {
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/room_online",
+        "/api/v1/properties/room_online",
       );
       return (query['data'] as List)
           .map((e) => RoomOnline.fromResMap(e))
@@ -49,7 +52,8 @@ class RoomOnlineService {
       return await sendPostRequest(
         payload,
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/new_room_online",
+        // UPDATED PATH:
+        "/api/v1/properties/${roomOnline.propertyId}/room_online",
       );
     } catch (e) {
       return false;
@@ -62,6 +66,7 @@ class RoomOnlineService {
       "price": roomOnline.price,
       "date": roomOnline.date.toIso8601String(),
       "category_id": roomOnline.categoryId,
+      "room_id": roomOnline.roomId,
       "room_status_id": roomOnline.roomStatusId
     };
 
@@ -69,7 +74,8 @@ class RoomOnlineService {
       return await sendPutRequest(
         payload,
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/update_room_online/${roomOnline.id}",
+        // UPDATED PATH:
+        "/api/v1/properties/${roomOnline.propertyId}/room_online/${roomOnline.id}",
       );
     } catch (e) {
       return false;
@@ -77,11 +83,13 @@ class RoomOnlineService {
   }
 
   /// Delete a room rate by ID
-  Future<bool> deleteRoomOnline(String roomOnlineId) async {
+  /// UPDATED: Added propertyId parameter because backend URL requires it
+  Future<bool> deleteRoomOnline(int propertyId, String roomOnlineId) async {
     try {
       final dynamic response = await sendDeleteRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/delete_room_online/$roomOnlineId",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/room_online/$roomOnlineId",
       );
       if (response is bool) return response;
       if (response is Map<String, dynamic>) {
@@ -94,11 +102,15 @@ class RoomOnlineService {
   }
 
   /// Fetch a single room rate by ID
-  Future<RoomOnline?> getRoomOnlineById(String id) async {
+  /// UPDATED: Added propertyId parameter because backend URL pattern requires it.
+  /// NOTE: Your room_online.py currently does NOT have a GET route for a single rate ID.
+  /// If you use this, you'll need to add it to your Flask backend!
+  Future<RoomOnline?> getRoomOnlineById(int propertyId, String id) async {
     try {
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/room_online/$id",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/room_online/$id",
       );
       return RoomOnline.fromResMap(query['data']);
     } catch (e) {
@@ -114,7 +126,8 @@ class RoomOnlineService {
     try {
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/room_online_by_category?property_id=$propertyId&category_id=$categoryId",
+        // UPDATED PATH:
+        "/api/v1/properties/$propertyId/room_online/by_category?category_id=$categoryId",
       );
       return (query['data'] as List)
           .map((e) => RoomOnline.fromResMap(e))
