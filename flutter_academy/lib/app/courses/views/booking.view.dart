@@ -8,6 +8,9 @@ import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart'
 import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 
+// Import the new Chat View
+import 'package:flutter_academy/app/courses/views/guest_chat.view.dart';
+
 final roomMappingProvider = Provider<Map<int, String>>((ref) {
   final rooms = ref.watch(roomListVM);
   return {
@@ -25,6 +28,7 @@ final paymentStatusMappingProvider =
 class BookingView extends ConsumerWidget {
   const BookingView({super.key});
 
+  // RESTORED: The method to send a custom email
   void _showSendMessageDialog(
       BuildContext context, WidgetRef ref, int bookingId, Booking booking) {
     final TextEditingController subjectController = TextEditingController();
@@ -37,7 +41,7 @@ class BookingView extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Message ${booking.firstName} ${booking.lastName}'),
+              title: Text('Email ${booking.firstName} ${booking.lastName}'),
               content: ConstrainedBox(
                 constraints: const BoxConstraints(minWidth: 400),
                 child: Column(
@@ -103,13 +107,13 @@ class BookingView extends ConsumerWidget {
                             messenger.showSnackBar(
                               const SnackBar(
                                 content:
-                                    Text('Message sent to guest successfully.'),
+                                    Text('Email sent to guest successfully.'),
                               ),
                             );
                           } else {
                             messenger.showSnackBar(
                               const SnackBar(
-                                content: Text('Failed to send message.'),
+                                content: Text('Failed to send email.'),
                               ),
                             );
                           }
@@ -168,20 +172,63 @@ class BookingView extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- Guest Communication Action Bar ---
-                  if (booking.email != null && booking.email!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.email_outlined),
-                        label: const Text("Message Guest"),
-                        onPressed: () => _showSendMessageDialog(
-                            context, ref, bookingId, booking),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Wrap(
+                      spacing: 12.0, // Space between the buttons
+                      runSpacing: 8.0, // Space if they wrap to the next line
+                      children: [
+                        // Button 1: Chat Mechanism (WhatsApp/SMS)
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.chat),
+                          label: const Text("Chat Guest"),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom:
+                                      MediaQuery.of(context).viewInsets.bottom,
+                                ),
+                                child: FractionallySizedBox(
+                                  heightFactor: 0.85,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(20)),
+                                    child: GuestChatView(
+                                      propertyId: propertyId,
+                                      bookingId: bookingId,
+                                      guestName:
+                                          '${booking.firstName} ${booking.lastName}',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
                         ),
-                      ),
+
+                        // Button 2: Email Mechanism (Only shows if guest has an email)
+                        if (booking.email != null && booking.email!.isNotEmpty)
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.email_outlined),
+                            label: const Text("Email Guest"),
+                            onPressed: () => _showSendMessageDialog(
+                                context, ref, bookingId, booking),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
 
                   // --- Booking Details ---
                   Wrap(
