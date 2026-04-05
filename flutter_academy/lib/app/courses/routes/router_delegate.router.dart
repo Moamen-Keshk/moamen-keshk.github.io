@@ -4,6 +4,7 @@ import 'package:flutter_academy/app/auth/pages/login.page.dart';
 import 'package:flutter_academy/app/auth/pages/register.page.dart';
 import 'package:flutter_academy/app/auth/pages/reset_password.page.dart';
 import 'package:flutter_academy/app/courses/pages/about.page.dart';
+import 'package:flutter_academy/app/courses/pages/amenities_management.page.dart';
 import 'package:flutter_academy/app/courses/pages/booking.page.dart';
 import 'package:flutter_academy/app/courses/pages/booking_search.page.dart';
 import 'package:flutter_academy/app/courses/pages/contact.page.dart';
@@ -142,6 +143,10 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'staff_management':
         _pages.add(_page(const StaffManagementPage(), 'staff_management'));
+        break;
+      case 'amenities_management':
+        _pages.add(
+            _page(const AmenitiesManagementPage(), 'amenities_management'));
         break;
       case 'watchlist':
         _pages.add(_page(const WatchlistPage(), 'watchlist'));

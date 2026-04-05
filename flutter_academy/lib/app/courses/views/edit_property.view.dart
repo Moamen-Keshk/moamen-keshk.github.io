@@ -6,6 +6,7 @@ import 'package:flutter_academy/app/courses/view_models/lists/floor_list.vm.dart
 import 'package:flutter_academy/app/courses/view_models/lists/property_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/room.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/room_list.vm.dart';
+import 'package:flutter_academy/app/courses/view_models/lists/amenity_list.vm.dart';
 import 'package:flutter_academy/app/global/selected_property.global.dart';
 import 'package:flutter_academy/infrastructure/courses/model/room.model.dart';
 import 'package:flutter_academy/main.dart';
@@ -25,81 +26,166 @@ class EditPropertyView extends ConsumerStatefulWidget {
 class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
   @override
   Widget build(BuildContext context) {
+    final property = ref.watch(selectedPropertyProvider);
+
+    if (property == null) {
+      return const Center(child: Text("No property selected."));
+    }
+
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          TabBar(
+            labelColor: Theme.of(context).primaryColor,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Theme.of(context).primaryColor,
+            tabs: const [
+              Tab(text: "Basic Details"),
+              Tab(text: "Amenities"),
+              Tab(text: "Floors"),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildBasicDetailsTab(property),
+                _AmenitiesTab(property: property),
+                _buildFloorsTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // TAB 1: BASIC DETAILS & DANGER ZONE
+  // ==========================================
+  Widget _buildBasicDetailsTab(PropertyVM property) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Basic Details Card
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          property.name,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.edit, size: 16),
+                        label: const Text("Edit"),
+                        onPressed: () =>
+                            _showEditPropertyDialog(context, ref, property),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    property.address,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const Divider(height: 30),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, size: 20, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      Text(property.phoneNumber.isNotEmpty
+                          ? property.phoneNumber
+                          : 'No phone set'),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.email, size: 20, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      Text(property.email.isNotEmpty
+                          ? property.email
+                          : 'No email set'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+          // 👉 THE DANGER ZONE
+          Card(
+            color: Colors.red[50],
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: Colors.red, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Danger Zone",
+                    style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Deleting this property will permanently remove all floors, rooms, bookings, and staff access associated with it. This action cannot be undone.",
+                    style: TextStyle(color: Colors.red, fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white),
+                    icon: const Icon(Icons.delete_forever),
+                    label: const Text("Delete Property Entirely"),
+                    onPressed: () => _confirmDeleteProperty(context, property),
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // TAB 3: FLOORS
+  // ==========================================
+  Widget _buildFloorsTab() {
     return Column(
       children: [
-        // ---> NEW: Property Details Header Card <---
-        Consumer(
-          builder: (context, ref, child) {
-            // Adjust 'selectedPropertyProvider' to match your actual exported provider name
-            final property = ref.watch(selectedPropertyProvider);
-
-            if (property == null) return const SizedBox.shrink();
-
-            return Card(
-              margin: const EdgeInsets.all(10.0),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            property.name,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () =>
-                              _showEditPropertyDialog(context, ref, property),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      property.address,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const Divider(height: 20),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone, size: 16, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Text(property.phoneNumber.isNotEmpty
-                            ? property.phoneNumber
-                            : 'No phone set'),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.email, size: 16, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Text(property.email.isNotEmpty
-                            ? property.email
-                            : 'No email set'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-
-        // EXISTING: Floors GridView
         Expanded(
-          // Changed from SizedBox(height: 700) to Expanded for better responsiveness
           child: Consumer(
             builder: (context, ref, child) {
               final floors = ref.watch(floorListVM);
               roomsCategoryMapping = setRoomCategory(
                   ref.read(roomListVM), ref.read(categoryListVM));
+
+              if (floors.isEmpty) {
+                return const Center(child: Text("No floors configured yet."));
+              }
 
               return GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -129,8 +215,7 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                               padding: const EdgeInsets.all(6.0),
                               child: Text(
                                 'Floor ${floors[index].number.toString()}',
-                                style:
-                                    Theme.of(context).textTheme.headlineMedium,
+                                style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ),
                             Expanded(
@@ -216,7 +301,8 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                                     );
                                   }
                                 },
-                                icon: const Icon(Icons.clear),
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.redAccent),
                               ),
                             ),
                           ],
@@ -230,22 +316,23 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(5),
-          child: ElevatedButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey,
-            ),
+          padding: const EdgeInsets.all(10),
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text("New Floor"),
             onPressed: () {
               ref.read(routerProvider).push('new_floor');
             },
-            child: const Text("New Floor"),
           ),
         )
       ],
     );
   }
 
-  // ---> NEW: Edit Property Details Dialog <---
+  // ==========================================
+  // HELPER METHODS
+  // ==========================================
+
   Future<void> _showEditPropertyDialog(
       BuildContext context, WidgetRef ref, PropertyVM property) async {
     final nameController = TextEditingController(text: property.name);
@@ -301,40 +388,22 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                 };
 
                 final propertyId = int.tryParse(property.id);
-                if (propertyId == null) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Unable to update property.'),
-                      ),
-                    );
-                  }
-                  return;
-                }
+                if (propertyId == null) return;
 
                 final success = await ref
                     .read(propertyListVM.notifier)
                     .editProperty(propertyId, updatedData);
 
-                if (!success) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to save property changes.'),
-                      ),
-                    );
-                  }
-                  return;
-                }
+                if (!context.mounted) return;
 
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Property updated successfully.'),
-                    ),
-                  );
-                }
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success
+                        ? 'Property updated successfully.'
+                        : 'Failed to save property changes.'),
+                  ),
+                );
               },
               child: const Text("Save"),
             ),
@@ -342,6 +411,85 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
         );
       },
     );
+  }
+
+  // 👉 HIGH-FRICTION CONFIRMATION DIALOG
+  Future<void> _confirmDeleteProperty(
+      BuildContext context, PropertyVM property) async {
+    final confirmController = TextEditingController();
+    bool isMatched = false;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Delete Property?',
+                style: TextStyle(color: Colors.red)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                    "This action is irreversible. All data will be lost."),
+                const SizedBox(height: 16),
+                Text('Please type "${property.name}" to confirm:'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: confirmController,
+                  decoration:
+                      const InputDecoration(border: OutlineInputBorder()),
+                  onChanged: (val) {
+                    setState(() {
+                      isMatched = val.trim() == property.name;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: isMatched ? () => Navigator.of(ctx).pop(true) : null,
+                child: const Text('I understand, delete it',
+                    style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        });
+      },
+    );
+
+    if (confirm == true) {
+      final propertyId = int.tryParse(property.id);
+      if (propertyId != null) {
+        final success =
+            await ref.read(propertyListVM.notifier).deleteProperty(propertyId);
+
+        if (!mounted || !context.mounted) return;
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Property deleted permanently.'),
+                backgroundColor: Colors.red),
+          );
+          // 1. Reset the global selected property
+          ref.read(selectedPropertyVM.notifier).updateProperty(0);
+          // 2. Return to dashboard
+          ref.read(routerProvider).replaceAllWith('dashboard');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete property.')),
+          );
+        }
+      }
+    }
   }
 
   Map<int, int> setRoomCategory(
@@ -373,7 +521,8 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                 child: const Text("Cancel"),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
-              TextButton(
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 child: const Text("Delete"),
                 onPressed: () => Navigator.of(context).pop(true),
               ),
@@ -381,5 +530,105 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
           ),
         ) ??
         false;
+  }
+}
+
+// ==========================================
+// TAB 2: AMENITIES (Private Widget)
+// ==========================================
+class _AmenitiesTab extends ConsumerStatefulWidget {
+  final PropertyVM property;
+
+  const _AmenitiesTab({required this.property});
+
+  @override
+  ConsumerState<_AmenitiesTab> createState() => _AmenitiesTabState();
+}
+
+class _AmenitiesTabState extends ConsumerState<_AmenitiesTab> {
+  final List<String> _selectedAmenityIds = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 👉 Pre-fill the selected IDs based on what the backend returned
+    if (widget.property.amenities.isNotEmpty) {
+      for (var amenity in widget.property.amenities) {
+        _selectedAmenityIds.add(amenity.id);
+      }
+    }
+  }
+
+  Future<void> _saveAmenities() async {
+    setState(() => _isLoading = true);
+
+    final propertyId = int.tryParse(widget.property.id);
+    if (propertyId != null) {
+      final success = await ref.read(propertyListVM.notifier).editProperty(
+          propertyId,
+          // Sending the integers to backend
+          {
+            'amenity_ids':
+                _selectedAmenityIds.map((id) => int.parse(id)).toList()
+          });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(success ? 'Amenities updated!' : 'Update failed.')),
+        );
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final availableAmenities = ref.watch(amenityListVM);
+
+    if (availableAmenities.isEmpty) {
+      return const Center(child: Text("No amenities available globally."));
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: availableAmenities.length,
+            itemBuilder: (context, index) {
+              final amenity = availableAmenities[index];
+              final isSelected = _selectedAmenityIds.contains(amenity.id);
+
+              return CheckboxListTile(
+                title: Text(amenity.name),
+                value: isSelected,
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedAmenityIds.add(amenity.id);
+                    } else {
+                      _selectedAmenityIds.remove(amenity.id);
+                    }
+                  });
+                },
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: _isLoading
+              ? const CircularProgressIndicator()
+              : ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label: const Text("Save Amenities"),
+                  onPressed: _saveAmenities,
+                ),
+        )
+      ],
+    );
   }
 }

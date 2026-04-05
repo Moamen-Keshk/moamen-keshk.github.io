@@ -180,8 +180,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   child: const Text("Channels"),
                 ),
 
-              /// 💡 Settings Dropdown (Includes OPTION 2 for Channels)
-              /// 💡 Settings Dropdown (Includes Staff Management)
+              /// 💡 Settings Dropdown
               PopupMenuButton<String>(
                 icon: const Icon(Icons.settings),
                 onSelected: (value) {
@@ -202,9 +201,12 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     case 'channels':
                       router.push('channel_manager');
                       break;
-                    // ---> NEW: Route for Staff Management <---
                     case 'staff':
                       router.push('staff_management');
+                      break;
+                    // ---> NEW: Route for Amenities Management <---
+                    case 'amenities':
+                      router.push('amenities_management');
                       break;
                   }
                 },
@@ -215,8 +217,10 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   PopupMenuItem(value: 'seasons', child: Text('Seasons')),
                   PopupMenuItem(
                       value: 'channels', child: Text('Channel Manager')),
-                  // ---> NEW: Dropdown item for Staff <---
                   PopupMenuItem(value: 'staff', child: Text('Staff & Roles')),
+                  // ---> NEW: Dropdown item for Amenities <---
+                  PopupMenuItem(
+                      value: 'amenities', child: Text('Global Amenities')),
                 ],
               ),
 

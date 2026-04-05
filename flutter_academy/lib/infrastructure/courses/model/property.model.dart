@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_academy/infrastructure/courses/model/amenity.model.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart'; // <-- Added for listEquals
 
 final formatter = DateFormat('yyyy-MM-dd');
 
@@ -8,18 +10,20 @@ class Property {
   final String name;
   final String address;
   final String phoneNumber;
-  final String email; // <-- Added email property
+  final String email;
   final String status;
   final DateTime publishedDate;
+  final List<Amenity> amenities;
 
   Property({
     required this.id,
     required this.name,
     required this.address,
     required this.phoneNumber,
-    required this.email, // <-- Added to constructor
+    required this.email,
     required this.status,
     required this.publishedDate,
+    this.amenities = const [],
   });
 
   Property copyWith({
@@ -27,18 +31,20 @@ class Property {
     String? name,
     String? address,
     String? phoneNumber,
-    String? email, // <-- Added to copyWith
+    String? email,
     String? status,
     DateTime? publishedDate,
+    List<Amenity>? amenities,
   }) {
     return Property(
       id: id ?? this.id,
       name: name ?? this.name,
       address: address ?? this.address,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      email: email ?? this.email, // <-- Updated mapping
+      email: email ?? this.email,
       status: status ?? this.status,
       publishedDate: publishedDate ?? this.publishedDate,
+      amenities: amenities ?? this.amenities,
     );
   }
 
@@ -48,9 +54,10 @@ class Property {
       'name': name,
       'address': address,
       'phone_number': phoneNumber,
-      'email': email, // <-- Added to JSON map
+      'email': email,
       'status': status,
-      'publishedDate': publishedDate,
+      'published_date': formatter.format(publishedDate),
+      'amenities': amenities.map((x) => x.toMap()).toList(),
     };
   }
 
@@ -60,9 +67,19 @@ class Property {
       name: map['name'] ?? '',
       address: map['address'] ?? '',
       phoneNumber: map['phone_number'] ?? '',
-      email: map['email'] ?? '', // <-- Parsed from JSON map
+      email: map['email'] ?? '',
       status: map['status'] ?? '',
-      publishedDate: formatter.parse(map['published_date'] ?? ''),
+      // Safely parse date, fallback to now if null or empty
+      publishedDate: (map['published_date'] != null &&
+              map['published_date'].toString().isNotEmpty)
+          ? formatter.parse(map['published_date'])
+          : DateTime.now(),
+      // Safely cast to List before mapping
+      amenities: (map['amenities'] != null && map['amenities'] is List)
+          ? (map['amenities'] as List)
+              .map((x) => Amenity.fromResMap(x))
+              .toList()
+          : [],
     );
   }
 
@@ -72,9 +89,19 @@ class Property {
       name: map['name'] ?? '',
       address: map['address'] ?? '',
       phoneNumber: map['phone_number'] ?? '',
-      email: map['email'] ?? '', // <-- Parsed from JSON map
+      email: map['email'] ?? '',
       status: map['status'] ?? '',
-      publishedDate: formatter.parse(map['published_date'] ?? ''),
+      // Safely parse date, fallback to now if null or empty
+      publishedDate: (map['published_date'] != null &&
+              map['published_date'].toString().isNotEmpty)
+          ? formatter.parse(map['published_date'])
+          : DateTime.now(),
+      // Safely cast to List before mapping
+      amenities: (map['amenities'] != null && map['amenities'] is List)
+          ? (map['amenities'] as List)
+              .map((x) => Amenity.fromResMap(x))
+              .toList()
+          : [],
     );
   }
 
@@ -85,8 +112,7 @@ class Property {
 
   @override
   String toString() {
-    // <-- Added email to string representation
-    return 'Property(id: $id, name: $name, address: $address, phoneNumber: $phoneNumber, email: $email, status: $status, publishedDate: $publishedDate)';
+    return 'Property(id: $id, name: $name, address: $address, phoneNumber: $phoneNumber, email: $email, status: $status, publishedDate: $publishedDate, amenities: $amenities)';
   }
 
   @override
@@ -98,9 +124,10 @@ class Property {
         other.name == name &&
         other.address == address &&
         other.phoneNumber == phoneNumber &&
-        other.email == email && // <-- Added to equality check
+        other.email == email &&
         other.status == status &&
-        other.publishedDate == publishedDate;
+        other.publishedDate == publishedDate &&
+        listEquals(other.amenities, amenities);
   }
 
   @override
@@ -109,8 +136,9 @@ class Property {
         name.hashCode ^
         address.hashCode ^
         phoneNumber.hashCode ^
-        email.hashCode ^ // <-- Added to hash code
+        email.hashCode ^
         status.hashCode ^
-        publishedDate.hashCode;
+        publishedDate.hashCode ^
+        amenities.hashCode;
   }
 }

@@ -35,10 +35,31 @@ class PropertyService {
   }
 
   // 3. ADD PROPERTY
-  Future<bool> addProperty(String name, String address) async {
+  // 👉 UPDATED: Now uses named parameters to accept the full Wizard payload
+  Future<bool> addProperty({
+    required String name,
+    required String address,
+    String? phone,
+    String? email,
+    List<int>? floors,
+    List<int>? amenityIds,
+  }) async {
     final token = await _auth.currentUser?.getIdToken();
-    return await sendPostRequest(
-        {"name": name, "address": address}, token, "/api/v1/new_property");
+
+    // Construct the dynamic payload based on what was provided in the wizard
+    final Map<String, dynamic> payload = {
+      "name": name,
+      "address": address,
+    };
+
+    if (phone != null && phone.isNotEmpty) payload["phone_number"] = phone;
+    if (email != null && email.isNotEmpty) payload["email"] = email;
+    if (floors != null && floors.isNotEmpty) payload["floors"] = floors;
+    if (amenityIds != null && amenityIds.isNotEmpty) {
+      payload["amenity_ids"] = amenityIds;
+    }
+
+    return await sendPostRequest(payload, token, "/api/v1/new_property");
   }
 
   // 4. EDIT PROPERTY
@@ -53,6 +74,27 @@ class PropertyService {
       );
     } catch (e) {
       debugPrint("Error editing property: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteProperty(int propertyId) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      final dynamic response = await sendDeleteRequest(
+        token,
+        "/api/v1/properties/$propertyId",
+      );
+
+      if (response == null) return false;
+      if (response is bool) return response;
+
+      if (response is Map<String, dynamic>) {
+        return response['status'] == 'success';
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Error deleting property: $e");
       return false;
     }
   }
