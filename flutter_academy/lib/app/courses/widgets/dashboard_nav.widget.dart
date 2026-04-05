@@ -193,7 +193,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                       router.push('hotel_rate_plan');
                       break;
                     case 'categories':
-                      router.push('new_category');
+                      router.push('categories_management');
                       break;
                     case 'seasons':
                       router.push('hotel_seasons');

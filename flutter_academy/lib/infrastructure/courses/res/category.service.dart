@@ -1,35 +1,65 @@
 import 'package:flutter_academy/app/req/request.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_academy/infrastructure/courses/model/category.model.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+// 👉 FIX: Hide Flutter's internal Category class to prevent the conflict
+import 'package:flutter/foundation.dart' hide Category;
 
 class CategoryService {
   final _auth = FirebaseAuth.instance;
 
-  // 1. GET ALL CATEGORIES (Global)
-  Future<List<Category>> getCategory() async {
+  Future<List<Category>> getAllCategories() async {
     final token = await _auth.currentUser?.getIdToken();
     final query = await sendGetRequest(token, "/api/v1/categories");
 
     if (query == null || !query.containsKey('data')) {
-      debugPrint("Failed to fetch categories. Returning empty list.");
+      debugPrint("Failed to fetch categories.");
       return [];
     }
-
     return (query['data'] as List).map((e) => Category.fromResMap(e)).toList();
   }
 
-  // 2. GET ALL CATEGORIES (Alias for backward compatibility in your UI)
-  Future<List<Category>> getAllCategories() async {
-    return await getCategory();
-  }
-
-  // 3. ADD CATEGORY (Global)
-  Future<bool> addCategory(String name, String description) async {
+  Future<bool> addCategory({
+    required String name,
+    required int capacity,
+    String? description,
+  }) async {
     final token = await _auth.currentUser?.getIdToken();
     return await sendPostRequest(
-        {"name": name, "description": description},
-        token,
-        "/api/v1/categories");
+      {
+        "name": name,
+        "capacity": capacity,
+        "description": description ?? '',
+      },
+      token,
+      "/api/v1/categories",
+    );
+  }
+
+  Future<bool> editCategory(
+      String categoryId, Map<String, dynamic> updatedData) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      return await sendPutRequest(
+          updatedData, token, "/api/v1/categories/$categoryId");
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteCategory(String categoryId) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      final dynamic response =
+          await sendDeleteRequest(token, "/api/v1/categories/$categoryId");
+
+      if (response == null) return false;
+      if (response is bool) return response;
+      if (response is Map<String, dynamic>) {
+        return response['status'] == 'success';
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }

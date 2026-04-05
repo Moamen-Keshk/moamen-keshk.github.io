@@ -18,7 +18,7 @@ import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
 import 'package:flutter_academy/app/courses/pages/hotel_seasons.page.dart';
 import 'package:flutter_academy/app/courses/pages/load.page.dart';
-import 'package:flutter_academy/app/courses/pages/new_category.page.dart';
+import 'package:flutter_academy/app/courses/pages/categories_management.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_property.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_season.page.dart';
@@ -96,8 +96,9 @@ class AppRouterDelegate extends RouterDelegate<Object>
       case 'edit_floor':
         _pages.add(_page(const EditFloorPage(), 'edit_floor'));
         break;
-      case 'new_category':
-        _pages.add(_page(const NewCategoryPage(), 'new_category'));
+      case 'categories_management':
+        _pages.add(
+            _page(const CategoriesManagementPage(), 'categories_management'));
         break;
       case 'new_floor':
         _pages.add(_page(const NewFloorPage(), 'new_floor'));
