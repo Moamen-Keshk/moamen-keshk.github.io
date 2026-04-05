@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
+import 'package:flutter_academy/main.dart';
 
 class BookingTile extends ConsumerStatefulWidget {
   final int tabIndex;
@@ -23,60 +24,7 @@ class BookingTile extends ConsumerStatefulWidget {
 
 class _BookingTileState extends ConsumerState<BookingTile> {
   bool _isHovered = false;
-  bool _showDelete = false;
-  bool _showCheckIn = false;
   bool _isSelected = false;
-
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Delete Booking"),
-        content: const Text("Are you sure you want to delete this booking?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      final notifier = ref.read(bookingListVM.notifier);
-      final success = await notifier.deleteBooking(widget.booking.booking.id);
-      ref.read(selectedBookingIdProvider.notifier).state = null;
-
-      if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Booking deleted successfully."),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _handleCheckIn(BuildContext context) async {
-    final success = await ref
-        .read(bookingListVM.notifier)
-        .checkInBooking(int.parse(widget.booking.booking.id));
-    if (success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Guest checked in successfully."),
-          backgroundColor: Colors.teal,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,20 +34,15 @@ class _BookingTileState extends ConsumerState<BookingTile> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () {
-        setState(() {
-          _showDelete = false;
-          _showCheckIn = true;
-          ref.read(selectedBookingIdProvider.notifier).state =
-              int.parse(widget.booking.booking.id);
-        });
+        ref.read(selectedBookingIdProvider.notifier).state =
+            int.parse(widget.booking.booking.id);
       },
-      onLongPress: () {
-        setState(() {
-          _showDelete = true;
-          _showCheckIn = false;
-          ref.read(selectedBookingIdProvider.notifier).state =
-              int.parse(widget.booking.booking.id);
-        });
+      onDoubleTap: () {
+        ref.read(selectedBookingIdProvider.notifier).state =
+            int.parse(widget.booking.booking.id);
+        ref.read(bookingIdProvider.notifier).state =
+            int.parse(widget.booking.booking.id);
+        ref.read(routerProvider).push('booking');
       },
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
@@ -115,13 +58,11 @@ class _BookingTileState extends ConsumerState<BookingTile> {
               context,
               color: Colors.blue[300]!,
               opacity: 1.0,
-              showDelete: false,
             ),
             childWhenDragging: _buildTile(
               context,
               color: Colors.grey[300]!,
               opacity: 0.5,
-              showDelete: false,
             ),
             child: _buildTile(
               context,
@@ -131,10 +72,9 @@ class _BookingTileState extends ConsumerState<BookingTile> {
                       ? Colors.brown[200]!
                       : widget.booking.booking.statusID == 1
                           ? Colors.blue[300]!
-                          : widget.booking.paymentStatusID == 3
+                      : widget.booking.paymentStatusID == 3
                               ? Colors.red[300]!
                               : Colors.blue[300]!,
-              showDelete: _isSelected && _showDelete,
               opacity: _isHovered ? 0.85 : 1.0,
             ),
           ),
@@ -144,8 +84,7 @@ class _BookingTileState extends ConsumerState<BookingTile> {
   }
 
   Widget _buildTile(BuildContext context,
-      {required Color color, double opacity = 1.0, bool showDelete = false}) {
-    final booking = widget.booking.booking;
+      {required Color color, double opacity = 1.0}) {
     return Opacity(
       opacity: opacity,
       child: Container(
@@ -168,23 +107,6 @@ class _BookingTileState extends ConsumerState<BookingTile> {
                 ),
               ),
             ),
-            if (showDelete)
-              IconButton(
-                icon: const Icon(Icons.delete, size: 18, color: Colors.white),
-                padding: const EdgeInsets.only(right: 4),
-                constraints: const BoxConstraints(),
-                onPressed: () => _handleDelete(context),
-              ),
-            if (!showDelete &&
-                _showCheckIn &&
-                booking.statusID == 1 &&
-                _isSelected)
-              IconButton(
-                icon: const Icon(Icons.login, size: 18, color: Colors.white),
-                padding: const EdgeInsets.only(right: 4),
-                constraints: const BoxConstraints(),
-                onPressed: () => _handleCheckIn(context),
-              ),
           ],
         ),
       ),

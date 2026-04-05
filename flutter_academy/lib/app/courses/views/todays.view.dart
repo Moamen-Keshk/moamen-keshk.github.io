@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter_academy/app/courses/utilities/booking_summary_card.utils.dart';
-import 'package:flutter_academy/app/courses/utilities/status_card.utils.dart';
 import 'package:flutter_academy/app/courses/view_models/booking.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/booking_list.vm.dart';
 import 'package:flutter_academy/app/courses/view_models/lists/payment_status_list.vm.dart';
@@ -58,80 +57,24 @@ class TodaysView extends ConsumerWidget {
       orElse: () => <int, String>{},
     );
 
-    final readyRoomIDs = arrivals
-        .where(
-          (arrival) => !departures.any(
-            (departure) => departure.roomID == arrival.roomID,
+    // Keep only the selected list based on the chosen view
+    final filtered = selectedView == 'Departures'
+        ? departures
+        : selectedView == 'InHouse'
+            ? inHouse
+            : arrivals;
+
+    final List<Widget> rows = filtered
+        .map(
+          (booking) => _bookingRow(
+            context,
+            ref,
+            booking,
+            roomMapping,
+            paymentStatusMapping,
           ),
         )
-        .map((b) => b.roomID)
-        .toSet();
-
-    final toCleanRoomIDs = departures
-        .where(
-          (departure) => arrivals.any(
-            (arrival) => arrival.roomID == departure.roomID,
-          ),
-        )
-        .map((b) => b.roomID)
-        .toSet();
-
-    List<Widget> rows;
-
-    if (selectedView == 'Ready') {
-      final rooms = readyRoomIDs
-          .map((id) => roomMapping[id] ?? 'Room $id')
-          .toList()
-        ..sort();
-
-      rows = [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: rooms.map((room) => Chip(label: Text(room))).toList(),
-          ),
-        ),
-      ];
-    } else if (selectedView == 'ToClean') {
-      final rooms = toCleanRoomIDs
-          .map((id) => roomMapping[id] ?? 'Room $id')
-          .toList()
-        ..sort();
-
-      rows = [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: rooms.map((room) => Chip(label: Text(room))).toList(),
-          ),
-        ),
-      ];
-    } else {
-      final filtered = selectedView == 'Departures'
-          ? departures
-          : selectedView == 'InHouse'
-              ? inHouse
-              : arrivals;
-
-      rows = filtered
-          .map(
-            (booking) => _bookingRow(
-              context,
-              ref,
-              propertyId,
-              booking,
-              roomMapping,
-              paymentStatusMapping,
-            ),
-          )
-          .toList();
-    }
+        .toList();
 
     return SizedBox(
       height: MediaQuery.of(context).size.height,
@@ -153,17 +96,7 @@ class TodaysView extends ConsumerWidget {
                       ref.read(selectedViewProvider.notifier).state = category;
                     },
                   ),
-                  const SizedBox(height: 8),
-                  StatusCards(
-                    readyRoomIDs: readyRoomIDs,
-                    toCleanRoomIDs: toCleanRoomIDs,
-                    roomMapping: roomMapping,
-                    selectedGroup: selectedView,
-                    onTap: (group) {
-                      ref.read(selectedViewProvider.notifier).state = group!;
-                    },
-                  ),
-                  const Divider(height: 24),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -181,7 +114,6 @@ class TodaysView extends ConsumerWidget {
   Widget _bookingRow(
     BuildContext context,
     WidgetRef ref,
-    int propertyId,
     BookingVM booking,
     Map<int, String> roomMapping,
     Map<int, String> paymentMapping,

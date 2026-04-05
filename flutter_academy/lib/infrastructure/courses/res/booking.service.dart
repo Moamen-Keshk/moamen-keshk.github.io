@@ -93,6 +93,20 @@ class BookingService {
     }
   }
 
+  Future<bool> checkOutBooking(int propertyId, int bookingId) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      return await sendPostRequest(
+        {}, // No body needed
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId/check_out",
+      );
+    } catch (e) {
+      debugPrint("Error checking out booking: $e");
+      return false;
+    }
+  }
+
   Future<List<Booking>> getBookingsByDate(
       int propertyId, DateTime date, String bookingState) async {
     final token = await _auth.currentUser?.getIdToken();
@@ -148,6 +162,59 @@ class BookingService {
     } catch (e) {
       debugPrint("Error sending message: $e");
       return false;
+    }
+  }
+
+  Future<bool> extendBooking(
+    int propertyId,
+    int bookingId,
+    String newCheckOutDate, {
+    bool isPaid = false,
+    double extraCost = 0.0,
+  }) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      return await sendPostRequest(
+        {
+          "new_check_out": newCheckOutDate,
+          "is_paid": isPaid,
+          "extra_cost": extraCost
+        },
+        token,
+        "/api/v1/properties/$propertyId/bookings/$bookingId/extend",
+      );
+    } catch (e) {
+      debugPrint("Error extending booking: $e");
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> checkExtensionAvailability(int propertyId,
+      int roomId, String currentCheckOut, String newCheckOut) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+
+      // Expected backend response: {"available": true, "extra_cost": 150.00}
+      final response = await sendPostWithResponseRequest(
+        {
+          "room_id": roomId,
+          "current_check_out": currentCheckOut,
+          "new_check_out": newCheckOut
+        },
+        token,
+        "/api/v1/properties/$propertyId/bookings/check_extension",
+      );
+
+      if (response != null && response is Map<String, dynamic>) {
+        return response;
+      }
+
+      // Fallback if backend endpoint isn't built yet
+      return {'available': true, 'extra_cost': null};
+    } catch (e) {
+      debugPrint("Error checking extension availability: $e");
+      // Default to false if the network fails entirely
+      return {'available': false, 'extra_cost': 0.0};
     }
   }
 }

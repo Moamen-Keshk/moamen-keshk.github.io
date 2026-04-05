@@ -71,6 +71,14 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     return success;
   }
 
+  Future<bool> checkOutBooking(int bookingId) async {
+    final success = await bookingService.checkOutBooking(propertyId, bookingId);
+    if (success) {
+      await fetchBookings();
+    }
+    return success;
+  }
+
   Future<BookingVM?> getBookingById(String bookingId) async {
     final booking = await bookingService.getBookingById(propertyId, bookingId);
     if (booking != null) {
@@ -92,6 +100,60 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     } catch (_) {
       return false;
     }
+  }
+
+  // 👉 UPDATED: Extend Logic with Named Parameters
+  Future<bool> extendBooking(
+    int bookingId,
+    String newCheckOutDate, {
+    bool isPaid = false,
+    double extraCost = 0.0,
+  }) async {
+    final success = await bookingService.extendBooking(
+      propertyId,
+      bookingId,
+      newCheckOutDate,
+      isPaid: isPaid,
+      extraCost: extraCost,
+    );
+
+    if (success) {
+      await fetchBookings();
+    }
+    return success;
+  }
+
+  // 👉 MAKE SURE you also have this method in your VM if you haven't added it yet!
+  Future<Map<String, dynamic>> checkExtensionAvailability(
+      int roomId, String currentCheckOut, String newCheckOut) async {
+    return await bookingService.checkExtensionAvailability(
+        propertyId, roomId, currentCheckOut, newCheckOut);
+  }
+
+  // 👉 ADD THIS TO: lib/app/courses/view_models/lists/booking_list.vm.dart
+  Future<bool> updatePaymentStatus(
+      int bookingId, int newPaymentStatusId) async {
+    // Uses the existing editBooking service to just update the payment status field
+    final success = await bookingService.editBooking(propertyId, bookingId, {
+      'payment_status_id': newPaymentStatusId,
+    });
+
+    if (success) {
+      await fetchBookings();
+    }
+    return success;
+  }
+
+  // 👉 NEW: Dedicated method to update finances
+  Future<bool> recordPayment(int bookingId, double newAmountPaid) async {
+    final success = await bookingService.editBooking(propertyId, bookingId, {
+      'amount_paid': newAmountPaid,
+    });
+
+    if (success) {
+      await fetchBookings(); // Refresh the list
+    }
+    return success;
   }
 }
 

@@ -31,6 +31,8 @@ class Booking {
   final int propertyID;
   final int roomID;
   final List<BookingRate> bookingRates;
+  final double amountPaid;
+  final double balanceDue;
 
   Booking({
     required this.id,
@@ -59,6 +61,8 @@ class Booking {
     required this.propertyID,
     required this.roomID,
     required this.bookingRates,
+    required this.amountPaid,
+    required this.balanceDue,
   });
 
   Booking copyWith({
@@ -88,6 +92,8 @@ class Booking {
     int? propertyID,
     int? roomID,
     List<BookingRate>? bookingRates,
+    double? amountPaid,
+    double? balanceDue,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -116,6 +122,8 @@ class Booking {
       propertyID: propertyID ?? this.propertyID,
       roomID: roomID ?? this.roomID,
       bookingRates: bookingRates ?? this.bookingRates,
+      amountPaid: amountPaid ?? this.amountPaid,
+      balanceDue: balanceDue ?? this.balanceDue,
     );
   }
 
@@ -147,6 +155,8 @@ class Booking {
       'property_id': propertyID,
       'room_id': roomID,
       'booking_rates': bookingRates.map((r) => r.toMap()).toList(),
+      'amount_paid': amountPaid,
+      'balance_due': balanceDue,
     };
   }
 
@@ -189,6 +199,8 @@ class Booking {
               ?.map((e) => BookingRate.fromMap(e))
               .toList() ??
           [],
+      amountPaid: (map['amount_paid'] as num?)?.toDouble() ?? 0.0,
+      balanceDue: (map['balance_due'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -203,7 +215,7 @@ class Booking {
 
   @override
   String toString() {
-    return 'Booking(id: $id, confirmationNumber: $confirmationNumber, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, numberOfAdults: $numberOfAdults, numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID, note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate, checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay, checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay, checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights, rate: $rate, propertyID: $propertyID, roomID: $roomID, bookingRates: $bookingRates)';
+    return 'Booking(id: $id, confirmationNumber: $confirmationNumber, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, numberOfAdults: $numberOfAdults, numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID, note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate, checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay, checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay, checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights, rate: $rate, propertyID: $propertyID, roomID: $roomID, bookingRates: $bookingRates, amountPaid: $amountPaid, balanceDue: $balanceDue)';
   }
 
   @override
@@ -236,7 +248,9 @@ class Booking {
         other.rate == rate &&
         other.propertyID == propertyID &&
         other.roomID == roomID &&
-        other.bookingRates == bookingRates;
+        other.bookingRates == bookingRates &&
+        other.amountPaid == amountPaid &&
+        other.balanceDue == balanceDue;
   }
 
   @override
@@ -266,6 +280,8 @@ class Booking {
         rate.hashCode ^
         propertyID.hashCode ^
         roomID.hashCode ^
-        bookingRates.hashCode;
+        bookingRates.hashCode ^
+        amountPaid.hashCode ^
+        balanceDue.hashCode;
   }
 }

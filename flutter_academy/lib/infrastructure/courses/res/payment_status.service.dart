@@ -12,7 +12,7 @@ class PaymentStatusService {
     final token = await _auth.currentUser?.getIdToken();
 
     // 👉 Updated to match the global RESTful pattern
-    final query = await sendGetRequest(token, "/api/v1/all-payment-status");
+    final query = await sendGetRequest(token, "/api/v1/payment-statusesq");
 
     // 👉 THE SAFETY NET: Prevent the 'null' crash
     if (query == null || !query.containsKey('data')) {
@@ -31,7 +31,7 @@ class PaymentStatusService {
     final token = await _auth.currentUser?.getIdToken();
 
     // 👉 Updated to match the global RESTful pattern
-    final query = await sendGetRequest(token, "/api/v1/all-payment-status");
+    final query = await sendGetRequest(token, "/api/v1/all-payment-statuses");
 
     // 👉 THE SAFETY NET
     if (query == null || !query.containsKey('data')) {
@@ -53,7 +53,7 @@ class PaymentStatusService {
     return await sendPostRequest(
         {"name": name, "description": description},
         token,
-        "/api/v1/all-payment-status" // Make sure your Flask POST route matches this string!
+        "/api/v1/payment-statuses" // Make sure your Flask POST route matches this string!
         );
   }
 }

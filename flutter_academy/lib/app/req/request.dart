@@ -40,6 +40,33 @@ Future<bool> sendPostRequest(
   }
 }
 
+Future<dynamic> sendPostWithResponseRequest(
+  Map<String, dynamic> body,
+  String? idToken,
+  String apiURL,
+) async {
+  try {
+    final http.Response response = await http.post(
+      Uri.parse('$baseURL$apiURL'),
+      headers: <String, String>{
+        "Content-Type": "application/json",
+        if (idToken != null) "Authorization": "Bearer $idToken",
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.body.isEmpty) {
+        return {'status': 'success'};
+      }
+      return jsonDecode(response.body);
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 Future<dynamic> sendGetRequest(String? idToken, String apiURL) async {
   try {
     final http.Response query = await http.get(

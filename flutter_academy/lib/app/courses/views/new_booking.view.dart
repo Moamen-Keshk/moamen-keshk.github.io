@@ -39,14 +39,17 @@ class _BookingFormState extends State<BookingForm> {
   final dateRangeController = TextEditingController();
   final checkInController = TextEditingController();
   final checkOutController = TextEditingController();
+
   final rateController = TextEditingController();
+  final amountPaidController = TextEditingController();
 
   final ScrollController _formScroll = ScrollController();
   final ScrollController _noteVScroll = ScrollController();
   final ScrollController _specialVScroll = ScrollController();
 
   DateTime? checkInDate;
-  DateTime? checkOutDate; // treated as inclusive last booked day
+  // 👉 FIX: Treated as departure day (Exclusive of nightly rate)
+  DateTime? checkOutDate;
   int? _numberOfNights;
   int? _numberOfAdults;
   int? _numberOfChildren;
@@ -64,8 +67,8 @@ class _BookingFormState extends State<BookingForm> {
         widget.tabDay!,
       );
 
-      // Inclusive end date: same day means 1 booked night/day
-      checkOutDate = checkInDate;
+      // 👉 FIX: Default check-out is the NEXT day (1 night stay)
+      checkOutDate = checkInDate!.add(const Duration(days: 1));
       _numberOfNights = 1;
 
       checkInController.text = _formatDate(checkInDate!);
@@ -80,11 +83,41 @@ class _BookingFormState extends State<BookingForm> {
     }
   }
 
+  void _updateAmountPaidBasedOnStatus() {
+    if (_paymentStatusID == null || widget.ref == null) {
+      return;
+    }
+
+    final statuses = widget.ref!.read(paymentStatusListVM);
+    final status = statuses.firstWhereOrNull(
+      (s) => s.id == _paymentStatusID.toString(),
+    );
+
+    if (status != null && rateController.text.isNotEmpty) {
+      final name = status.name.toLowerCase();
+
+      if (name == 'paid') {
+        amountPaidController.text = rateController.text;
+      } else if (name == 'pending' || name == 'unpaid') {
+        amountPaidController.text = '0.00';
+      } else if (name == 'partially paid') {
+        final currentAmount = double.tryParse(amountPaidController.text) ?? 0.0;
+        final totalRate = double.tryParse(rateController.text) ?? 0.0;
+        if (currentAmount == 0.0 || currentAmount == totalRate) {
+          amountPaidController.text = '';
+        }
+      }
+    }
+  }
+
   Future<void> _tryResolveAndSetRate() async {
     if (_roomID != null && checkInDate != null && checkOutDate != null) {
       await _resolveAndSetRate();
     } else {
-      setState(() => rateController.text = '');
+      setState(() {
+        rateController.text = '';
+        amountPaidController.text = '';
+      });
     }
   }
 
@@ -101,32 +134,51 @@ class _BookingFormState extends State<BookingForm> {
         );
 
     final categoryId = roomVM?.categoryId.toString();
-    if (categoryId == null) return;
+    if (categoryId == null) {
+      return;
+    }
 
     final resolver = RateResolver(widget.ref!);
 
     double totalRate = 0.0;
     DateTime currentDate = checkInDate!;
+    DateTime endLoop = checkOutDate!;
 
-    // Inclusive loop: includes the last selected day
-    while (!currentDate.isAfter(checkOutDate!)) {
+    // Safety fallback: if same day selected, charge for at least 1 night
+    if (currentDate.isAtSameMomentAs(endLoop)) {
+      endLoop = endLoop.add(const Duration(days: 1));
+    }
+
+    // 👉 FIX: Exclusive loop (stops before the check-out day)
+    while (currentDate.isBefore(endLoop)) {
       final nightlyRate = resolver.getRateForRoomAndDate(
         roomId: _roomID.toString(),
         date: currentDate,
         categoryId: categoryId,
       );
-      if (nightlyRate != null) totalRate += nightlyRate;
+      if (nightlyRate != null) {
+        totalRate += nightlyRate;
+      }
       currentDate = currentDate.add(const Duration(days: 1));
     }
 
-    setState(() => rateController.text = totalRate.toStringAsFixed(2));
+    setState(() {
+      rateController.text = totalRate.toStringAsFixed(2);
+    });
+
+    _updateAmountPaidBasedOnStatus();
   }
 
   void calculateNumberOfNights() {
     if (checkInDate != null && checkOutDate != null) {
       setState(() {
-        // Inclusive difference
-        _numberOfNights = checkOutDate!.difference(checkInDate!).inDays + 1;
+        // 👉 FIX: Standard calculation. (e.g. 4th - 1st = 3 nights)
+        _numberOfNights = checkOutDate!.difference(checkInDate!).inDays;
+
+        // Fallback for same-day selection to prevent 0 nights
+        if (_numberOfNights! <= 0) {
+          _numberOfNights = 1;
+        }
       });
     }
   }
@@ -143,6 +195,7 @@ class _BookingFormState extends State<BookingForm> {
     checkInController.dispose();
     checkOutController.dispose();
     rateController.dispose();
+    amountPaidController.dispose();
 
     _formScroll.dispose();
     _noteVScroll.dispose();
@@ -268,19 +321,21 @@ class _BookingFormState extends State<BookingForm> {
                           builder: (context, ref, _) {
                             final statuses = ref.watch(paymentStatusListVM);
                             return _buildDropdownField<String>(
-                              label: 'Payment',
+                              label: 'Payment Status',
                               value: _paymentStatusID?.toString(),
                               items: statuses
                                   .map(
                                     (s) => DropdownMenuItem(
-                                      value: s.id,
+                                      value: s.id.toString(),
                                       child: Text(s.name),
                                     ),
                                   )
                                   .toList(),
-                              onChanged: (val) => setState(
-                                () => _paymentStatusID = int.parse(val!),
-                              ),
+                              onChanged: (val) {
+                                setState(
+                                    () => _paymentStatusID = int.parse(val!));
+                                _updateAmountPaidBasedOnStatus();
+                              },
                             );
                           },
                         ),
@@ -305,14 +360,34 @@ class _BookingFormState extends State<BookingForm> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        SizedBox(
-                          width: 120,
+                        Expanded(
                           child: TextFormField(
                             controller: rateController,
                             readOnly: true,
-                            decoration:
-                                const InputDecoration(labelText: 'Rate'),
+                            decoration: const InputDecoration(
+                                labelText: 'Total Rate (£)',
+                                border: OutlineInputBorder()),
                             validator: _requiredString,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: amountPaidController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            decoration: const InputDecoration(
+                                labelText: 'Amount Paid (£)',
+                                border: OutlineInputBorder()),
+                            validator: (val) {
+                              if (val == null || val.isEmpty) {
+                                return 'Required';
+                              }
+                              if (double.tryParse(val) == null) {
+                                return 'Invalid Amount';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -358,7 +433,9 @@ class _BookingFormState extends State<BookingForm> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     if (checkInDate == null || checkOutDate == null) {
       _showError(context, 'Please select both check-in and check-out dates.');
@@ -391,11 +468,14 @@ class _BookingFormState extends State<BookingForm> {
         'check_out_month': checkOutDate!.month,
         'check_out_year': checkOutDate!.year,
         'rate': rateController.text,
+        'amount_paid': double.tryParse(amountPaidController.text) ?? 0.0,
         'room_id': _roomID,
         'property_id': widget.ref?.read(selectedPropertyVM) ?? 0,
       });
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -428,14 +508,17 @@ class _BookingFormState extends State<BookingForm> {
               if (picked != null) {
                 setState(() {
                   checkInDate = picked.start;
-                  checkOutDate = picked.end; // inclusive last day
+                  // 👉 FIX: The Range picker "end" date is treated as departure day
+                  checkOutDate = picked.end;
                   dateRangeController.text =
                       "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
                   calculateNumberOfNights();
                 });
 
                 WidgetsBinding.instance.addPostFrameCallback((_) async {
-                  if (_roomID != null) await _tryResolveAndSetRate();
+                  if (_roomID != null) {
+                    await _tryResolveAndSetRate();
+                  }
                 });
               }
             },
@@ -473,8 +556,9 @@ class _BookingFormState extends State<BookingForm> {
                   checkInDate = picked;
                   checkInController.text = _formatDate(picked);
 
-                  if (checkOutDate == null || checkOutDate!.isBefore(picked)) {
-                    checkOutDate = picked;
+                  // Force checkout to be at least 1 day after check-in
+                  if (checkOutDate == null || !checkOutDate!.isAfter(picked)) {
+                    checkOutDate = picked.add(const Duration(days: 1));
                     checkOutController.text = _formatDate(checkOutDate!);
                   }
 
@@ -497,9 +581,13 @@ class _BookingFormState extends State<BookingForm> {
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
-                firstDate: checkInDate ?? DateTime.now(),
+                // Block selecting a checkout date that is before check-in
+                firstDate:
+                    checkInDate?.add(const Duration(days: 1)) ?? DateTime.now(),
                 lastDate: DateTime(2100),
-                initialDate: checkOutDate ?? checkInDate ?? DateTime.now(),
+                initialDate: checkOutDate ??
+                    checkInDate?.add(const Duration(days: 1)) ??
+                    DateTime.now(),
               );
 
               if (picked != null) {
