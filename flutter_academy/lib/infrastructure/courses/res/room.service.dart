@@ -73,4 +73,48 @@ class RoomService {
       return false;
     }
   }
+
+// Update Cleaning Status (Interactive - Today)
+  Future<bool> updateCleaningStatus(
+      int propertyId, int roomId, int cleaningStatusId) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      final userName = _auth.currentUser?.email ?? 'Staff Member';
+
+      // 1. Change type from dynamic to bool
+      final bool success = await sendPutRequest(
+        {"cleaning_status_id": cleaningStatusId, "user_name": userName},
+        token,
+        "/api/v1/properties/$propertyId/rooms/$roomId/status",
+      );
+
+      // 2. Just return the boolean directly
+      return success;
+    } catch (e) {
+      debugPrint("Error updating cleaning status: $e");
+      return false;
+    }
+  }
+
+  // Fetch Past Logs or Future Forecasts
+  Future<Map<String, dynamic>?> getHousekeepingByDate(
+      int propertyId, DateTime date) async {
+    try {
+      final token = await _auth.currentUser?.getIdToken();
+      // Format date as YYYY-MM-DD
+      final dateString =
+          "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+      final dynamic response = await sendGetRequest(token,
+          "/api/v1/properties/$propertyId/housekeeping?date=$dateString");
+
+      if (response != null && response is Map<String, dynamic>) {
+        return response; // Should return { 'type': 'past'/'future', 'data': [...] }
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Error fetching housekeeping data by date: $e");
+      return null;
+    }
+  }
 }

@@ -448,6 +448,9 @@ class _BookingFormState extends State<BookingForm> {
     }
 
     try {
+      final widgetRef = widget.ref;
+      final propertyId = widgetRef?.read(selectedPropertyVM) ?? 0;
+
       final success = await widget.onSubmit({
         'first_name': firstNameController.text,
         'last_name': lastNameController.text,
@@ -470,7 +473,7 @@ class _BookingFormState extends State<BookingForm> {
         'rate': rateController.text,
         'amount_paid': double.tryParse(amountPaidController.text) ?? 0.0,
         'room_id': _roomID,
-        'property_id': widget.ref?.read(selectedPropertyVM) ?? 0,
+        'property_id': propertyId,
       });
 
       if (!mounted) {

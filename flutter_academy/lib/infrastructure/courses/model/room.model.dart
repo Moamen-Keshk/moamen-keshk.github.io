@@ -7,6 +7,7 @@ class Room {
   final int categoryId;
   final int? floorId;
   final int? statusId;
+  final int? cleaningStatusId;
 
   Room({
     required this.id,
@@ -15,6 +16,7 @@ class Room {
     required this.categoryId,
     this.floorId,
     this.statusId,
+    this.cleaningStatusId,
   });
 
   Room copyWith({
@@ -24,6 +26,7 @@ class Room {
     int? categoryId,
     int? floorId,
     int? statusId,
+    int? cleaningStatusId,
   }) {
     return Room(
       id: id ?? this.id,
@@ -32,6 +35,7 @@ class Room {
       categoryId: categoryId ?? this.categoryId,
       floorId: floorId ?? this.floorId,
       statusId: statusId ?? this.statusId,
+      cleaningStatusId: cleaningStatusId ?? this.cleaningStatusId,
     );
   }
 
@@ -43,6 +47,7 @@ class Room {
       'category_id': categoryId,
       if (floorId != null) 'floor_id': floorId,
       if (statusId != null) 'status_id': statusId,
+      if (cleaningStatusId != null) 'cleaning_status_id': cleaningStatusId,
     };
   }
 
@@ -54,6 +59,7 @@ class Room {
       categoryId: _parseInt(map['category_id']),
       floorId: _parseNullableInt(map['floor_id']),
       statusId: _parseNullableInt(map['status_id']),
+      cleaningStatusId: _parseNullableInt(map['cleaning_status_id']),
     );
   }
 
@@ -63,7 +69,7 @@ class Room {
 
   @override
   String toString() {
-    return 'Room(id: $id, number: $roomNumber, propertyId: $propertyId, categoryId: $categoryId, floorId: $floorId, statusId: $statusId)';
+    return 'Room(id: $id, number: $roomNumber, propertyId: $propertyId, categoryId: $categoryId, floorId: $floorId, statusId: $statusId, cleaningStatusId: $cleaningStatusId)';
   }
 
   @override
@@ -76,7 +82,8 @@ class Room {
         other.propertyId == propertyId &&
         other.categoryId == categoryId &&
         other.floorId == floorId &&
-        other.statusId == statusId;
+        other.statusId == statusId &&
+        other.cleaningStatusId == cleaningStatusId;
   }
 
   @override
@@ -86,7 +93,8 @@ class Room {
         propertyId.hashCode ^
         categoryId.hashCode ^
         floorId.hashCode ^
-        statusId.hashCode;
+        statusId.hashCode ^
+        cleaningStatusId.hashCode;
   }
 
   static int _parseInt(dynamic value) =>

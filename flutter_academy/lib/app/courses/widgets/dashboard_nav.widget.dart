@@ -166,6 +166,14 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 },
                 child: const Text("Bookings"),
               ),
+              TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey,
+                  ),
+                  onPressed: () {
+                    ref.read(routerProvider).push('housekeeping');
+                  },
+                  child: const Text("Housekeeping")),
 
               // 💡 OPTION 1: Standalone TextButton for Channels
               if (currentPropertyId != null &&

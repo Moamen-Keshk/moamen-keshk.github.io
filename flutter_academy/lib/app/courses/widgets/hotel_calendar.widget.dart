@@ -185,7 +185,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                   children: [
                     SizedBox(
                       width: 140,
-                      child: ElevatedButton(
+                        child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           shape: BeveledRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
@@ -207,6 +207,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                         },
                         child: Text(
                           DateFormat('MMMM yyyy').format(selectedDate),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
                           style: const TextStyle(fontSize: 14),
                         ),
                       ),

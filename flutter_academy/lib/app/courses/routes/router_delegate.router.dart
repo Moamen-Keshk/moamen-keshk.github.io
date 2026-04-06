@@ -17,6 +17,7 @@ import 'package:flutter_academy/app/courses/pages/edit_season.page.dart';
 import 'package:flutter_academy/app/courses/pages/error_404.page.dart';
 import 'package:flutter_academy/app/courses/pages/home.page.dart';
 import 'package:flutter_academy/app/courses/pages/hotel_seasons.page.dart';
+import 'package:flutter_academy/app/courses/pages/housekeeping.page.dart';
 import 'package:flutter_academy/app/courses/pages/load.page.dart';
 import 'package:flutter_academy/app/courses/pages/categories_management.page.dart';
 import 'package:flutter_academy/app/courses/pages/new_floor.page.dart';
@@ -102,6 +103,9 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'new_floor':
         _pages.add(_page(const NewFloorPage(), 'new_floor'));
+        break;
+      case 'housekeeping':
+        _pages.add(_page(const HousekeepingPage(), 'housekeeping'));
         break;
       case 'contact':
         _pages.add(_page(const ContactPage(), 'contact'));

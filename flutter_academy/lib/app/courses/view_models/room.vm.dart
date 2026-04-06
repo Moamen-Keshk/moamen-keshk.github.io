@@ -8,4 +8,5 @@ class RoomVM {
   int get categoryId => room.categoryId;
   int? get floorId => room.floorId;
   int? get statusId => room.statusId;
+  int? get cleaningStatusId => room.cleaningStatusId;
 }

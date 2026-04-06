@@ -14,7 +14,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   Widget build(BuildContext context) {
     return const Column(
       children: [
-        FloorRooms(),
+        Expanded(
+          child: FloorRooms(),
+        ),
       ],
     );
   }
