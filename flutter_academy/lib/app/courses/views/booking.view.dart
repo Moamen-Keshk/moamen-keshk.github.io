@@ -221,6 +221,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
           );
           // 👉 Instantly refresh UI
           ref.invalidate(bookingDetailsProvider);
+          // 👉 Force TodaysView and Main List to refresh
+          ref.invalidate(bookingListByDateVM);
+          ref.invalidate(bookingListVM);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -352,6 +355,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
           );
           // 👉 Instantly refresh UI
           ref.invalidate(bookingDetailsProvider);
+          // 👉 Force TodaysView and Main List to refresh
+          ref.invalidate(bookingListByDateVM);
+          ref.invalidate(bookingListVM);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -389,6 +395,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
         );
         // 👉 Instantly refresh UI
         ref.invalidate(bookingDetailsProvider);
+        // 👉 Force TodaysView and Main List to refresh
+        ref.invalidate(bookingListByDateVM);
+        ref.invalidate(bookingListVM);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -448,7 +457,11 @@ class _BookingViewState extends ConsumerState<BookingView> {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Payment recorded!'),
               backgroundColor: Colors.green));
+
           ref.invalidate(bookingDetailsProvider); // Refresh the UI instantly
+          // 👉 Force TodaysView and Main List to refresh
+          ref.invalidate(bookingListByDateVM);
+          ref.invalidate(bookingListVM);
         }
       }
     }
@@ -588,6 +601,17 @@ class _BookingViewState extends ConsumerState<BookingView> {
                             "Confirmation Number":
                                 booking.confirmationNumber.toString(),
                             "Email": booking.email ?? "-",
+                          }),
+                          _section("Notes & Requests", {
+                            "Special Request": (booking.specialRequest !=
+                                        null &&
+                                    booking.specialRequest!.trim().isNotEmpty)
+                                ? booking.specialRequest!
+                                : "None",
+                            "Note": (booking.note != null &&
+                                    booking.note!.trim().isNotEmpty)
+                                ? booking.note!
+                                : "None",
                           }),
                           _section("Nightly Rates", {
                             for (var rate in booking.bookingRates)
@@ -776,22 +800,23 @@ class _BookingViewState extends ConsumerState<BookingView> {
                       fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               ...data.entries.map((e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Flexible(
-                          flex: 1,
+                          flex: 2,
                           child: Text(e.key,
                               style: const TextStyle(fontSize: 12),
                               overflow: TextOverflow.ellipsis),
                         ),
                         const SizedBox(width: 8),
                         Flexible(
-                          flex: 1,
+                          flex: 3,
                           child: Text(e.value,
                               textAlign: TextAlign.right,
+                              maxLines: 5,
                               style: const TextStyle(
                                   fontSize: 12, color: Colors.black87),
                               overflow: TextOverflow.ellipsis),

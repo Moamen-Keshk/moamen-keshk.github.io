@@ -14,7 +14,8 @@ const Map<int, String> cleaningStatusNames = {
   3: 'Clean',
   4: 'Refresh',
   5: 'Service',
-  6: 'Idle'
+  6: 'Idle',
+  7: 'Ready',
 };
 
 const Map<int, Color> cleaningStatusColors = {
@@ -23,11 +24,13 @@ const Map<int, Color> cleaningStatusColors = {
   3: Colors.green,
   4: Colors.blue,
   5: Colors.purple,
-  6: Colors.grey
+  6: Colors.grey,
+  7: Colors.teal,
 };
 
 // Define the priority order (Most work to least work)
 const List<int> statusPriority = [
+  7, // Ready
   1, // Dirty
   5, // Service
   2, // Waiting (will be dirty soon)
@@ -209,6 +212,7 @@ class HousekeepingView extends ConsumerWidget {
     const List<String> forecastPriority = [
       'To be cleaned',
       'To be refreshed',
+      'Ready',
       'Expected Idle',
       'Clean'
     ];
@@ -238,6 +242,9 @@ class HousekeepingView extends ConsumerWidget {
           }
           if (item == 'Clean') {
             color = Colors.green;
+          }
+          if (item == 'Ready') {
+            color = Colors.teal;
           }
 
           return Padding(
@@ -269,6 +276,9 @@ class HousekeepingView extends ConsumerWidget {
           }
           if (item.forecastStatus == 'Clean') {
             badgeColor = Colors.green;
+          }
+          if (item.forecastStatus == 'Ready') {
+            badgeColor = Colors.teal;
           }
 
           return Card(

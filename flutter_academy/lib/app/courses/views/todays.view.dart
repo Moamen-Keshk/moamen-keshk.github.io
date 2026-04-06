@@ -38,17 +38,37 @@ class TodaysView extends ConsumerWidget {
     final selectedView = ref.watch(selectedViewProvider);
     final propertyId = ref.watch(selectedPropertyVM) ?? 0;
 
-    final arrivals = ref.watch(
+    // Fetch the raw lists from the VM
+    final rawArrivals = ref.watch(
       bookingListByDateVM((propertyId, currentDate, 'Arrivals')),
     );
 
-    final inHouse = ref.watch(
+    final rawInHouse = ref.watch(
       bookingListByDateVM((propertyId, currentDate, 'InHouse')),
     );
 
-    final departures = ref.watch(
+    final rawDepartures = ref.watch(
       bookingListByDateVM((propertyId, currentDate, 'Departures')),
     );
+
+    // Arrivals should ONLY be Status 1 (Confirmed/Pending Check-in)
+    final arrivals = rawArrivals.where((b) => b.statusID == 1).toList();
+
+    // InHouse should ONLY be Status 2 (Checked-In)
+    // We combine the rawInHouse list and any rawArrivals that might have been checked in today
+    final inHouseMap = <String, BookingVM>{};
+    for (var b in [...rawInHouse, ...rawArrivals]) {
+      if (b.statusID == 2) {
+        inHouseMap[b.id] = b; // Use map to safely deduplicate by ID
+      }
+    }
+    final inHouse = inHouseMap.values.toList();
+
+    // 👉 NEW: Departures should ONLY show bookings that have not yet checked out.
+    // Status 1 (Confirmed - for same day check-in/out) and Status 2 (Checked-In).
+    // Once they check out (Status 3), they are removed from this list.
+    final departures =
+        rawDepartures.where((b) => b.statusID == 1 || b.statusID == 2).toList();
 
     final roomMapping = ref.watch(roomMappingProvider);
     final paymentStatusAsync = ref.watch(paymentStatusMappingProvider);
@@ -89,9 +109,9 @@ class TodaysView extends ConsumerWidget {
                   _DatePicker(selectedDate),
                   const SizedBox(height: 8),
                   BookingSummaryCards(
-                    arrivals: arrivals.length,
-                    inHouse: inHouse.length,
-                    departures: departures.length,
+                    arrivals: arrivals.length, // Uses the filtered length
+                    inHouse: inHouse.length, // Uses the filtered length
+                    departures: departures.length, // Uses the filtered length
                     onTap: (category) {
                       ref.read(selectedViewProvider.notifier).state = category;
                     },
@@ -134,12 +154,30 @@ class TodaysView extends ConsumerWidget {
             children: [
               Expanded(
                 flex: 2,
-                child: Text(
-                  '${booking.firstName} ${booking.lastName}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${booking.firstName} ${booking.lastName}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (booking.booking.specialRequest != null &&
+                        booking.booking.specialRequest!.trim().isNotEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 6.0),
+                        child: Icon(
+                          Icons.star, // Or Icons.speaker_notes
+                          color: Colors.amber,
+                          size: 18,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Expanded(

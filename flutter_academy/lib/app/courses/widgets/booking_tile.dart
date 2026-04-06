@@ -72,7 +72,7 @@ class _BookingTileState extends ConsumerState<BookingTile> {
                       ? Colors.brown[200]!
                       : widget.booking.booking.statusID == 1
                           ? Colors.blue[300]!
-                      : widget.booking.paymentStatusID == 3
+                          : widget.booking.paymentStatusID == 3
                               ? Colors.red[300]!
                               : Colors.blue[300]!,
               opacity: _isHovered ? 0.85 : 1.0,
@@ -85,6 +85,10 @@ class _BookingTileState extends ConsumerState<BookingTile> {
 
   Widget _buildTile(BuildContext context,
       {required Color color, double opacity = 1.0}) {
+    // Check if there is a special request
+    final hasSpecialRequest = widget.booking.booking.specialRequest != null &&
+        widget.booking.booking.specialRequest!.trim().isNotEmpty;
+
     return Opacity(
       opacity: opacity,
       child: Container(
@@ -98,13 +102,27 @@ class _BookingTileState extends ConsumerState<BookingTile> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
-              child: Center(
-                child: Text(
-                  "${widget.booking.firstName} ${widget.booking.lastName}",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      "${widget.booking.firstName} ${widget.booking.lastName}",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (hasSpecialRequest)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4.0),
+                      child: Icon(
+                        Icons.star, // Or Icons.speaker_notes
+                        color: Colors.amberAccent,
+                        size: 14,
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
