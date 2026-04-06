@@ -27,7 +27,9 @@ class RateResolver {
           r.date.month == date.month &&
           r.date.day == date.day,
     );
-    if (match != null) return match.price;
+    if (match != null) {
+      return match.price;
+    }
 
     final plan = ratePlans.firstWhereOrNull(
       (rp) =>
@@ -36,7 +38,9 @@ class RateResolver {
           !date.isAfter(rp.endDate) &&
           rp.isActive,
     );
-    if (plan == null) return null;
+    if (plan == null) {
+      return null;
+    }
 
     final isWeekend =
         date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
@@ -82,6 +86,10 @@ class _EditBookingFormState extends State<EditBookingForm> {
   int? _paymentStatusID;
   int? _roomID;
 
+  // Added state variables for handling extra cost payments
+  double _extraCost = 0.0;
+  bool _isPaid = false;
+
   @override
   void initState() {
     super.initState();
@@ -126,176 +134,204 @@ class _EditBookingFormState extends State<EditBookingForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(
-            child: TextFormField(
-              controller: firstNameController,
-              decoration: InputDecoration(labelText: 'First Name'),
-              validator: _requiredString,
+      child: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            Expanded(
+              child: TextFormField(
+                controller: firstNameController,
+                decoration: InputDecoration(labelText: 'First Name'),
+                validator: _requiredString,
+              ),
             ),
-          ),
-          Expanded(
-            child: TextFormField(
-              controller: lastNameController,
-              decoration: InputDecoration(labelText: 'Last Name'),
-              validator: _requiredString,
+            Expanded(
+              child: TextFormField(
+                controller: lastNameController,
+                decoration: InputDecoration(labelText: 'Last Name'),
+                validator: _requiredString,
+              ),
             ),
-          ),
-        ]),
-        Row(children: [
-          Expanded(
-            child: TextFormField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
+          ]),
+          Row(children: [
+            Expanded(
+              child: TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+              ),
             ),
-          ),
-          Expanded(
-            child: TextFormField(
-              controller: phoneController,
-              decoration: InputDecoration(labelText: 'Phone'),
-              keyboardType: TextInputType.phone,
+            Expanded(
+              child: TextFormField(
+                controller: phoneController,
+                decoration: InputDecoration(labelText: 'Phone'),
+                keyboardType: TextInputType.phone,
+              ),
             ),
-          ),
-        ]),
-        TextFormField(
-          controller: dateRangeController,
-          decoration: InputDecoration(labelText: 'Select Dates'),
-          readOnly: true,
-          onTap: () async {
-            final now = DateTime.now();
-            final picked = await showDateRangePicker(
-              context: context,
-              firstDate: now,
-              lastDate: DateTime(2027),
-              initialDateRange: checkInDate != null && checkOutDate != null
-                  ? DateTimeRange(start: checkInDate!, end: checkOutDate!)
-                  : null,
-            );
-            if (picked != null) {
-              setState(() {
-                checkInDate = picked.start;
-                checkOutDate = picked.end;
-                dateRangeController.text =
-                    "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
-                calculateNumberOfNights();
-              });
-              await _tryResolveAndSetRate();
-            }
-          },
-          validator: _requiredString,
-        ),
-        Row(children: [
-          _buildDropdown("Adults:", _numberOfAdults,
-              (val) => setState(() => _numberOfAdults = val)),
-          _buildDropdown("Children:", _numberOfChildren,
-              (val) => setState(() => _numberOfChildren = val)),
-        ]),
-        Row(children: [
-          Consumer(builder: (context, ref, _) {
-            final rooms = ref.watch(roomListVM);
-            return _buildDropdownField(
-              label: 'Room',
-              value: _roomID?.toString(),
-              items: rooms
-                  .map((r) => DropdownMenuItem(
-                        value: r.id,
-                        child: Text(r.roomNumber.toString()),
-                      ))
-                  .toList(),
-              onChanged: (val) async {
-                setState(() => _roomID = int.tryParse(val!));
-                await _tryResolveAndSetRate();
-              },
-            );
-          }),
-          Consumer(builder: (context, ref, _) {
-            final statuses = ref.watch(paymentStatusListVM);
-            return _buildDropdownField(
-              label: 'Payment',
-              value: _paymentStatusID?.toString(),
-              items: statuses
-                  .map((s) => DropdownMenuItem(
-                        value: s.id,
-                        child: Text(s.name),
-                      ))
-                  .toList(),
-              onChanged: (val) =>
-                  setState(() => _paymentStatusID = int.tryParse(val!)),
-            );
-          }),
-        ]),
-        TextFormField(
-            controller: noteController,
-            decoration: InputDecoration(labelText: 'Note')),
-        TextFormField(
-            controller: specialRequestController,
-            maxLines: 2,
-            decoration: InputDecoration(labelText: 'Special request')),
-        TextFormField(
-          controller: rateController,
-          decoration: InputDecoration(labelText: 'Rate'),
-          validator: _requiredString,
-          readOnly: true,
-        ),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              if (checkInDate == null || checkOutDate == null) {
-                _showError(context, 'Please select valid dates.');
-                return;
-              }
-
-              if (_numberOfNights == null || _numberOfNights! <= 0) {
-                _showError(context, 'Invalid number of nights.');
-                return;
-              }
-
-              try {
-                final success = await widget.onSubmit({
-                  'first_name': firstNameController.text,
-                  'last_name': lastNameController.text,
-                  'email': emailController.text,
-                  'phone': phoneController.text,
-                  'check_in': checkInDate!.toIso8601String(),
-                  'check_out': checkOutDate!.toIso8601String(),
-                  'number_of_days': _numberOfNights,
-                  'number_of_adults': _numberOfAdults,
-                  'number_of_children': _numberOfChildren,
-                  'payment_status_id': _paymentStatusID,
-                  'note': noteController.text,
-                  'special_request': specialRequestController.text,
-                  'check_in_day': checkInDate!.day,
-                  'check_in_month': checkInDate!.month,
-                  'check_in_year': checkInDate!.year,
-                  'check_out_day': checkOutDate!.day,
-                  'check_out_month': checkOutDate!.month,
-                  'check_out_year': checkOutDate!.year,
-                  'rate': rateController.text,
-                  'property_id': widget.ref!.read(selectedPropertyVM) ?? 0,
-                  'room_id': _roomID,
+          ]),
+          TextFormField(
+            controller: dateRangeController,
+            decoration: InputDecoration(labelText: 'Select Dates'),
+            readOnly: true,
+            onTap: () async {
+              final now = DateTime.now();
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: now,
+                lastDate: DateTime(2027),
+                initialDateRange: checkInDate != null && checkOutDate != null
+                    ? DateTimeRange(start: checkInDate!, end: checkOutDate!)
+                    : null,
+              );
+              if (picked != null) {
+                setState(() {
+                  checkInDate = picked.start;
+                  checkOutDate = picked.end;
+                  dateRangeController.text =
+                      "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
+                  calculateNumberOfNights();
                 });
-
-                if (!mounted) return;
-
-                if (success && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Booking updated successfully.')),
-                  );
-                  Navigator.of(context).pop();
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                _showError(context, 'Something went wrong while saving.');
+                await _tryResolveAndSetRate();
               }
-            }
-          },
-          child: const Text('Submit'),
-        )
-      ]),
+            },
+            validator: _requiredString,
+          ),
+          Row(children: [
+            _buildDropdown("Adults:", _numberOfAdults,
+                (val) => setState(() => _numberOfAdults = val)),
+            _buildDropdown("Children:", _numberOfChildren,
+                (val) => setState(() => _numberOfChildren = val)),
+          ]),
+          Row(children: [
+            Consumer(builder: (context, ref, _) {
+              final rooms = ref.watch(roomListVM);
+              return _buildDropdownField(
+                label: 'Room',
+                value: _roomID?.toString(),
+                items: rooms
+                    .map((r) => DropdownMenuItem(
+                          value: r.id,
+                          child: Text(r.roomNumber.toString()),
+                        ))
+                    .toList(),
+                onChanged: (val) async {
+                  setState(() => _roomID = int.tryParse(val!));
+                  await _tryResolveAndSetRate();
+                },
+              );
+            }),
+            Consumer(builder: (context, ref, _) {
+              final statuses = ref.watch(paymentStatusListVM);
+              return _buildDropdownField(
+                label: 'Payment',
+                value: _paymentStatusID?.toString(),
+                items: statuses
+                    .map((s) => DropdownMenuItem(
+                          value: s.id,
+                          child: Text(s.name),
+                        ))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _paymentStatusID = int.tryParse(val!)),
+              );
+            }),
+          ]),
+          TextFormField(
+              controller: noteController,
+              decoration: InputDecoration(labelText: 'Note')),
+          TextFormField(
+              controller: specialRequestController,
+              maxLines: 2,
+              decoration: InputDecoration(labelText: 'Special request')),
+          TextFormField(
+            controller: rateController,
+            decoration: InputDecoration(labelText: 'Rate'),
+            validator: _requiredString,
+            readOnly: true,
+          ),
+
+          // Dynamic checkbox for handling extra cost payment directly in the form
+          if (_extraCost > 0)
+            CheckboxListTile(
+              title: Text(
+                  'Guest paid the extra \$${_extraCost.toStringAsFixed(2)} now'),
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _isPaid,
+              onChanged: (val) {
+                setState(() {
+                  _isPaid = val ?? false;
+                });
+              },
+            ),
+
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                if (checkInDate == null || checkOutDate == null) {
+                  _showError(context, 'Please select valid dates.');
+                  return;
+                }
+
+                if (_numberOfNights == null || _numberOfNights! <= 0) {
+                  _showError(context, 'Invalid number of nights.');
+                  return;
+                }
+
+                try {
+                  // Calculate the final amount paid before submitting
+                  double finalAmountPaid = widget.booking.amountPaid;
+                  if (_isPaid && _extraCost > 0) {
+                    finalAmountPaid += _extraCost;
+                  }
+
+                  final success = await widget.onSubmit({
+                    'first_name': firstNameController.text,
+                    'last_name': lastNameController.text,
+                    'email': emailController.text,
+                    'phone': phoneController.text,
+                    'check_in': checkInDate!.toIso8601String(),
+                    'check_out': checkOutDate!.toIso8601String(),
+                    'number_of_days': _numberOfNights,
+                    'number_of_adults': _numberOfAdults,
+                    'number_of_children': _numberOfChildren,
+                    'payment_status_id': _paymentStatusID,
+                    'note': noteController.text,
+                    'special_request': specialRequestController.text,
+                    'check_in_day': checkInDate!.day,
+                    'check_in_month': checkInDate!.month,
+                    'check_in_year': checkInDate!.year,
+                    'check_out_day': checkOutDate!.day,
+                    'check_out_month': checkOutDate!.month,
+                    'check_out_year': checkOutDate!.year,
+                    'rate': rateController.text,
+                    'amount_paid': finalAmountPaid, // Pass updated amount paid
+                    'property_id': widget.ref!.read(selectedPropertyVM) ?? 0,
+                    'room_id': _roomID,
+                  });
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  if (success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Booking updated successfully.')),
+                    );
+                    Navigator.of(context).pop();
+                  }
+                } catch (e) {
+                  if (!context.mounted) {
+                    return;
+                  }
+                  _showError(context, 'Something went wrong while saving.');
+                }
+              }
+            },
+            child: const Text('Submit'),
+          )
+        ]),
+      ),
     );
   }
 
@@ -326,6 +362,8 @@ class _EditBookingFormState extends State<EditBookingForm> {
     } else {
       setState(() {
         rateController.text = '';
+        _extraCost = 0.0;
+        _isPaid = false;
       });
     }
   }
@@ -342,7 +380,9 @@ class _EditBookingFormState extends State<EditBookingForm> {
           (room) => int.tryParse(room.id) == _roomID,
         );
     final categoryId = roomVM?.categoryId.toString();
-    if (categoryId == null) return;
+    if (categoryId == null) {
+      return;
+    }
 
     final resolver = RateResolver(widget.ref!);
     double totalRate = 0.0;
@@ -362,6 +402,12 @@ class _EditBookingFormState extends State<EditBookingForm> {
 
     setState(() {
       rateController.text = totalRate.toStringAsFixed(2);
+
+      // Calculate extra cost dynamically on rate update
+      _extraCost = totalRate - widget.booking.rate;
+      if (_extraCost <= 0) {
+        _isPaid = false; // reset flag if cost goes down or stays equal
+      }
     });
   }
 
