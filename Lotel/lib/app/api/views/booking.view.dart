@@ -14,6 +14,9 @@ import 'package:lotel_pms/app/api/view_models/lists/booking_status_list.vm.dart'
 // Import the Chat View
 import 'package:lotel_pms/app/api/views/guest_chat.view.dart';
 
+// 👉 IMPORT THE NEW VCC CHARGE DIALOG
+import 'package:lotel_pms/app/payments/widgets/vcc_charge_dialog.widget.dart';
+
 final roomMappingProvider = Provider<Map<int, String>>((ref) {
   final rooms = ref.watch(roomListVM);
   return {
@@ -736,6 +739,35 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                     booking.paymentStatusID,
                                     paymentStatusMapping),
                               ),
+
+                              // 👉 NEW: CHARGE VCC BUTTON 
+                              if (booking.balanceDue > 0)
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final result = await showDialog<bool>(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (context) => VccChargeDialog(booking: booking),
+                                    );
+
+                                    // Refresh UI state upon successful charge
+                                    if (result == true) {
+                                      ref.invalidate(bookingDetailsProvider);
+                                      ref.invalidate(bookingListByDateVM);
+                                      ref.invalidate(bookingListVM);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.credit_card),
+                                  label: const Text('Charge VCC'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+
                               if (booking.statusID == 1)
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.cancel),

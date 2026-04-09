@@ -5,7 +5,7 @@ import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
 import 'package:lotel_pms/app/api/views/booking.view.dart';
 import 'package:lotel_pms/app/payments/services/payment.service.dart';
 
-class PaymentHelper {
+class PaymentVM {
   final PaymentService _paymentService = PaymentService();
 
   Future<void> makePayment(BuildContext context, int bookingId, double amount,
@@ -69,6 +69,55 @@ class PaymentHelper {
       messenger.showSnackBar(
         SnackBar(content: Text('Unexpected error: $e')),
       );
+    }
+  }
+
+  // --- NEW: Direct VCC Charge Method for Front Desk ---
+  Future<bool> chargeVCC(
+    BuildContext context, {
+    required int bookingId,
+    required double amount,
+    required String cardNumber,
+    required String expMonth,
+    required String expYear,
+    required String cvc,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final container = ProviderScope.containerOf(context, listen: false);
+
+    try {
+      final success = await _paymentService.chargeVCC(
+        bookingId: bookingId,
+        amount: amount,
+        cardNumber: cardNumber,
+        expMonth: expMonth,
+        expYear: expYear,
+        cvc: cvc,
+      );
+
+      if (success) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('VCC Charged successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh UI state to reflect new payments
+        container.invalidate(bookingDetailsProvider);
+        container.invalidate(bookingListByDateVM);
+        container.invalidate(bookingListVM);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error charging VCC: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
     }
   }
 }
