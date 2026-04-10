@@ -1,13 +1,23 @@
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
+import 'package:lotel_pms/app/req/request.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:logging/logging.dart';
+
+// 👉 NEW: Import the socket_io_client
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class BookingListVM extends StateNotifier<List<BookingVM>> {
+  static final Logger _logger = Logger('BookingListVM');
+
   final BookingService bookingService;
   final int propertyId;
   final int year;
   final int month;
+
+  // 👉 NEW: Socket instance
+  io.Socket? _socket;
 
   BookingListVM(
     this.propertyId,
@@ -19,6 +29,49 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     if (autoFetch) {
       fetchBookings();
     }
+    // 👉 NEW: Initialize WebSockets when the VM is created
+    _initWebSockets();
+  }
+
+  // 👉 NEW: WebSocket Initialization Method
+  void _initWebSockets() {
+    final String backendUrl = baseURL;
+
+    _socket = io.io(backendUrl, <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': true,
+    });
+
+    _socket?.onConnect((_) {
+      _logger.info('Connected to PMS realtime sync');
+    });
+
+    // Listen for the event emitted by the Celery worker / Flask-SocketIO
+    _socket?.on('calendar_updated', (data) {
+      _logger.fine('WebSocket calendar_updated event received: $data');
+
+      // 👉 BULLETPROOF TYPE CHECK
+      if (data['property_id'].toString() == propertyId.toString()) {
+        _logger.info('Property match for $propertyId. Fetching new bookings.');
+        fetchBookings();
+      } else {
+        _logger.fine(
+          'Ignoring event for property ${data['property_id']} while viewing $propertyId.',
+        );
+      }
+    });
+
+    _socket?.onDisconnect((_) {
+      _logger.info('Disconnected from PMS realtime sync');
+    });
+  }
+
+  // 👉 NEW: Always dispose of the socket to prevent memory leaks
+  @override
+  void dispose() {
+    _socket?.disconnect();
+    _socket?.dispose();
+    super.dispose();
   }
 
   Future<void> fetchBookings() async {
@@ -102,7 +155,6 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     }
   }
 
-  // 👉 UPDATED: Extend Logic with Named Parameters
   Future<bool> extendBooking(
     int bookingId,
     String newCheckOutDate, {
@@ -123,17 +175,14 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     return success;
   }
 
-  // 👉 MAKE SURE you also have this method in your VM if you haven't added it yet!
   Future<Map<String, dynamic>> checkExtensionAvailability(
       int roomId, String currentCheckOut, String newCheckOut) async {
     return await bookingService.checkExtensionAvailability(
         propertyId, roomId, currentCheckOut, newCheckOut);
   }
 
-  // 👉 ADD THIS TO: lib/app/courses/view_models/lists/booking_list.vm.dart
   Future<bool> updatePaymentStatus(
       int bookingId, int newPaymentStatusId) async {
-    // Uses the existing editBooking service to just update the payment status field
     final success = await bookingService.editBooking(propertyId, bookingId, {
       'payment_status_id': newPaymentStatusId,
     });
@@ -144,14 +193,13 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     return success;
   }
 
-  // 👉 NEW: Dedicated method to update finances
   Future<bool> recordPayment(int bookingId, double newAmountPaid) async {
     final success = await bookingService.editBooking(propertyId, bookingId, {
       'amount_paid': newAmountPaid,
     });
 
     if (success) {
-      await fetchBookings(); // Refresh the list
+      await fetchBookings();
     }
     return success;
   }
