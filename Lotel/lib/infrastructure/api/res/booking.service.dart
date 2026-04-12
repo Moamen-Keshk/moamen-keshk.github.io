@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart'; // Added for debugPrint
 class BookingService {
   final _auth = FirebaseAuth.instance;
 
-  // Note: Added propertyId to match the new backend security requirements
-  Future<List<Booking>> getBooking(int propertyId) async {
+  // Fetch all bookings for a property without month-level filtering.
+  Future<List<Booking>> getBookingsForProperty(int propertyId) async {
     final token = await _auth.currentUser?.getIdToken();
     final query =
         await sendGetRequest(token, "/api/v1/properties/$propertyId/bookings");
@@ -16,6 +16,11 @@ class BookingService {
     if (query == null || !query.containsKey('data')) return [];
 
     return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
+  }
+
+  // Backwards-compatible alias for older call sites.
+  Future<List<Booking>> getBooking(int propertyId) async {
+    return getBookingsForProperty(propertyId);
   }
 
   Future<List<Booking>> getAllBookings(

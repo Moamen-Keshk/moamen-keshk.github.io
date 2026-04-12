@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
+import 'package:lotel_pms/app/global/selected_property.global.dart';
+import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +25,17 @@ final paymentStatusMappingProvider =
   return await PaymentStatusListVM().paymentStatusMapping();
 });
 
+final bookingSearchListProvider =
+    FutureProvider.autoDispose<List<BookingVM>>((ref) async {
+  final propertyId = ref.watch(selectedPropertyVM);
+  if (propertyId == null || propertyId <= 0) {
+    return const [];
+  }
+
+  final bookings = await BookingService().getBookingsForProperty(propertyId);
+  return bookings.map((booking) => BookingVM(booking)).toList();
+});
+
 class BookingSearchView extends ConsumerStatefulWidget {
   const BookingSearchView({super.key});
 
@@ -30,43 +45,27 @@ class BookingSearchView extends ConsumerStatefulWidget {
 
 class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
   final TextEditingController searchController = TextEditingController();
+  Timer? _searchDebounce;
+  String _query = '';
   DateTime? checkInFrom;
   DateTime? checkOutTo;
 
   @override
-  void initState() {
-    super.initState();
-    final today = DateTime.now();
-    checkInFrom = DateTime(today.year, today.month, today.day);
-    checkOutTo = DateTime(today.year, today.month, today.day);
+  void dispose() {
+    _searchDebounce?.cancel();
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final allBookings = ref.watch(bookingListVM);
+    final selectedPropertyId = ref.watch(selectedPropertyVM);
+    final allBookingsAsync = ref.watch(bookingSearchListProvider);
     final roomMapping = ref.watch(roomMappingProvider);
     final paymentStatus = ref.watch(paymentStatusMappingProvider).maybeWhen(
           data: (value) => Map<int, String>.from(value),
           orElse: () => <int, String>{},
         );
-
-    final query = searchController.text.toLowerCase();
-    final filtered = allBookings.where((b) {
-      final matchesQuery = query.isEmpty ||
-          b.firstName.toLowerCase().contains(query) ||
-          b.lastName.toLowerCase().contains(query) ||
-          '${b.firstName} ${b.lastName}'.toLowerCase().contains(query) ||
-          b.email?.toLowerCase().contains(query) == true ||
-          b.phone?.contains(query) == true ||
-          b.confirmationNumber.toString().contains(query);
-
-      final matchesCheckIn =
-          checkInFrom == null || !b.checkIn.isBefore(checkInFrom!);
-      final matchesCheckOut =
-          checkOutTo == null || !b.checkOut.isAfter(checkOutTo!);
-
-      return matchesQuery && matchesCheckIn && matchesCheckOut;
-    }).toList();
 
     return SizedBox(
       height: MediaQuery.of(context).size.height,
@@ -103,9 +102,10 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
                     flex: 3,
                     child: TextField(
                       controller: searchController,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: _handleSearchChanged,
                       decoration: const InputDecoration(
-                        hintText: 'Name, email, phone, or confirmation #',
+                        hintText:
+                            'Name, email, phone, room, invoice, or confirmation #',
                         prefixIcon: Icon(Icons.search),
                         border: OutlineInputBorder(),
                       ),
@@ -117,21 +117,38 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
           ),
           const Divider(height: 1),
           Expanded(
-            child: filtered.isEmpty
-                ? const Center(child: Text('No bookings found'))
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 8),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final booking = filtered[index];
-                      // Pass data directly to the builder without an outside InkWell
-                      return _bookingRow(
-                        context,
-                        ref,
-                        booking.propertyID,
-                        booking,
+            child: selectedPropertyId == null || selectedPropertyId <= 0
+                ? const Center(child: Text('Select a property to search bookings'))
+                : allBookingsAsync.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, _) =>
+                        Center(child: Text('Failed to load bookings: $error')),
+                    data: (allBookings) {
+                      final filtered = _filterBookings(
+                        allBookings,
                         roomMapping,
                         paymentStatus,
+                      );
+
+                      if (filtered.isEmpty) {
+                        return const Center(child: Text('No bookings found'));
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(top: 8),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final booking = filtered[index];
+                          return _bookingRow(
+                            context,
+                            ref,
+                            booking.propertyID,
+                            booking,
+                            roomMapping,
+                            paymentStatus,
+                          );
+                        },
                       );
                     },
                   ),
@@ -139,6 +156,73 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
         ],
       ),
     );
+  }
+
+  void _handleSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _query = value.trim().toLowerCase();
+      });
+    });
+  }
+
+  List<BookingVM> _filterBookings(
+    List<BookingVM> bookings,
+    Map<int, String> roomMapping,
+    Map<int, String> paymentMapping,
+  ) {
+    final filtered = bookings.where((booking) {
+      final matchesQuery = _query.isEmpty || _matchesQuery(
+        booking,
+        roomMapping,
+        paymentMapping,
+      );
+      final matchesCheckIn = checkInFrom == null ||
+          !_startOfDay(booking.checkIn).isBefore(_startOfDay(checkInFrom!));
+      final matchesCheckOut = checkOutTo == null ||
+          !_startOfDay(booking.checkOut).isAfter(_startOfDay(checkOutTo!));
+
+      return matchesQuery && matchesCheckIn && matchesCheckOut;
+    }).toList();
+
+    filtered.sort((left, right) => right.checkIn.compareTo(left.checkIn));
+    return filtered;
+  }
+
+  bool _matchesQuery(
+    BookingVM booking,
+    Map<int, String> roomMapping,
+    Map<int, String> paymentMapping,
+  ) {
+    final roomNumber = roomMapping[booking.roomID] ?? '';
+    final searchableFields = <String>[
+      booking.id,
+      booking.firstName,
+      booking.lastName,
+      '${booking.firstName} ${booking.lastName}',
+      booking.email ?? '',
+      booking.phone ?? '',
+      booking.confirmationNumber.toString(),
+      roomNumber,
+      booking.invoiceNumber ?? '',
+      booking.invoiceStatus ?? '',
+      paymentMapping[booking.paymentStatusID] ?? '',
+      booking.note ?? '',
+      booking.specialRequest ?? '',
+    ];
+
+    return searchableFields
+        .map((field) => field.toLowerCase())
+        .any((field) => field.contains(_query));
+  }
+
+  DateTime _startOfDay(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 
   Widget _buildDatePicker({

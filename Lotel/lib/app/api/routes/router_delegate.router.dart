@@ -30,6 +30,7 @@ import 'package:lotel_pms/app/api/pages/watchlist.page.dart';
 import 'package:lotel_pms/app/api/pages/edit_rate_plan.page.dart';
 import 'package:lotel_pms/app/api/pages/hotel_rate_plan.page.dart';
 import 'package:lotel_pms/app/api/pages/rate_plan.page.dart';
+import 'package:lotel_pms/app/api/pages/reports.page.dart';
 import 'package:lotel_pms/app/api/pages/all_notifications.page.dart';
 import 'package:lotel_pms/app/channel_manager/pages/channel_manager_dashboard.page.dart';
 
@@ -149,6 +150,9 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'booking_search':
         _pages.add(_page(const BookingSearchPage(), 'booking_search'));
+        break;
+      case 'reports':
+        _pages.add(_page(const ReportsPage(), 'reports'));
         break;
       case 'staff_management':
         _pages.add(_page(const StaffManagementPage(), 'staff_management'));
