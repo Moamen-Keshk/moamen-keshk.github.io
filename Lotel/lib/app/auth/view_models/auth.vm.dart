@@ -149,25 +149,33 @@ class AuthVM extends ChangeNotifier {
     });
   }
 
-  Future<void> syncWithBackend() async {
+  Future<void> syncWithBackend({int? propertyId}) async {
     if (_auth.currentUser == null) return;
 
     try {
       String? token = await _auth.currentUser?.getIdToken();
 
-      // Assumes you have a sendGetRequest in request.dart similar to sendPostRequest
-      // Adjust this call if your request.dart uses a slightly different signature
-      final response = await sendGetRequest(token, "/api/v1/users");
+      final response = await sendGetWithParamsRequest(
+        token,
+        "/api/v1/users",
+        {
+          'property_id': propertyId?.toString(),
+        },
+      );
 
       if (response != null && response['status'] == 'success') {
         final data = response['data'];
+        final permissions = (data['permissions'] as List?)
+                ?.whereType<String>()
+                .toList() ??
+            const <String>[];
 
-        // Update the user with the properties fetched from your Flask backend
         user = user?.copyWith(
-          accountStatusId:
-              data['account_status_id'] ?? 1, // Default to Pending (1)
+          accountStatusId: data['account_status_id'] ?? 1,
           role: data['role_name'],
           propertyId: data['property_id'],
+          permissions: permissions,
+          isSuperAdmin: data['is_super_admin'] == true,
         );
         notifyListeners();
       }

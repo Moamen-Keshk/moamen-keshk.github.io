@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/widgets/dashboard_drawer.widget.dart';
 import 'package:lotel_pms/app/api/widgets/dashboard_nav.widget.dart';
@@ -11,7 +12,10 @@ class ChannelManagerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const DashboardNav(),
-      body: ChannelManagerView(),
+      body: PermissionGuard(
+        requiredPermission: PmsPermission.manageChannels,
+        child: ChannelManagerView(),
+      ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

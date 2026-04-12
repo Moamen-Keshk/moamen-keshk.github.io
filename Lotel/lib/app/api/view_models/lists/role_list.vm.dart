@@ -23,13 +23,16 @@ class RoleListVM extends StateNotifier<List<RoleVM>> {
   Future<void> fetchRoles() async {
     if (propertyId == null || propertyId == 0) return;
 
-    // Fetches assignable roles from the backend
-    final res = await roleService.getAssignableRoles(propertyId!);
+    try {
+      final res = await roleService.getAssignableRoles(propertyId!);
 
-    if (_disposed) return;
+      if (_disposed) return;
 
-    // Maps the RoleModels to RoleVMs and updates the state
-    state = [...res.map((role) => RoleVM(role))];
+      state = [...res.map((role) => RoleVM(role))];
+    } catch (_) {
+      if (_disposed) return;
+      state = const [];
+    }
   }
 }
 

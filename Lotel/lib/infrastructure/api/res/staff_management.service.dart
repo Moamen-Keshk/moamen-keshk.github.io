@@ -6,19 +6,22 @@ class StaffManagementService {
 
   // --- GET ALL STAFF ---
   Future<List<dynamic>> getStaffMembers(int propertyId) async {
-    try {
-      final response = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff",
-      );
+    final response = await sendGetRequestOrThrow(
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/staff",
+      fallbackMessage: 'Failed to load staff members.',
+    );
 
-      if (response != null && response['status'] == 'success') {
-        return response['data'] as List<dynamic>;
-      }
-      return [];
-    } catch (e) {
-      return [];
+    if (response is! Map<String, dynamic> || response['status'] != 'success') {
+      throw ApiRequestException('Failed to load staff members.');
     }
+
+    final data = response['data'];
+    if (data is! List<dynamic>) {
+      throw ApiRequestException('Invalid staff response from server.');
+    }
+
+    return data;
   }
 
   // --- SEND INVITE ---
@@ -28,15 +31,14 @@ class StaffManagementService {
       "role_id": roleId,
     };
 
-    try {
-      return await sendPostRequest(
-        payload,
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/invites",
-      );
-    } catch (e) {
-      return false;
-    }
+    await sendPostWithResponseRequestOrThrow(
+      payload,
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/invites",
+      fallbackMessage: 'Failed to send invite.',
+    );
+
+    return true;
   }
 
   // --- UPDATE STAFF ROLE ---
@@ -46,15 +48,14 @@ class StaffManagementService {
       "role_id": newRoleId,
     };
 
-    try {
-      return await sendPutRequest(
-        payload,
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff/$userId/role",
-      );
-    } catch (e) {
-      return false;
-    }
+    await sendPutWithResponseRequestOrThrow(
+      payload,
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/staff/$userId/role",
+      fallbackMessage: 'Failed to update staff role.',
+    );
+
+    return true;
   }
 
   // --- UPDATE STAFF STATUS (SOFT DELETE / DEACTIVATE) ---
@@ -64,32 +65,28 @@ class StaffManagementService {
       "status_id": statusId,
     };
 
-    try {
-      return await sendPutRequest(
-        payload,
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff/$userId/status",
-      );
-    } catch (e) {
-      return false;
-    }
+    await sendPutWithResponseRequestOrThrow(
+      payload,
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/staff/$userId/status",
+      fallbackMessage: 'Failed to update user status.',
+    );
+
+    return true;
   }
 
   // --- REMOVE STAFF MEMBER (HARD DELETE - Kept for future Super Admin use) ---
   Future<bool> removeStaff(int propertyId, String userId) async {
-    try {
-      final dynamic response = await sendDeleteRequest(
-        await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/staff/$userId",
-      );
+    final dynamic response = await sendDeleteRequestOrThrow(
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/staff/$userId",
+      fallbackMessage: 'Failed to remove user.',
+    );
 
-      if (response is bool) return response;
-      if (response is Map<String, dynamic>) {
-        return response['status'] == 'success';
-      }
-      return false;
-    } catch (e) {
-      return false;
+    if (response is Map<String, dynamic>) {
+      return response['status'] == 'success';
     }
+
+    throw ApiRequestException('Invalid remove-staff response from server.');
   }
 }

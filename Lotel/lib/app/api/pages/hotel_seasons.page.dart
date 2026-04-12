@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/views/hotel_seasons.view.dart';
 import 'package:lotel_pms/app/api/widgets/dashboard_drawer.widget.dart';
@@ -11,7 +12,10 @@ class HotelSeasonsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: DashboardNav(),
-      body: HotelSeasonsView(),
+      body: PermissionGuard(
+        requiredPermission: PmsPermission.manageRates,
+        child: HotelSeasonsView(),
+      ),
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null
           : const DashboardDrawer(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/users/view_models/theme_mode.vm.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,17 @@ class DashboardDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeModeVM = ref.watch(themeModeProvider);
+    final effectivePropertyId = ref.watch(effectivePropertyIdProvider);
+    final canViewBookings = hasPmsPermission(ref, PmsPermission.viewBookings);
+    final canViewFinance = hasPmsPermission(ref, PmsPermission.viewFinance);
+    final canManageProperty =
+        hasPmsPermission(ref, PmsPermission.manageProperty);
+    final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
+    final canManageStaff = hasPmsPermission(ref, PmsPermission.manageStaff);
+    final canManageChannels =
+        hasPmsPermission(ref, PmsPermission.manageChannels);
+    final canUpdateRoomStatus =
+        hasPmsPermission(ref, PmsPermission.updateRoomStatus);
 
     return Drawer(
       child: ListView(
@@ -30,30 +42,106 @@ class DashboardDrawer extends ConsumerWidget {
               ref.read(routerProvider).replaceAllWith('dashboard');
             },
           ),
-          ListTile(
-            title: const Text("Courses"),
-            onTap: () {
-              ref.read(routerProvider).push('courses');
-            },
-          ),
-          ListTile(
-            title: const Text("Watchlist"),
-            onTap: () {
-              ref.read(routerProvider).push('watchlist');
-            },
-          ),
-          ListTile(
-            title: const Text("Invoices"),
-            onTap: () {
-              ref.read(routerProvider).push('invoices');
-            },
-          ),
-          ListTile(
-            title: const Text("Reports"),
-            onTap: () {
-              ref.read(routerProvider).push('reports');
-            },
-          ),
+          if (canViewBookings)
+            ListTile(
+              title: const Text("Today's"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('todays');
+                    },
+            ),
+          if (canViewBookings)
+            ListTile(
+              title: const Text("Bookings"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('booking_search');
+                    },
+            ),
+          if (canUpdateRoomStatus)
+            ListTile(
+              title: const Text("Housekeeping"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('housekeeping');
+                    },
+            ),
+          if (canManageChannels)
+            ListTile(
+              title: const Text("Channels"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('channel_manager');
+                    },
+            ),
+          if (canManageProperty)
+            ListTile(
+              title: const Text("Property"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('edit_property');
+                    },
+            ),
+          if (canManageRates)
+            ListTile(
+              title: const Text("Rate Plans"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('hotel_rate_plan');
+                    },
+            ),
+          if (canManageRates)
+            ListTile(
+              title: const Text("Seasons"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('hotel_seasons');
+                    },
+            ),
+          if (canManageStaff)
+            ListTile(
+              title: const Text("Staff & Roles"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('staff_management');
+                    },
+            ),
+          if (canViewFinance)
+            ListTile(
+              title: const Text("Invoices"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('invoices');
+                    },
+            ),
+          if (canViewFinance)
+            ListTile(
+              title: const Text("Reports"),
+              enabled: effectivePropertyId != null,
+              onTap: effectivePropertyId == null
+                  ? null
+                  : () {
+                      ref.read(routerProvider).push('reports');
+                    },
+            ),
           ListTile(
             title: Text(themeModeVM.themeMode == ThemeMode.dark
                 ? "Light Theme"

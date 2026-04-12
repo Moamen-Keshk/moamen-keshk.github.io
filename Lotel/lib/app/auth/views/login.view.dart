@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/auth/view_models/auth.vm.dart';
+import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -73,6 +74,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       // 3. Sync with Python Backend for Role & Status
                       // We await this explicitly to ensure data is loaded before routing
                       await authState.syncWithBackend();
+                      final initialPropertyId = authState.user?.propertyId;
+                      if (initialPropertyId != null && initialPropertyId != 0) {
+                        ref
+                            .read(selectedPropertyVM.notifier)
+                            .updateProperty(initialPropertyId);
+                      }
 
                       if (!mounted) return;
 

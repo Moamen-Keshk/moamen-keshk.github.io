@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/widgets/dashboard_drawer.widget.dart';
@@ -20,8 +21,10 @@ class RatePlanMappingPage extends StatelessWidget {
     return Scaffold(
       appBar: const DashboardNav(),
 
-      // The View now completely handles its own state, list, and FAB!
-      body: ChannelRateMappingView(connectionId: connectionId),
+      body: PermissionGuard(
+        requiredPermission: PmsPermission.manageChannels,
+        child: ChannelRateMappingView(connectionId: connectionId),
+      ),
 
       drawer: MediaQuery.of(context).size.width > ScreenSizes.md
           ? null

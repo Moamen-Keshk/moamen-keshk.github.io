@@ -6,21 +6,22 @@ class RoleService {
   final _auth = FirebaseAuth.instance;
 
   Future<List<Role>> getAssignableRoles(int propertyId) async {
-    try {
-      final token = await _auth.currentUser?.getIdToken();
-      final response = await sendGetRequest(
-        token,
-        "/api/v1/properties/$propertyId/assignable-roles",
-      );
+    final token = await _auth.currentUser?.getIdToken();
+    final response = await sendGetRequestOrThrow(
+      token,
+      "/api/v1/properties/$propertyId/assignable-roles",
+      fallbackMessage: 'Failed to load assignable roles.',
+    );
 
-      if (response['status'] == 'success') {
-        return (response['data'] as List)
-            .map((e) => Role.fromResMap(e))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
+    if (response is! Map<String, dynamic> || response['status'] != 'success') {
+      throw ApiRequestException('Failed to load assignable roles.');
     }
+
+    final data = response['data'];
+    if (data is! List) {
+      throw ApiRequestException('Invalid role response from server.');
+    }
+
+    return data.map((e) => Role.fromResMap(e)).toList();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
 import 'package:lotel_pms/app/api/view_models/floor.vm.dart';
@@ -147,6 +148,8 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
+      final canViewRates = hasPmsPermission(ref, PmsPermission.viewRates);
+      final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
       final blocks = ref.watch(blockListVM); // 👈 watch blocks
@@ -215,76 +218,84 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    SizedBox(
-                      width: 140,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _showRates
-                                    ? Colors.green[200]
-                                    : Colors.grey[300],
-                                elevation: 0,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                shape: BeveledRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
+                    if (canViewRates || canManageRates)
+                      SizedBox(
+                        width: 140,
+                        child: Row(
+                          children: [
+                            if (canViewRates)
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _showRates
+                                        ? Colors.green[200]
+                                        : Colors.grey[300],
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8),
+                                    shape: BeveledRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    setState(() => _showRates = !_showRates);
+                                  },
+                                  child: Text(
+                                    _showRates ? 'Hide' : 'Rates',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              onPressed: () {
-                                setState(() => _showRates = !_showRates);
-                              },
-                              child: Text(
-                                _showRates ? 'Hide' : 'Rates',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[200],
-                                elevation: 0,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                shape: BeveledRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                              onPressed: () async {
-                                final propertyId = ref.read(selectedPropertyVM);
-                                if (propertyId == null) return;
+                            if (canViewRates && canManageRates)
+                              const SizedBox(width: 4),
+                            if (canManageRates)
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[200],
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8),
+                                    shape: BeveledRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    final propertyId =
+                                        ref.read(selectedPropertyVM);
+                                    if (propertyId == null) return;
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Refreshing rates...')),
-                                );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Refreshing rates...')),
+                                    );
 
-                                await ref
-                                    .read(roomOnlineListVM.notifier)
-                                    .fetchRoomOnline();
-                                await ref
-                                    .read(blockListVM.notifier)
-                                    .fetchBlocks(); // 👈 refresh blocks
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text('Rates updated.')),
-                                  );
-                                }
-                              },
-                              child: const Icon(Icons.sync,
-                                  size: 16, color: Colors.black),
-                            ),
-                          ),
-                        ],
+                                    await ref
+                                        .read(roomOnlineListVM.notifier)
+                                        .fetchRoomOnline();
+                                    await ref
+                                        .read(blockListVM.notifier)
+                                        .fetchBlocks();
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Rates updated.')),
+                                      );
+                                    }
+                                  },
+                                  child: const Icon(Icons.sync,
+                                      size: 16, color: Colors.black),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(width: 8),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/views/edit_booking.view.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
@@ -26,6 +27,8 @@ class BookingDetailsBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final canManageBookings =
+        hasPmsPermission(ref, PmsPermission.manageBookings);
     final selectedId = ref.watch(selectedBookingIdProvider);
     final booking = bookings.firstWhereOrNull(
       (b) => int.parse(b.booking.id) == selectedId,
@@ -163,12 +166,13 @@ class BookingDetailsBar extends ConsumerWidget {
                           style: const TextStyle(fontSize: 13),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () {
-                          _showEditBookingDialog(context, booking, ref);
-                        },
-                      ),
+                      if (canManageBookings)
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            _showEditBookingDialog(context, booking, ref);
+                          },
+                        ),
                     ],
                   ),
                 ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:lotel_pms/app/req/request.dart';
 import 'package:lotel_pms/infrastructure/api/res/staff_management.service.dart';
 
 // Model to represent a staff member parsed from the backend
@@ -48,6 +49,13 @@ class StaffManagementVM extends ChangeNotifier {
   String error = '';
   List<StaffMember> staffList = [];
 
+  String _messageFromError(Object error, String fallback) {
+    if (error is ApiRequestException && error.message.isNotEmpty) {
+      return error.message;
+    }
+    return fallback;
+  }
+
   // --- FETCH STAFF ---
   Future<void> fetchStaff(int propertyId) async {
     isLoading = true;
@@ -60,7 +68,7 @@ class StaffManagementVM extends ChangeNotifier {
           .map((e) => StaffMember.fromMap(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      error = 'Failed to load staff members.';
+      error = _messageFromError(e, 'Failed to load staff members.');
     } finally {
       isLoading = false;
       notifyListeners();
@@ -77,14 +85,14 @@ class StaffManagementVM extends ChangeNotifier {
     error = '';
     notifyListeners();
 
-    final success = await _service.sendInvite(propertyId, email, roleId);
-
-    isLoading = false;
-    if (success) {
+    try {
+      final success = await _service.sendInvite(propertyId, email, roleId);
+      isLoading = false;
       notifyListeners();
-      return true;
-    } else {
-      error = 'Failed to send invite.';
+      return success;
+    } catch (e) {
+      error = _messageFromError(e, 'Failed to send invite.');
+      isLoading = false;
       notifyListeners();
       return false;
     }
@@ -100,14 +108,19 @@ class StaffManagementVM extends ChangeNotifier {
     error = '';
     notifyListeners();
 
-    final success =
-        await _service.updateStaffRole(propertyId, targetUserId, newRoleId);
-
-    if (success) {
-      await fetchStaff(propertyId); // Refresh the list
-      return true;
-    } else {
+    try {
+      final success =
+          await _service.updateStaffRole(propertyId, targetUserId, newRoleId);
+      if (success) {
+        await fetchStaff(propertyId);
+        return true;
+      }
       error = 'Failed to update role.';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      error = _messageFromError(e, 'Failed to update role.');
       isLoading = false;
       notifyListeners();
       return false;
@@ -124,14 +137,19 @@ class StaffManagementVM extends ChangeNotifier {
     error = '';
     notifyListeners();
 
-    final success =
-        await _service.updateStaffStatus(propertyId, targetUserId, newStatusId);
-
-    if (success) {
-      await fetchStaff(propertyId); // Refresh the list
-      return true;
-    } else {
+    try {
+      final success = await _service.updateStaffStatus(
+          propertyId, targetUserId, newStatusId);
+      if (success) {
+        await fetchStaff(propertyId);
+        return true;
+      }
       error = 'Failed to update user status.';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      error = _messageFromError(e, 'Failed to update user status.');
       isLoading = false;
       notifyListeners();
       return false;
@@ -147,13 +165,18 @@ class StaffManagementVM extends ChangeNotifier {
     error = '';
     notifyListeners();
 
-    final success = await _service.removeStaff(propertyId, targetUserId);
-
-    if (success) {
-      await fetchStaff(propertyId); // Refresh the list
-      return true;
-    } else {
+    try {
+      final success = await _service.removeStaff(propertyId, targetUserId);
+      if (success) {
+        await fetchStaff(propertyId);
+        return true;
+      }
       error = 'Failed to remove user.';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      error = _messageFromError(e, 'Failed to remove user.');
       isLoading = false;
       notifyListeners();
       return false;

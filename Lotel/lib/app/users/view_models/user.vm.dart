@@ -7,6 +7,8 @@ class UserVM {
       accountStatusId; // 1: Pending, 2: Active, 3: Suspended, 4: Cancelled
   final String? role; // e.g., 'Property Admin', 'Front Desk'
   final int? propertyId; // The property this user is assigned to
+  final List<String> permissions;
+  final bool isSuperAdmin;
 
   UserVM({
     required this.email,
@@ -15,6 +17,8 @@ class UserVM {
     this.accountStatusId,
     this.role,
     this.propertyId,
+    this.permissions = const [],
+    this.isSuperAdmin = false,
   });
 
   // Helper method to update backend data later
@@ -25,6 +29,8 @@ class UserVM {
     int? accountStatusId,
     String? role,
     int? propertyId,
+    List<String>? permissions,
+    bool? isSuperAdmin,
   }) {
     return UserVM(
       email: email ?? this.email,
@@ -33,6 +39,8 @@ class UserVM {
       accountStatusId: accountStatusId ?? this.accountStatusId,
       role: role ?? this.role,
       propertyId: propertyId ?? this.propertyId,
+      permissions: permissions ?? this.permissions,
+      isSuperAdmin: isSuperAdmin ?? this.isSuperAdmin,
     );
   }
 }

@@ -18,6 +18,49 @@ String getBaseUrl() {
 final String baseURL = getBaseUrl();
 final List<Object> resData = <Object>[];
 
+class ApiRequestException implements Exception {
+  final String message;
+
+  ApiRequestException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+Map<String, String> _buildHeaders(String? idToken) {
+  return <String, String>{
+    "Content-Type": "application/json",
+    if (idToken != null) "Authorization": "Bearer $idToken",
+  };
+}
+
+dynamic _decodeResponseBody(http.Response response) {
+  if (response.body.isEmpty) {
+    return {'status': 'success'};
+  }
+  return jsonDecode(response.body);
+}
+
+String _extractErrorMessage(http.Response response, String fallbackMessage) {
+  if (response.body.isEmpty) {
+    return '$fallbackMessage (HTTP ${response.statusCode})';
+  }
+
+  try {
+    final dynamic decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      final message = decoded['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+    }
+  } catch (_) {
+    // Fall through to the generic fallback below.
+  }
+
+  return '$fallbackMessage (HTTP ${response.statusCode})';
+}
+
 Future<bool> sendPostRequest(
   Map<String, dynamic> body,
   String? idToken,
@@ -26,10 +69,7 @@ Future<bool> sendPostRequest(
   try {
     final http.Response response = await http.post(
       Uri.parse('$baseURL$apiURL'),
-      headers: <String, String>{
-        "Content-Type": "application/json",
-        if (idToken != null) "Authorization": "Bearer $idToken",
-      },
+      headers: _buildHeaders(idToken),
       body: jsonEncode(body),
     );
 
@@ -48,18 +88,12 @@ Future<dynamic> sendPostWithResponseRequest(
   try {
     final http.Response response = await http.post(
       Uri.parse('$baseURL$apiURL'),
-      headers: <String, String>{
-        "Content-Type": "application/json",
-        if (idToken != null) "Authorization": "Bearer $idToken",
-      },
+      headers: _buildHeaders(idToken),
       body: jsonEncode(body),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      if (response.body.isEmpty) {
-        return {'status': 'success'};
-      }
-      return jsonDecode(response.body);
+      return _decodeResponseBody(response);
     }
     return null;
   } catch (_) {
@@ -67,14 +101,30 @@ Future<dynamic> sendPostWithResponseRequest(
   }
 }
 
+Future<dynamic> sendPostWithResponseRequestOrThrow(
+  Map<String, dynamic> body,
+  String? idToken,
+  String apiURL, {
+  String fallbackMessage = 'Request failed.',
+}) async {
+  final http.Response response = await http.post(
+    Uri.parse('$baseURL$apiURL'),
+    headers: _buildHeaders(idToken),
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return _decodeResponseBody(response);
+  }
+
+  throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
+}
+
 Future<dynamic> sendGetRequest(String? idToken, String apiURL) async {
   try {
     final http.Response query = await http.get(
       Uri.parse(baseURL + apiURL),
-      headers: <String, String>{
-        "Content-Type": "application/json",
-        if (idToken != null) "Authorization": "Bearer $idToken",
-      },
+      headers: _buildHeaders(idToken),
     );
 
     if (query.statusCode == 200 || query.statusCode == 201) {
@@ -85,6 +135,23 @@ Future<dynamic> sendGetRequest(String? idToken, String apiURL) async {
   } on Exception {
     return null;
   }
+}
+
+Future<dynamic> sendGetRequestOrThrow(
+  String? idToken,
+  String apiURL, {
+  String fallbackMessage = 'Request failed.',
+}) async {
+  final http.Response response = await http.get(
+    Uri.parse('$baseURL$apiURL'),
+    headers: _buildHeaders(idToken),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return _decodeResponseBody(response);
+  }
+
+  throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
 }
 
 Future<dynamic> sendGetWithParamsRequest(
@@ -102,10 +169,7 @@ Future<dynamic> sendGetWithParamsRequest(
 
     final http.Response query = await http.get(
       uriWithParams,
-      headers: <String, String>{
-        "Content-Type": "application/json",
-        if (idToken != null) "Authorization": "Bearer $idToken",
-      },
+      headers: _buildHeaders(idToken),
     );
 
     if (query.statusCode == 200 || query.statusCode == 201) {
@@ -126,10 +190,7 @@ Future<bool> sendPutRequest(
   try {
     final http.Response response = await http.put(
       Uri.parse('$baseURL$apiURL'),
-      headers: <String, String>{
-        "Content-Type": "application/json",
-        if (idToken != null) "Authorization": "Bearer $idToken",
-      },
+      headers: _buildHeaders(idToken),
       body: jsonEncode(body),
     );
 
@@ -142,28 +203,60 @@ Future<bool> sendPutRequest(
   }
 }
 
+Future<dynamic> sendPutWithResponseRequestOrThrow(
+  Map<String, dynamic> body,
+  String? idToken,
+  String apiURL, {
+  String fallbackMessage = 'Request failed.',
+}) async {
+  final http.Response response = await http.put(
+    Uri.parse('$baseURL$apiURL'),
+    headers: _buildHeaders(idToken),
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode == 200 ||
+      response.statusCode == 201 ||
+      response.statusCode == 204) {
+    return _decodeResponseBody(response);
+  }
+
+  throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
+}
+
 Future<dynamic> sendDeleteRequest(String? idToken, String apiURL) async {
   try {
     final http.Response response = await http.delete(
       Uri.parse('$baseURL$apiURL'),
-      headers: <String, String>{
-        "Content-Type": "application/json",
-        if (idToken != null) "Authorization": "Bearer $idToken",
-      },
+      headers: _buildHeaders(idToken),
     );
 
     if (response.statusCode == 200 ||
         response.statusCode == 201 ||
         response.statusCode == 204) {
-      // Normalize successful DELETE responses so callers can safely read
-      // the same shape even when the backend returns 204 No Content.
-      if (response.body.isEmpty) {
-        return {'status': 'success'};
-      }
-      return jsonDecode(response.body);
+      return _decodeResponseBody(response);
     }
     return null;
   } catch (_) {
     return null;
   }
+}
+
+Future<dynamic> sendDeleteRequestOrThrow(
+  String? idToken,
+  String apiURL, {
+  String fallbackMessage = 'Request failed.',
+}) async {
+  final http.Response response = await http.delete(
+    Uri.parse('$baseURL$apiURL'),
+    headers: _buildHeaders(idToken),
+  );
+
+  if (response.statusCode == 200 ||
+      response.statusCode == 201 ||
+      response.statusCode == 204) {
+    return _decodeResponseBody(response);
+  }
+
+  throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
 }

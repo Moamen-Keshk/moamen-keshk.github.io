@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/view_models/role.vm.dart';
 import 'package:lotel_pms/app/api/view_models/staff_management.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/app/api/view_models/lists/role_list.vm.dart';
+
+class _StatusAction {
+  final int targetStatusId;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const _StatusAction({
+    required this.targetStatusId,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+}
 
 class StaffManagementView extends ConsumerStatefulWidget {
   const StaffManagementView({super.key});
@@ -16,6 +31,13 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   int? _selectedRoleId;
+
+  static const Map<int, String> _statusLabels = {
+    1: 'Pending',
+    2: 'Active',
+    3: 'Suspended',
+    4: 'Cancelled',
+  };
 
   @override
   void initState() {
@@ -38,12 +60,120 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
     }
   }
 
+  void _resetInviteForm(List<RoleVM> allowedRoles) {
+    _emailController.clear();
+    if (allowedRoles.isEmpty) {
+      _selectedRoleId = null;
+      return;
+    }
+
+    final selectedRoleStillValid =
+        allowedRoles.any((role) => role.id == _selectedRoleId);
+    _selectedRoleId =
+        selectedRoleStillValid ? _selectedRoleId : allowedRoles.first.id;
+  }
+
+  List<_StatusAction> _statusActionsFor(StaffMember member) {
+    switch (member.statusId) {
+      case 1:
+        return const [
+          _StatusAction(
+            targetStatusId: 2,
+            label: 'Approve Access',
+            color: Colors.green,
+            icon: Icons.check_circle,
+          ),
+          _StatusAction(
+            targetStatusId: 3,
+            label: 'Suspend Access',
+            color: Colors.orange,
+            icon: Icons.block,
+          ),
+          _StatusAction(
+            targetStatusId: 4,
+            label: 'Cancel Invite',
+            color: Colors.red,
+            icon: Icons.cancel,
+          ),
+        ];
+      case 2:
+        return const [
+          _StatusAction(
+            targetStatusId: 3,
+            label: 'Suspend Access',
+            color: Colors.orange,
+            icon: Icons.block,
+          ),
+          _StatusAction(
+            targetStatusId: 4,
+            label: 'Cancel Access',
+            color: Colors.red,
+            icon: Icons.cancel,
+          ),
+        ];
+      case 3:
+        return const [
+          _StatusAction(
+            targetStatusId: 2,
+            label: 'Reactivate Access',
+            color: Colors.green,
+            icon: Icons.check_circle,
+          ),
+          _StatusAction(
+            targetStatusId: 4,
+            label: 'Cancel Access',
+            color: Colors.red,
+            icon: Icons.cancel,
+          ),
+        ];
+      case 4:
+        return const [
+          _StatusAction(
+            targetStatusId: 2,
+            label: 'Restore Access',
+            color: Colors.green,
+            icon: Icons.restore,
+          ),
+        ];
+      default:
+        return const [];
+    }
+  }
+
+  Color _cardColorForStatus(int statusId) {
+    switch (statusId) {
+      case 1:
+        return Colors.amber.shade50;
+      case 3:
+        return Colors.grey.shade200;
+      case 4:
+        return Colors.red.shade50;
+      default:
+        return Colors.white;
+    }
+  }
+
+  Color _avatarColorForStatus(int statusId) {
+    switch (statusId) {
+      case 1:
+        return Colors.amber;
+      case 3:
+        return Colors.grey;
+      case 4:
+        return Colors.red;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  Color _textColorForStatus(int statusId) {
+    return statusId == 2 ? Colors.black : Colors.black87;
+  }
+
   // Dialog for Inviting Staff
   void _showInviteDialog(
-      BuildContext context, int propertyId, List<dynamic> allowedRoles) {
-    if (allowedRoles.isNotEmpty && _selectedRoleId == null) {
-      _selectedRoleId = allowedRoles.first.id;
-    }
+      BuildContext context, int propertyId, List<RoleVM> allowedRoles) {
+    _resetInviteForm(allowedRoles);
 
     showDialog(
       context: context,
@@ -105,7 +235,9 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text("Cancel")),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: allowedRoles.isEmpty
+                  ? null
+                  : () async {
                 if (_formKey.currentState!.validate() &&
                     _selectedRoleId != null) {
                   final success = await ref.read(staffManagementVM).sendInvite(
@@ -135,12 +267,12 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
           ],
         );
       },
-    );
+    ).then((_) => _resetInviteForm(allowedRoles));
   }
 
   // Dialog for Editing Role
   void _showEditRoleDialog(BuildContext context, int propertyId,
-      StaffMember member, List<dynamic> allowedRoles) {
+      StaffMember member, List<RoleVM> allowedRoles) {
     int? editRoleId = member.roleId;
 
     // Check if the user is allowed to assign the role they currently have, if not default to first assignable
@@ -214,41 +346,34 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
     );
   }
 
-  // Dialog for Suspending/Reactivating Staff (Soft Delete)
-  void _showToggleStatusDialog(
-      BuildContext context, int propertyId, StaffMember member) {
-    // Assuming Status 1 = Pending, 2 = Active, 3 = Suspended.
-    // If they are anything other than Suspended (3), the button will Suspend them.
-    final bool isCurrentlyActive = member.statusId != 3;
-    final int targetStatusId = isCurrentlyActive ? 3 : 2;
-    final String actionWord = isCurrentlyActive ? 'Suspend' : 'Reactivate';
-    final Color actionColor = isCurrentlyActive ? Colors.orange : Colors.green;
-
+  void _showStatusDialog(BuildContext context, int propertyId, StaffMember member,
+      _StatusAction action) {
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text('$actionWord Access'),
+          title: Text(action.label),
           content: Text(
-              'Are you sure you want to $actionWord ${member.username}\'s access to this property?'),
+              'Are you sure you want to ${action.label.toLowerCase()} for ${member.username}?'),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text("Cancel")),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: actionColor),
+              style: ElevatedButton.styleFrom(backgroundColor: action.color),
               onPressed: () async {
                 final success = await ref.read(staffManagementVM).updateStatus(
                       propertyId: propertyId,
                       targetUserId: member.userUid,
-                      newStatusId: targetStatusId,
+                      newStatusId: action.targetStatusId,
                     );
                 if (!ctx.mounted) return;
                 Navigator.of(ctx).pop();
                 final messenger = ScaffoldMessenger.of(ctx);
                 if (success) {
                   messenger.showSnackBar(SnackBar(
-                      content: Text('User access updated to $actionWord'),
+                      content: Text(
+                          'User status updated to ${_statusLabels[action.targetStatusId] ?? 'Updated'}'),
                       backgroundColor: Colors.green));
                 } else {
                   messenger.showSnackBar(SnackBar(
@@ -257,7 +382,7 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                 }
               },
               child:
-                  Text(actionWord, style: const TextStyle(color: Colors.white)),
+                  Text(action.label, style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -269,7 +394,7 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
   Widget build(BuildContext context) {
     final staffVM = ref.watch(staffManagementVM);
     final propertyId = ref.watch(selectedPropertyVM);
-    final allowedRoles = ref.watch(roleListVM);
+    final List<RoleVM> allowedRoles = ref.watch(roleListVM);
 
     // Re-fetch staff if property changes
     ref.listen(selectedPropertyVM, (previous, next) {
@@ -289,63 +414,86 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          if (propertyId != null) {
-            _showInviteDialog(context, propertyId, allowedRoles);
-          }
-        },
-        icon: const Icon(Icons.person_add),
-        label: const Text("Invite"),
-      ),
+      floatingActionButton: propertyId == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _showInviteDialog(context, propertyId, allowedRoles),
+              icon: const Icon(Icons.person_add),
+              label: const Text("Invite"),
+            ),
       body: staffVM.isLoading && staffVM.staffList.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : staffVM.staffList.isEmpty
-              ? const Center(child: Text("No staff found for this property."))
-              : RefreshIndicator(
-                  onRefresh: () async => _loadStaff(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: staffVM.staffList.length,
-                    itemBuilder: (context, index) {
-                      final staff = staffVM.staffList[index];
-                      final bool isSuspended = staff.statusId == 3;
+          : RefreshIndicator(
+              onRefresh: () async => _loadStaff(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  if (staffVM.error.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        staffVM.error,
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ),
+                  if (staffVM.staffList.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 32),
+                      child: Center(
+                        child: Text("No staff found for this property."),
+                      ),
+                    )
+                  else
+                    ...staffVM.staffList.map((staff) {
+                      final statusActions = _statusActionsFor(staff);
 
                       return Card(
-                        color: isSuspended
-                            ? Colors.grey.shade200
-                            : Colors.white, // Grey out suspended users slightly
+                        color: _cardColorForStatus(staff.statusId),
                         margin: const EdgeInsets.only(bottom: 12.0),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor:
-                                isSuspended ? Colors.grey : Colors.blue,
+                            backgroundColor: _avatarColorForStatus(staff.statusId),
                             child: Text(
-                                staff.username.isNotEmpty
-                                    ? staff.username[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(color: Colors.white)),
+                              staff.username.isNotEmpty
+                                  ? staff.username[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
                           title: Text(
-                              staff.username.isEmpty
-                                  ? staff.email
-                                  : staff.username,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: isSuspended
-                                      ? Colors.grey
-                                      : Colors.black)),
+                            staff.username.isEmpty ? staff.email : staff.username,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _textColorForStatus(staff.statusId),
+                            ),
+                          ),
                           subtitle: Text(
-                              '${staff.roleName} • Status: ${staff.statusName}'),
+                            '${staff.roleName} • Status: ${staff.statusName}'
+                            '${staff.isCurrentUser ? ' • You' : ''}',
+                          ),
                           trailing: staff.canManage
                               ? PopupMenuButton<String>(
                                   onSelected: (value) {
                                     if (value == 'edit') {
                                       _showEditRoleDialog(context, propertyId!,
                                           staff, allowedRoles);
-                                    } else if (value == 'toggle_status') {
-                                      _showToggleStatusDialog(
-                                          context, propertyId!, staff);
+                                      return;
+                                    }
+
+                                    for (final action in statusActions) {
+                                      if (value ==
+                                          'status:${action.targetStatusId}') {
+                                        _showStatusDialog(
+                                            context, propertyId!, staff, action);
+                                        return;
+                                      }
                                     }
                                   },
                                   itemBuilder: (context) => [
@@ -359,28 +507,21 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                                         ],
                                       ),
                                     ),
-                                    PopupMenuItem(
-                                      value: 'toggle_status',
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                              isSuspended
-                                                  ? Icons.check_circle
-                                                  : Icons.block,
-                                              color: isSuspended
-                                                  ? Colors.green
-                                                  : Colors.orange,
-                                              size: 18),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                              isSuspended
-                                                  ? 'Reactivate Access'
-                                                  : 'Suspend Access',
-                                              style: TextStyle(
-                                                  color: isSuspended
-                                                      ? Colors.green
-                                                      : Colors.orange))
-                                        ],
+                                    ...statusActions.map(
+                                      (action) => PopupMenuItem(
+                                        value: 'status:${action.targetStatusId}',
+                                        child: Row(
+                                          children: [
+                                            Icon(action.icon,
+                                                color: action.color, size: 18),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              action.label,
+                                              style:
+                                                  TextStyle(color: action.color),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -388,9 +529,10 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                               : null,
                         ),
                       );
-                    },
-                  ),
-                ),
+                    }),
+                ],
+              ),
+            ),
     );
   }
 }

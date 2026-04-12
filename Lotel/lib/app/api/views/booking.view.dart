@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
 import 'package:lotel_pms/infrastructure/api/model/booking.model.dart';
 import 'package:lotel_pms/infrastructure/api/model/invoice.model.dart';
@@ -806,6 +807,10 @@ class _BookingViewState extends ConsumerState<BookingView> {
     final bookingId = ref.watch(bookingIdProvider);
     final propertyId = ref.watch(selectedPropertyVM) ?? 0;
     final roomMapping = ref.watch(roomMappingProvider);
+    final canManageBookings =
+        hasPmsPermission(ref, PmsPermission.manageBookings);
+    final canViewFinance = hasPmsPermission(ref, PmsPermission.viewFinance);
+    final canManageFinance = hasPmsPermission(ref, PmsPermission.manageFinance);
 
     final paymentStatusMappingAsync = ref.watch(paymentStatusMappingProvider);
     final bookingStatusMappingAsync = ref.watch(bookingStatusMappingProvider);
@@ -853,43 +858,45 @@ class _BookingViewState extends ConsumerState<BookingView> {
                           spacing: 12.0,
                           runSpacing: 8.0,
                           children: [
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.chat),
-                              label: const Text("Chat Guest"),
-                              onPressed: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(context)
-                                          .viewInsets
-                                          .bottom,
-                                    ),
-                                    child: FractionallySizedBox(
-                                      heightFactor: 0.85,
-                                      child: ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                                top: Radius.circular(20)),
-                                        child: GuestChatView(
-                                          propertyId: propertyId,
-                                          bookingId: bookingId,
-                                          guestName:
-                                              '${booking.firstName} ${booking.lastName}',
+                            if (canManageBookings)
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.chat),
+                                label: const Text("Chat Guest"),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: MediaQuery.of(context)
+                                            .viewInsets
+                                            .bottom,
+                                      ),
+                                      child: FractionallySizedBox(
+                                        heightFactor: 0.85,
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              const BorderRadius.vertical(
+                                                  top: Radius.circular(20)),
+                                          child: GuestChatView(
+                                            propertyId: propertyId,
+                                            bookingId: bookingId,
+                                            guestName:
+                                                '${booking.firstName} ${booking.lastName}',
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 12),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 12),
+                                ),
                               ),
-                            ),
-                            if (booking.email != null &&
+                            if (canManageBookings &&
+                                booking.email != null &&
                                 booking.email!.isNotEmpty)
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.email_outlined),
@@ -905,86 +912,82 @@ class _BookingViewState extends ConsumerState<BookingView> {
                         ),
                       ),
 
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            alignment: WrapAlignment.start,
-                            children: [
-                              _section("Guest Info", {
-                                "Name": "${booking.firstName} ${booking.lastName}",
-                                "Phone": booking.phone ?? "-",
-                                "Adults": "${booking.numberOfAdults}",
-                                "Children": "${booking.numberOfChildren}",
-                              }),
-                              _section("Status & Meta", {
-                                "Payment Status":
-                                    paymentStatusMapping[booking.paymentStatusID] ??
-                                        "Unknown",
-                                "Booking Status":
-                                    bookingStatusMapping[booking.statusID] ??
-                                        'Unknown',
-                                "Room": roomMapping[booking.roomID] ??
-                                    'Room ${booking.roomID}',
-                              }),
-                              _section("Dates", {
-                                "Check-in": format.format(booking.checkIn),
-                                "Check-out": format.format(booking.checkOut),
-                                "Created": format.format(booking.bookingDate),
-                              }),
-                              _section("Reference", {
-                                "Confirmation Number":
-                                    booking.confirmationNumber.toString(),
-                                "Email": booking.email ?? "-",
-                                "Invoice Number": booking.invoiceNumber ?? "-",
-                              }),
-                              _section("Notes & Requests", {
-                                "Special Request": (booking.specialRequest !=
-                                            null &&
-                                        booking.specialRequest!.trim().isNotEmpty)
-                                    ? booking.specialRequest!
-                                    : "None",
-                                "Note": (booking.note != null &&
-                                        booking.note!.trim().isNotEmpty)
-                                    ? booking.note!
-                                    : "None",
-                              }),
-                              _section("Nightly Rates", {
-                                for (var rate in booking.bookingRates)
-                                  DateFormat('dd MMM').format(rate.rateDate):
-                                      "£${rate.nightlyRate.toStringAsFixed(2)}"
-                              }),
-                              bookingInvoiceAsync.when(
-                                loading: () => _financeCardSkeleton(),
-                                error: (err, _) => _infoCard(
-                                  "Invoice",
-                                  Text('Failed to load invoice: $err'),
-                                ),
-                                data: (invoice) => _invoiceCard(
-                                  context,
-                                  ref,
-                                  booking,
-                                  invoice,
-                                ),
+                      // --- Booking Details ---
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.start,
+                        children: [
+                          _section("Guest Info", {
+                            "Name": "${booking.firstName} ${booking.lastName}",
+                            "Phone": booking.phone ?? "-",
+                            "Adults": "${booking.numberOfAdults}",
+                            "Children": "${booking.numberOfChildren}",
+                          }),
+                          _section("Status & Meta", {
+                            "Payment Status":
+                                paymentStatusMapping[booking.paymentStatusID] ??
+                                    "Unknown",
+                            "Booking Status":
+                                bookingStatusMapping[booking.statusID] ??
+                                    'Unknown',
+                            "Room": roomMapping[booking.roomID] ??
+                                'Room ${booking.roomID}',
+                          }),
+                          _section("Dates", {
+                            "Check-in": format.format(booking.checkIn),
+                            "Check-out": format.format(booking.checkOut),
+                            "Created": format.format(booking.bookingDate),
+                          }),
+                          _section("Reference", {
+                            "Confirmation Number":
+                                booking.confirmationNumber.toString(),
+                            "Email": booking.email ?? "-",
+                            "Invoice Number": booking.invoiceNumber ?? "-",
+                          }),
+                          _section("Notes & Requests", {
+                            "Special Request": (booking.specialRequest !=
+                                        null &&
+                                    booking.specialRequest!.trim().isNotEmpty)
+                                ? booking.specialRequest!
+                                : "None",
+                            "Note": (booking.note != null &&
+                                    booking.note!.trim().isNotEmpty)
+                                ? booking.note!
+                                : "None",
+                          }),
+                          _section("Nightly Rates", {
+                            for (var rate in booking.bookingRates)
+                              DateFormat('dd MMM').format(rate.rateDate):
+                                  "£${rate.nightlyRate.toStringAsFixed(2)}"
+                          }),
+                          if (canViewFinance)
+                            bookingInvoiceAsync.when(
+                              loading: () => _financeCardSkeleton(),
+                              error: (err, _) => _infoCard(
+                                "Invoice",
+                                Text('Failed to load invoice: $err'),
                               ),
-                              bookingPaymentsAsync.when(
-                                loading: () => _financeCardSkeleton(),
-                                error: (err, _) => _infoCard(
-                                  "Payments",
-                                  Text('Failed to load payments: $err'),
-                                ),
-                                data: (payments) => _paymentsCard(
-                                  context,
-                                  ref,
-                                  booking,
-                                  payments,
-                                ),
+                              data: (invoice) => _invoiceCard(
+                                context,
+                                ref,
+                                booking,
+                                invoice,
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          if (canViewFinance)
+                            bookingPaymentsAsync.when(
+                              loading: () => _financeCardSkeleton(),
+                              error: (err, _) => _infoCard(
+                                "Payments",
+                                Text('Failed to load payments: $err'),
+                              ),
+                              data: (payments) =>
+                                  _paymentsCard(context, ref, booking, payments),
+                            ),
+                        ],
                       ),
+                      const Spacer(),
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: Center(
@@ -993,55 +996,59 @@ class _BookingViewState extends ConsumerState<BookingView> {
                             spacing: 8.0,
                             runSpacing: 8.0,
                             children: [
-                              if (booking.statusID == 1)
+                              if (canManageBookings && booking.statusID == 1)
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.login),
                                   label: const Text("Check In"),
                                   onPressed: () => _handleAction(
                                       context, ref, bookingId, 'check_in'),
                                 ),
-                              if (booking.statusID == 2)
+                              if (canManageBookings && booking.statusID == 2)
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.logout),
                                   label: const Text("Check Out"),
                                   onPressed: () => _handleAction(
                                       context, ref, bookingId, 'check_out'),
                                 ),
-                              if (booking.statusID == 1 ||
-                                  booking.statusID == 2)
+                              if (canManageBookings &&
+                                  (booking.statusID == 1 ||
+                                      booking.statusID == 2))
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.calendar_month),
                                   label: const Text("Extend"),
                                   onPressed: () => _handleExtendBooking(
                                       context, ref, bookingId, booking),
                                 ),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.credit_score),
-                                label: const Text("Card Payment"),
-                                onPressed: booking.balanceDue <= 0
-                                    ? null
-                                    : () => _showStripePaymentDialog(
-                                        context, ref, bookingId, booking),
-                              ),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.point_of_sale),
-                                label: const Text("Record Payment"),
-                                onPressed: () => _showRecordPaymentDialog(
-                                    context, ref, bookingId, booking),
-                              ),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.payments_outlined),
-                                label: const Text("Update Status"),
-                                onPressed: () => _showUpdatePaymentDialog(
-                                    context,
-                                    ref,
-                                    bookingId,
-                                    booking.paymentStatusID,
-                                    paymentStatusMapping),
-                              ),
+                              if (canManageFinance)
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.credit_score),
+                                  label: const Text("Card Payment"),
+                                  onPressed: booking.balanceDue <= 0
+                                      ? null
+                                      : () => _showStripePaymentDialog(
+                                          context, ref, bookingId, booking),
+                                ),
+                              if (canManageFinance)
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.point_of_sale),
+                                  label: const Text("Record Payment"),
+                                  onPressed: () => _showRecordPaymentDialog(
+                                      context, ref, bookingId, booking),
+                                ),
+                              if (canManageFinance)
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.payments_outlined),
+                                  label: const Text("Update Status"),
+                                  onPressed: () => _showUpdatePaymentDialog(
+                                      context,
+                                      ref,
+                                      bookingId,
+                                      booking.paymentStatusID,
+                                      paymentStatusMapping),
+                                ),
 
                               // 👉 NEW: CHARGE VCC BUTTON 
-                              if (booking.balanceDue > 0)
+                              if (canManageFinance && booking.balanceDue > 0)
                                 ElevatedButton.icon(
                                   onPressed: () async {
                                     final result = await showDialog<bool>(
@@ -1067,14 +1074,15 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                     ),
                                   ),
                                 ),
-                              OutlinedButton.icon(
-                                icon: const Icon(Icons.sync),
-                                label: const Text('Sync Invoice'),
-                                onPressed: () =>
-                                    _syncInvoice(context, ref, booking),
-                              ),
+                              if (canManageFinance)
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.sync),
+                                  label: const Text('Sync Invoice'),
+                                  onPressed: () =>
+                                      _syncInvoice(context, ref, booking),
+                                ),
 
-                              if (booking.statusID == 1)
+                              if (canManageBookings && booking.statusID == 1)
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.cancel),
                                   label: const Text("Cancel"),

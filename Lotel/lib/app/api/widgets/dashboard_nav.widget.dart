@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/auth/view_models/auth.vm.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/block_list.vm.dart';
@@ -31,13 +32,43 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ ADDED: Get the selected property directly from Riverpod!
     final int? currentPropertyId = ref.watch(selectedPropertyVM);
+    final authState = ref.watch(authVM);
+    final effectivePropertyId = ref.watch(effectivePropertyIdProvider);
+    final canViewBookings = hasPmsPermission(ref, PmsPermission.viewBookings);
+    final canManageBookings =
+        hasPmsPermission(ref, PmsPermission.manageBookings);
+    final canViewFinance = hasPmsPermission(ref, PmsPermission.viewFinance);
+    final canManageChannels =
+        hasPmsPermission(ref, PmsPermission.manageChannels);
+    final canUpdateRoomStatus =
+        hasPmsPermission(ref, PmsPermission.updateRoomStatus);
+    final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
+    final canManageStaff = hasPmsPermission(ref, PmsPermission.manageStaff);
+    final canManageProperty =
+        hasPmsPermission(ref, PmsPermission.manageProperty);
+
+    ref.listen<int?>(selectedPropertyVM, (previous, next) {
+      if (next != previous) {
+        ref.read(authVM).syncWithBackend(propertyId: next);
+      }
+    });
+
+    if (currentPropertyId == null &&
+        authState.user?.propertyId != null &&
+        authState.user?.propertyId != 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(selectedPropertyVM.notifier)
+            .updateProperty(authState.user?.propertyId);
+      });
+    }
+
     // Convert to string for the dropdown, but handle 0 or null cleanly
     final String? dropdownValue =
-        (currentPropertyId == null || currentPropertyId == 0)
+        (effectivePropertyId == null || effectivePropertyId == 0)
             ? null
-            : currentPropertyId.toString();
+            : effectivePropertyId.toString();
 
     return AppBar(
       title: const Text('Lotel'),
@@ -51,6 +82,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   icon: const Icon(Icons.exit_to_app),
                   onPressed: () async {
                     if (await ref.read(authVM).logout()) {
+                      ref.read(selectedPropertyVM.notifier).clear();
                       ref.read(routerProvider).replaceAllWith('home');
                     }
                   },
@@ -58,34 +90,40 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
               }),
             ]
           : [
-              Consumer(builder: (context, ref, child) {
-                return TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: const Color.fromARGB(255, 109, 106, 106),
-                  ),
-                  onPressed: () {
-                    showBlockDialog(context, ref);
-                    ref.read(routerProvider).replaceAllWith('dashboard');
-                  },
-                  child: const Text("Create Block"),
-                );
-              }),
-              const SizedBox(width: 10.0),
-              Consumer(builder: (context, ref, child) {
-                return TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue[300],
-                  ),
-                  onPressed: () {
-                    showBookingDialog(context, ref);
-                    ref.read(routerProvider).replaceAllWith('dashboard');
-                  },
-                  child: const Text("New booking"),
-                );
-              }),
-              const SizedBox(width: 10.0),
+              if (canManageBookings)
+                Consumer(builder: (context, ref, child) {
+                  return TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 109, 106, 106),
+                    ),
+                    onPressed: effectivePropertyId != null
+                        ? () {
+                            showBlockDialog(context, ref);
+                            ref.read(routerProvider).replaceAllWith('dashboard');
+                          }
+                        : null,
+                    child: const Text("Create Block"),
+                  );
+                }),
+              if (canManageBookings) const SizedBox(width: 10.0),
+              if (canManageBookings)
+                Consumer(builder: (context, ref, child) {
+                  return TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue[300],
+                    ),
+                    onPressed: effectivePropertyId != null
+                        ? () {
+                            showBookingDialog(context, ref);
+                            ref.read(routerProvider).replaceAllWith('dashboard');
+                          }
+                        : null,
+                    child: const Text("New booking"),
+                  );
+                }),
+              if (canManageBookings) const SizedBox(width: 10.0),
 
               // THE DROPDOWN FIX
               Consumer(builder: (context, ref, child) {
@@ -109,20 +147,20 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                       if (newValue == 'add') {
                         ref.read(routerProvider).push('new_property');
                       } else if (newValue != null) {
-                        // ✅ Tell Riverpod to update. The UI will automatically rebuild!
                         ref
                             .read(selectedPropertyVM.notifier)
                             .updateProperty(int.parse(newValue));
                       }
                     },
-                    items: properties
-                        .map<DropdownMenuItem<String>>((PropertyVM property) {
-                      return DropdownMenuItem<String>(
-                        value: property.id,
-                        child: Text(property.name),
-                      );
-                    }).toList()
-                      ..add(
+                    items: [
+                      ...properties.map<DropdownMenuItem<String>>(
+                          (PropertyVM property) {
+                        return DropdownMenuItem<String>(
+                          value: property.id,
+                          child: Text(property.name),
+                        );
+                      }),
+                      if (canManageProperty)
                         const DropdownMenuItem(
                           value: 'add',
                           child: Row(
@@ -133,7 +171,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                             ],
                           ),
                         ),
-                      ),
+                    ],
                     icon:
                         const Icon(Icons.arrow_drop_down, color: Colors.black),
                   ),
@@ -148,97 +186,124 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                 },
                 child: const Text("Dashboard"),
               ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                ),
-                onPressed: () {
-                  ref.read(routerProvider).push('todays');
-                },
-                child: const Text("Today's"),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                ),
-                onPressed: () {
-                  ref.read(routerProvider).push('booking_search');
-                },
-                child: const Text("Bookings"),
-              ),
-              TextButton(
+              if (canViewBookings)
+                TextButton(
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey,
                   ),
-                  onPressed: () {
-                    ref.read(routerProvider).push('housekeeping');
-                  },
-                  child: const Text("Housekeeping")),
+                  onPressed: effectivePropertyId != null
+                      ? () {
+                          ref.read(routerProvider).push('todays');
+                        }
+                      : null,
+                  child: const Text("Today's"),
+                ),
+              if (canViewBookings)
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey,
+                  ),
+                  onPressed: effectivePropertyId != null
+                      ? () {
+                          ref.read(routerProvider).push('booking_search');
+                        }
+                      : null,
+                  child: const Text("Bookings"),
+                ),
+              if (canUpdateRoomStatus)
+                TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey,
+                    ),
+                    onPressed: effectivePropertyId != null
+                        ? () {
+                            ref.read(routerProvider).push('housekeeping');
+                          }
+                        : null,
+                    child: const Text("Housekeeping")),
 
-              // 💡 OPTION 1: Standalone TextButton for Channels
-              if (currentPropertyId != null &&
-                  currentPropertyId != 0) // ✅ Now uses Riverpod's state safely
+              if (canManageChannels)
                 TextButton(
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.blueAccent,
                   ),
-                  onPressed: () {
-                    ref.read(routerProvider).push('channel_manager');
-                  },
+                  onPressed: effectivePropertyId != null
+                      ? () {
+                          ref.read(routerProvider).push('channel_manager');
+                        }
+                      : null,
                   child: const Text("Channels"),
                 ),
 
-              /// 💡 Settings Dropdown
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.settings),
-                onSelected: (value) {
-                  final router = ref.read(routerProvider);
-                  switch (value) {
-                    case 'property':
-                      router.push('edit_property');
-                      break;
-                    case 'rate_plans':
-                      router.push('hotel_rate_plan');
-                      break;
-                    case 'categories':
-                      router.push('categories_management');
-                      break;
-                    case 'seasons':
-                      router.push('hotel_seasons');
-                      break;
-                    case 'channels':
-                      router.push('channel_manager');
-                      break;
-                    case 'staff':
-                      router.push('staff_management');
-                      break;
-                    case 'invoices':
-                      router.push('invoices');
-                      break;
-                    case 'reports':
-                      router.push('reports');
-                      break;
-                    // ---> NEW: Route for Amenities Management <---
-                    case 'amenities':
-                      router.push('amenities_management');
-                      break;
-                  }
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'property', child: Text('Property')),
-                  PopupMenuItem(value: 'rate_plans', child: Text('Rate Plans')),
-                  PopupMenuItem(value: 'categories', child: Text('Categories')),
-                  PopupMenuItem(value: 'seasons', child: Text('Seasons')),
-                  PopupMenuItem(
-                      value: 'channels', child: Text('Channel Manager')),
-                  PopupMenuItem(value: 'invoices', child: Text('Invoices')),
-                  PopupMenuItem(value: 'reports', child: Text('Reports')),
-                  PopupMenuItem(value: 'staff', child: Text('Staff & Roles')),
-                  // ---> NEW: Dropdown item for Amenities <---
-                  PopupMenuItem(
-                      value: 'amenities', child: Text('Global Amenities')),
-                ],
-              ),
+              if (canManageProperty ||
+                  canManageRates ||
+                  canManageChannels ||
+                  canManageStaff ||
+                  canViewFinance)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.settings),
+                  onSelected: (value) {
+                    final router = ref.read(routerProvider);
+                    switch (value) {
+                      case 'property':
+                        router.push('edit_property');
+                        break;
+                      case 'rate_plans':
+                        router.push('hotel_rate_plan');
+                        break;
+                      case 'categories':
+                        router.push('categories_management');
+                        break;
+                      case 'seasons':
+                        router.push('hotel_seasons');
+                        break;
+                      case 'channels':
+                        router.push('channel_manager');
+                        break;
+                      case 'staff':
+                        router.push('staff_management');
+                        break;
+                      case 'invoices':
+                        router.push('invoices');
+                        break;
+                      case 'reports':
+                        router.push('reports');
+                        break;
+                      case 'amenities':
+                        router.push('amenities_management');
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    if (canManageProperty)
+                      const PopupMenuItem(
+                          value: 'property', child: Text('Property')),
+                    if (canManageRates)
+                      const PopupMenuItem(
+                          value: 'rate_plans', child: Text('Rate Plans')),
+                    if (canManageProperty)
+                      const PopupMenuItem(
+                          value: 'categories', child: Text('Categories')),
+                    if (canManageRates)
+                      const PopupMenuItem(
+                          value: 'seasons', child: Text('Seasons')),
+                    if (canManageChannels)
+                      const PopupMenuItem(
+                          value: 'channels', child: Text('Channel Manager')),
+                    if (canViewFinance)
+                      const PopupMenuItem(
+                          value: 'invoices', child: Text('Invoices')),
+                    if (canViewFinance)
+                      const PopupMenuItem(
+                          value: 'reports', child: Text('Reports')),
+                    if (canManageStaff)
+                      const PopupMenuItem(
+                          value: 'staff', child: Text('Staff & Roles')),
+                    if (canManageProperty)
+                      const PopupMenuItem(
+                          value: 'amenities', child: Text('Global Amenities')),
+                  ],
+                ),
 
               const NotificationsView(), // ✅ Your global notification widget!
 
@@ -247,6 +312,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   icon: const Icon(Icons.exit_to_app),
                   onPressed: () async {
                     if (await ref.read(authVM).logout()) {
+                      ref.read(selectedPropertyVM.notifier).clear();
                       ref.read(routerProvider).replaceAllWith('home');
                     }
                   },

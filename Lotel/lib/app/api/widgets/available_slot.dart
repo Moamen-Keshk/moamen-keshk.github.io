@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/views/new_booking.view.dart';
 import 'package:lotel_pms/app/api/views/new_block.view.dart';
 import 'package:lotel_pms/app/api/widgets/rate_badge.widget.dart';
@@ -29,9 +30,16 @@ class AvailableSlot extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final canManageBookings =
+        hasPmsPermission(ref, PmsPermission.manageBookings);
+    final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
+
     return GestureDetector(
-      onTap: () => _onTap(context, ref),
-      onLongPress: () => _onLongPress(context, ref),
+      onTap: canManageBookings ? () => _onTap(context, ref) : null,
+      onLongPress: (!showRates && canManageBookings) ||
+              (showRates && canManageRates)
+          ? () => _onLongPress(context, ref)
+          : null,
       child: MouseRegion(
         onEnter: (_) {
           ref.read(highlightedDayVM.notifier).updateDay(tabDay);
@@ -43,10 +51,12 @@ class AvailableSlot extends ConsumerWidget {
         },
         child: DragTarget<BookingVM>(
           onWillAcceptWithDetails: (details) {
-            return roomsCategoryMapping[details.data.roomID] ==
+            return canManageBookings &&
+                roomsCategoryMapping[details.data.roomID] ==
                 roomsCategoryMapping[int.parse(tabRoom)];
           },
           onAcceptWithDetails: (details) async {
+            if (!canManageBookings) return;
             int numberOfNights = details.data.numberOfNights;
             int checkInYear = details.data.checkInYear;
             int checkInMonth = details.data.checkInMonth;

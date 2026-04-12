@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
 import 'package:lotel_pms/main.dart';
@@ -29,6 +30,8 @@ class _BookingTileState extends ConsumerState<BookingTile> {
   @override
   Widget build(BuildContext context) {
     final selectedId = ref.watch(selectedBookingIdProvider);
+    final canManageBookings =
+        hasPmsPermission(ref, PmsPermission.manageBookings);
     _isSelected = selectedId == int.parse(widget.booking.booking.id);
 
     return GestureDetector(
@@ -52,32 +55,46 @@ class _BookingTileState extends ConsumerState<BookingTile> {
           padding: const EdgeInsets.all(8),
           preferBelow: false,
           verticalOffset: 40,
-          child: Draggable<BookingVM>(
-            data: widget.booking,
-            feedback: _buildTile(
-              context,
-              color: Colors.blue[300]!,
-              opacity: 1.0,
-            ),
-            childWhenDragging: _buildTile(
-              context,
-              color: Colors.grey[300]!,
-              opacity: 0.5,
-            ),
-            child: _buildTile(
-              context,
-              color: _isSelected
-                  ? Colors.indigo[400]!
-                  : widget.booking.booking.statusID == 2
-                      ? Colors.brown[200]!
-                      : widget.booking.booking.statusID == 1
-                          ? Colors.blue[300]!
-                          : widget.booking.paymentStatusID == 3
-                              ? Colors.red[300]!
-                              : Colors.blue[300]!,
-              opacity: _isHovered ? 0.85 : 1.0,
-            ),
-          ),
+          child: canManageBookings
+              ? Draggable<BookingVM>(
+                  data: widget.booking,
+                  feedback: _buildTile(
+                    context,
+                    color: Colors.blue[300]!,
+                    opacity: 1.0,
+                  ),
+                  childWhenDragging: _buildTile(
+                    context,
+                    color: Colors.grey[300]!,
+                    opacity: 0.5,
+                  ),
+                  child: _buildTile(
+                    context,
+                    color: _isSelected
+                        ? Colors.indigo[400]!
+                        : widget.booking.booking.statusID == 2
+                            ? Colors.brown[200]!
+                            : widget.booking.booking.statusID == 1
+                                ? Colors.blue[300]!
+                                : widget.booking.paymentStatusID == 3
+                                    ? Colors.red[300]!
+                                    : Colors.blue[300]!,
+                    opacity: _isHovered ? 0.85 : 1.0,
+                  ),
+                )
+              : _buildTile(
+                  context,
+                  color: _isSelected
+                      ? Colors.indigo[400]!
+                      : widget.booking.booking.statusID == 2
+                          ? Colors.brown[200]!
+                          : widget.booking.booking.statusID == 1
+                              ? Colors.blue[300]!
+                              : widget.booking.paymentStatusID == 3
+                                  ? Colors.red[300]!
+                                  : Colors.blue[300]!,
+                  opacity: _isHovered ? 0.85 : 1.0,
+                ),
         ),
       ),
     );
