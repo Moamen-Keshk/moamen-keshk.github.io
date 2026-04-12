@@ -18,6 +18,7 @@ import 'package:lotel_pms/app/api/pages/error_404.page.dart';
 import 'package:lotel_pms/app/api/pages/home.page.dart';
 import 'package:lotel_pms/app/api/pages/hotel_seasons.page.dart';
 import 'package:lotel_pms/app/api/pages/housekeeping.page.dart';
+import 'package:lotel_pms/app/api/pages/invoices.page.dart';
 import 'package:lotel_pms/app/api/pages/load.page.dart';
 import 'package:lotel_pms/app/api/pages/categories_management.page.dart';
 import 'package:lotel_pms/app/api/pages/new_floor.page.dart';
@@ -142,6 +143,9 @@ class AppRouterDelegate extends RouterDelegate<Object>
         break;
       case 'booking':
         _pages.add(_page(const BookingPage(), 'booking'));
+        break;
+      case 'invoices':
+        _pages.add(_page(const InvoicesPage(), 'invoices'));
         break;
       case 'booking_search':
         _pages.add(_page(const BookingSearchPage(), 'booking_search'));

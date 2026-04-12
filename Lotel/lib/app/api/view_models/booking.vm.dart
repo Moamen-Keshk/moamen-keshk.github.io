@@ -31,6 +31,9 @@ class BookingVM {
   double get rate => booking.rate;
   double get amountPaid => booking.amountPaid;
   double get balanceDue => booking.balanceDue;
+  String? get invoiceId => booking.invoiceId;
+  String? get invoiceNumber => booking.invoiceNumber;
+  String? get invoiceStatus => booking.invoiceStatus;
   int get propertyID => booking.propertyID;
   int get roomID => booking.roomID;
   List<BookingRate> get bookingRates => booking.bookingRates;

@@ -6,17 +6,16 @@ class PaymentService {
   final _auth = FirebaseAuth.instance;
 
   Future<Map<String, dynamic>> createPaymentIntent(
-      int bookingId, double amount, bool isVcc) async {
+      int propertyId, int bookingId, double amount, bool isVcc) async {
     final token = await _auth.currentUser?.getIdToken();
 
     final response = await sendPostWithResponseRequest(
       {
-        'booking_id': bookingId,
         'amount': amount,
         'is_vcc': isVcc,
       },
       token,
-      "/api/v1/payments/create-payment-intent",
+      "/api/v1/properties/$propertyId/bookings/$bookingId/payments/create-intent",
     );
 
     if (response != null && response is Map<String, dynamic>) {
@@ -26,53 +25,54 @@ class PaymentService {
     throw Exception('Failed to create payment intent');
   }
 
-  // Add the direct charge method for VCC from the front desk UI
-  Future<bool> chargeVCC({
+  Future<Map<String, dynamic>> recordPayment({
+    required int propertyId,
     required int bookingId,
     required double amount,
-    required String cardNumber,
-    required String expMonth,
-    required String expYear,
-    required String cvc,
+    required String paymentMethod,
+    String source = 'manual',
+    String status = 'succeeded',
+    String? reference,
+    String? notes,
+    String currency = 'usd',
   }) async {
     final token = await _auth.currentUser?.getIdToken();
 
     final response = await sendPostWithResponseRequest(
       {
-        'booking_id': bookingId,
         'amount': amount,
-        'card_number': cardNumber,
-        'exp_month': expMonth,
-        'exp_year': expYear,
-        'cvc': cvc,
+        'payment_method': paymentMethod,
+        'source': source,
+        'status': status,
+        'reference': reference,
+        'notes': notes,
+        'currency': currency,
       },
       token,
-      "/api/v1/payments/charge-vcc", // Ensure this route matches your backend implementation
+      "/api/v1/properties/$propertyId/bookings/$bookingId/payments",
     );
 
-    // Adapting to typical response structures. Adjust the success condition based on your backend.
-    if (response != null &&
-        (response['success'] == true || response['status'] == 'succeeded')) {
-      return true;
-    } else if (response != null) {
-      throw Exception(
-          response['message'] ?? response['error'] ?? 'Failed to charge VCC');
+    if (response != null && response is Map<String, dynamic>) {
+      return response;
     }
 
-    throw Exception('Failed to charge VCC: Invalid response from server');
+    throw Exception('Failed to record payment');
   }
 
-  Future<Map<String, dynamic>?> fetchBookingVCC(int bookingId) async {
+  Future<Map<String, dynamic>?> fetchBookingVCC(
+      int propertyId, int bookingId) async {
     final token = await _auth.currentUser?.getIdToken();
 
     try {
       final response = await sendGetRequest(
         token,
-        "/payments/vcc/$bookingId",
+        "/api/v1/properties/$propertyId/bookings/$bookingId/vcc",
       );
 
-      if (response != null && response['has_vcc'] == true) {
-        return response;
+      if (response != null &&
+          response['data'] is Map<String, dynamic> &&
+          response['data']['has_vcc'] == true) {
+        return response['data'] as Map<String, dynamic>;
       }
       return null;
     } catch (e) {

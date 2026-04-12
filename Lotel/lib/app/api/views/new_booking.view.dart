@@ -55,6 +55,7 @@ class _BookingFormState extends State<BookingForm> {
   int? _numberOfChildren;
   int? _paymentStatusID;
   int? _roomID;
+  String _paymentMethod = 'cash';
 
   @override
   void initState() {
@@ -339,6 +340,31 @@ class _BookingFormState extends State<BookingForm> {
                             );
                           },
                         ),
+                        _buildDropdownField<String>(
+                          label: 'Payment Method',
+                          value: _paymentMethod,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'cash',
+                              child: Text('Cash'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'card',
+                              child: Text('Card'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'bank_transfer',
+                              child: Text('Bank Transfer'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'ota_vcc',
+                              child: Text('OTA VCC'),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            setState(() => _paymentMethod = val ?? 'cash');
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -400,9 +426,21 @@ class _BookingFormState extends State<BookingForm> {
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: _handleSubmit,
-                child: const Text('Submit'),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _handleSubmit(autoCheckIn: false),
+                    icon: const Icon(Icons.save_alt),
+                    label: const Text('Save Booking'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _handleSubmit(autoCheckIn: true),
+                    icon: const Icon(Icons.login),
+                    label: const Text('Walk-In Check-In'),
+                  ),
+                ],
               ),
             ),
           ],
@@ -432,7 +470,7 @@ class _BookingFormState extends State<BookingForm> {
     );
   }
 
-  Future<void> _handleSubmit() async {
+  Future<void> _handleSubmit({required bool autoCheckIn}) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -472,6 +510,12 @@ class _BookingFormState extends State<BookingForm> {
         'check_out_year': checkOutDate!.year,
         'rate': rateController.text,
         'amount_paid': double.tryParse(amountPaidController.text) ?? 0.0,
+        'payment_method': _paymentMethod,
+        'payment_reference': autoCheckIn ? 'WALK_IN' : null,
+        'payment_notes': autoCheckIn
+            ? 'Initial payment recorded during walk-in check-in.'
+            : null,
+        'auto_check_in': autoCheckIn,
         'room_id': _roomID,
         'property_id': propertyId,
       });
@@ -482,7 +526,13 @@ class _BookingFormState extends State<BookingForm> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Booking added successfully.')),
+          SnackBar(
+            content: Text(
+              autoCheckIn
+                  ? 'Walk-in booking checked in successfully.'
+                  : 'Booking added successfully.',
+            ),
+          ),
         );
         Navigator.of(context).pop();
       }

@@ -10,5 +10,6 @@ class RoomOnlineVM {
   double get price => roomOnline.price;
   int get propertyId => roomOnline.propertyId;
   String get categoryId => roomOnline.categoryId;
+  String? get ratePlanId => roomOnline.ratePlanId;
   int? get roomStatusId => roomOnline.roomStatusId;
 }

@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
 import 'package:lotel_pms/infrastructure/api/model/booking.model.dart';
+import 'package:lotel_pms/infrastructure/api/model/invoice.model.dart';
+import 'package:lotel_pms/infrastructure/api/model/payment_transaction.model.dart';
+import 'package:lotel_pms/infrastructure/api/res/invoice.service.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
+import 'package:lotel_pms/app/api/view_models/lists/invoice_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
+import 'package:lotel_pms/app/payments/view_models/payments.vm.dart';
 
 // 👉 IMPORT THE NEW BOOKING STATUS VM
 import 'package:lotel_pms/app/api/view_models/lists/booking_status_list.vm.dart';
@@ -46,6 +51,24 @@ final bookingDetailsProvider =
       .getBookingById(propertyId, bookingId.toString());
 });
 
+final bookingInvoiceProvider =
+    FutureProvider.autoDispose<InvoiceModel?>((ref) async {
+  final bookingId = ref.watch(bookingIdProvider);
+  if (bookingId == null) return null;
+  final propertyId = ref.watch(selectedPropertyVM) ?? 0;
+  if (propertyId <= 0) return null;
+  return InvoiceService().getBookingInvoice(propertyId, bookingId);
+});
+
+final bookingPaymentsProvider =
+    FutureProvider.autoDispose<List<PaymentTransaction>>((ref) async {
+  final bookingId = ref.watch(bookingIdProvider);
+  if (bookingId == null) return const [];
+  final propertyId = ref.watch(selectedPropertyVM) ?? 0;
+  if (propertyId <= 0) return const [];
+  return InvoiceService().getBookingPayments(propertyId, bookingId);
+});
+
 class BookingView extends ConsumerStatefulWidget {
   const BookingView({super.key});
 
@@ -54,6 +77,8 @@ class BookingView extends ConsumerStatefulWidget {
 }
 
 class _BookingViewState extends ConsumerState<BookingView> {
+  final PaymentVM _paymentVM = PaymentVM();
+
   void _showSendMessageDialog(
       BuildContext context, WidgetRef ref, int bookingId, Booking booking) {
     final TextEditingController subjectController = TextEditingController();
@@ -411,62 +436,89 @@ class _BookingViewState extends ConsumerState<BookingView> {
     }
   }
 
-  Future<void> _showRecordPaymentDialog(BuildContext context, WidgetRef ref,
-      int bookingId, Booking booking) async {
-    final TextEditingController amountController =
-        TextEditingController(text: booking.amountPaid.toStringAsFixed(2));
+  Future<void> _showStripePaymentDialog(
+    BuildContext context,
+    WidgetRef ref,
+    int bookingId,
+    Booking booking,
+  ) async {
+    final amountController =
+        TextEditingController(text: booking.balanceDue.toStringAsFixed(2));
 
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Record Payment'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Total Rate: £${booking.rate.toStringAsFixed(2)}'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: amountController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Total Amount Paid by Guest',
-                  prefixText: '£ ',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Collect Card Payment'),
+        content: TextField(
+          controller: amountController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Amount',
+            prefixText: '£ ',
+            border: OutlineInputBorder(),
           ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel')),
-            ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Save Payment')),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
     );
 
-    if (confirm == true && context.mounted) {
-      final double? newAmount = double.tryParse(amountController.text);
-      if (newAmount != null) {
-        final success = await ref
-            .read(bookingListVM.notifier)
-            .recordPayment(bookingId, newAmount);
-        if (success && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Payment recorded!'),
-              backgroundColor: Colors.green));
+    if (confirm != true || !context.mounted) {
+      return;
+    }
 
-          ref.invalidate(bookingDetailsProvider); // Refresh the UI instantly
-          // 👉 Force TodaysView and Main List to refresh
-          ref.invalidate(bookingListByDateVM);
-          ref.invalidate(bookingListVM);
-        }
-      }
+    final amount = double.tryParse(amountController.text);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid amount.')),
+      );
+      return;
+    }
+
+    await _paymentVM.makePayment(
+      context,
+      booking.propertyID,
+      bookingId,
+      amount,
+      onPaymentSuccess: () {
+        ref.invalidate(bookingDetailsProvider);
+        ref.invalidate(bookingInvoiceProvider);
+        ref.invalidate(bookingPaymentsProvider);
+        ref.invalidate(bookingListByDateVM);
+        ref.invalidate(bookingListVM);
+      },
+    );
+  }
+
+  Future<void> _syncInvoice(
+      BuildContext context, WidgetRef ref, Booking booking) async {
+    final invoice = await InvoiceService().syncBookingInvoice(
+      booking.propertyID,
+      int.parse(booking.id),
+    );
+
+    if (!context.mounted) return;
+
+    if (invoice != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice synchronized.')),
+      );
+      ref.invalidate(bookingInvoiceProvider);
+      ref.invalidate(bookingPaymentsProvider);
+      ref.invalidate(bookingDetailsProvider);
+      ref.invalidate(invoiceListVM);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to synchronize invoice.')),
+      );
     }
   }
 
@@ -479,8 +531,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
     final paymentStatusMappingAsync = ref.watch(paymentStatusMappingProvider);
     final bookingStatusMappingAsync = ref.watch(bookingStatusMappingProvider);
 
-    // 👉 Listen to the unified booking provider
     final bookingDetailsAsync = ref.watch(bookingDetailsProvider);
+    final bookingInvoiceAsync = ref.watch(bookingInvoiceProvider);
+    final bookingPaymentsAsync = ref.watch(bookingPaymentsProvider);
 
     if (bookingId == null) {
       return const Center(child: Text("No booking selected"));
@@ -573,132 +626,81 @@ class _BookingViewState extends ConsumerState<BookingView> {
                         ),
                       ),
 
-                      // --- Booking Details ---
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        alignment: WrapAlignment.start,
-                        children: [
-                          _section("Guest Info", {
-                            "Name": "${booking.firstName} ${booking.lastName}",
-                            "Phone": booking.phone ?? "-",
-                            "Adults": "${booking.numberOfAdults}",
-                            "Children": "${booking.numberOfChildren}",
-                          }),
-                          _section("Status & Meta", {
-                            "Payment Status":
-                                paymentStatusMapping[booking.paymentStatusID] ??
-                                    "Unknown",
-                            "Booking Status":
-                                bookingStatusMapping[booking.statusID] ??
-                                    'Unknown',
-                            "Room": roomMapping[booking.roomID] ??
-                                'Room ${booking.roomID}',
-                          }),
-                          _section("Dates", {
-                            "Check-in": format.format(booking.checkIn),
-                            "Check-out": format.format(booking.checkOut),
-                            "Created": format.format(booking.bookingDate),
-                          }),
-                          _section("Reference", {
-                            "Confirmation Number":
-                                booking.confirmationNumber.toString(),
-                            "Email": booking.email ?? "-",
-                          }),
-                          _section("Notes & Requests", {
-                            "Special Request": (booking.specialRequest !=
-                                        null &&
-                                    booking.specialRequest!.trim().isNotEmpty)
-                                ? booking.specialRequest!
-                                : "None",
-                            "Note": (booking.note != null &&
-                                    booking.note!.trim().isNotEmpty)
-                                ? booking.note!
-                                : "None",
-                          }),
-                          _section("Nightly Rates", {
-                            for (var rate in booking.bookingRates)
-                              DateFormat('dd MMM').format(rate.rateDate):
-                                  "£${rate.nightlyRate.toStringAsFixed(2)}"
-                          }),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 260),
-                            child: Card(
-                              margin: EdgeInsets.zero,
-                              color: booking.balanceDue <= 0
-                                  ? Colors.green.shade50
-                                  : Colors.red.shade50,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Financials",
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text("Total Rate:"),
-                                        Text(
-                                            "£${booking.rate.toStringAsFixed(2)}"),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text("Amount Paid:"),
-                                        Text(
-                                            "£${booking.amountPaid.toStringAsFixed(2)}"),
-                                      ],
-                                    ),
-                                    const Divider(),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          "Balance Due:",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        Text(
-                                          "£${booking.balanceDue.toStringAsFixed(2)}",
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: OutlinedButton(
-                                        onPressed: () =>
-                                            _showRecordPaymentDialog(
-                                          context,
-                                          ref,
-                                          bookingId,
-                                          booking,
-                                        ),
-                                        child: const Text("Record Payment"),
-                                      ),
-                                    ),
-                                  ],
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.start,
+                            children: [
+                              _section("Guest Info", {
+                                "Name": "${booking.firstName} ${booking.lastName}",
+                                "Phone": booking.phone ?? "-",
+                                "Adults": "${booking.numberOfAdults}",
+                                "Children": "${booking.numberOfChildren}",
+                              }),
+                              _section("Status & Meta", {
+                                "Payment Status":
+                                    paymentStatusMapping[booking.paymentStatusID] ??
+                                        "Unknown",
+                                "Booking Status":
+                                    bookingStatusMapping[booking.statusID] ??
+                                        'Unknown',
+                                "Room": roomMapping[booking.roomID] ??
+                                    'Room ${booking.roomID}',
+                              }),
+                              _section("Dates", {
+                                "Check-in": format.format(booking.checkIn),
+                                "Check-out": format.format(booking.checkOut),
+                                "Created": format.format(booking.bookingDate),
+                              }),
+                              _section("Reference", {
+                                "Confirmation Number":
+                                    booking.confirmationNumber.toString(),
+                                "Email": booking.email ?? "-",
+                                "Invoice Number": booking.invoiceNumber ?? "-",
+                              }),
+                              _section("Notes & Requests", {
+                                "Special Request": (booking.specialRequest !=
+                                            null &&
+                                        booking.specialRequest!.trim().isNotEmpty)
+                                    ? booking.specialRequest!
+                                    : "None",
+                                "Note": (booking.note != null &&
+                                        booking.note!.trim().isNotEmpty)
+                                    ? booking.note!
+                                    : "None",
+                              }),
+                              _section("Nightly Rates", {
+                                for (var rate in booking.bookingRates)
+                                  DateFormat('dd MMM').format(rate.rateDate):
+                                      "£${rate.nightlyRate.toStringAsFixed(2)}"
+                              }),
+                              bookingInvoiceAsync.when(
+                                loading: () => _financeCardSkeleton(),
+                                error: (err, _) => _infoCard(
+                                  "Invoice",
+                                  Text('Failed to load invoice: $err'),
+                                ),
+                                data: (invoice) => _invoiceCard(
+                                  context,
+                                  ref,
+                                  booking,
+                                  invoice,
                                 ),
                               ),
-                            ),
+                              bookingPaymentsAsync.when(
+                                loading: () => _financeCardSkeleton(),
+                                error: (err, _) => _infoCard(
+                                  "Payments",
+                                  Text('Failed to load payments: $err'),
+                                ),
+                                data: (payments) => _paymentsCard(payments),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                      const Spacer(),
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: Center(
@@ -730,8 +732,16 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                       context, ref, bookingId, booking),
                                 ),
                               ElevatedButton.icon(
+                                icon: const Icon(Icons.credit_score),
+                                label: const Text("Card Payment"),
+                                onPressed: booking.balanceDue <= 0
+                                    ? null
+                                    : () => _showStripePaymentDialog(
+                                        context, ref, bookingId, booking),
+                              ),
+                              ElevatedButton.icon(
                                 icon: const Icon(Icons.payments_outlined),
-                                label: const Text("Update Payment"),
+                                label: const Text("Update Status"),
                                 onPressed: () => _showUpdatePaymentDialog(
                                     context,
                                     ref,
@@ -767,6 +777,12 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                     ),
                                   ),
                                 ),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.sync),
+                                label: const Text('Sync Invoice'),
+                                onPressed: () =>
+                                    _syncInvoice(context, ref, booking),
+                              ),
 
                               if (booking.statusID == 1)
                                 ElevatedButton.icon(
@@ -859,6 +875,183 @@ class _BookingViewState extends ConsumerState<BookingView> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _financeCardSkeleton() {
+    return _infoCard(
+      "Finance",
+      const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
+  Widget _infoCard(String title, Widget child) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _invoiceCard(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+    InvoiceModel? invoice,
+  ) {
+    final currency = NumberFormat.currency(symbol: '£');
+
+    if (invoice == null) {
+      return _infoCard(
+        'Invoice',
+        const Text('No invoice is available for this booking yet.'),
+      );
+    }
+
+    return _infoCard(
+      'Invoice',
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _labelValue('Invoice', invoice.invoiceNumber),
+          _labelValue('Status', invoice.status.replaceAll('_', ' ').toUpperCase()),
+          _labelValue('Issued',
+              invoice.issueDate != null ? DateFormat.yMMMd().format(invoice.issueDate!) : '-'),
+          _labelValue(
+              'Due', invoice.dueDate != null ? DateFormat.yMMMd().format(invoice.dueDate!) : '-'),
+          const Divider(),
+          _labelValue('Subtotal', currency.format(invoice.subtotal)),
+          _labelValue('Tax', currency.format(invoice.taxAmount)),
+          _labelValue('Total', currency.format(invoice.totalAmount)),
+          _labelValue('Paid', currency.format(invoice.amountPaid)),
+          _labelValue('Balance', currency.format(invoice.balanceDue), bold: true),
+          if (invoice.lineItems.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Line Items',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            ...invoice.lineItems.take(5).map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.description,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        currency.format(item.amount),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+          if (invoice.notes != null && invoice.notes!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              invoice.notes!,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentsCard(List<PaymentTransaction> payments) {
+    final currency = NumberFormat.currency(symbol: '£');
+
+    return _infoCard(
+      'Payments',
+      payments.isEmpty
+          ? const Text('No payments have been posted yet.')
+          : Column(
+              children: payments.take(6).map((payment) {
+                final createdAt = payment.createdAt != null
+                    ? DateFormat.yMMMd().add_jm().format(payment.createdAt!)
+                    : '-';
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              payment.paymentMethod.replaceAll('_', ' ').toUpperCase(),
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              '${payment.status.toUpperCase()} • $createdAt',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            if ((payment.reference ?? '').isNotEmpty)
+                              Text(
+                                'Ref: ${payment.reference}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Text(currency.format(payment.amount)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+    );
+  }
+
+  Widget _labelValue(String label, String value, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

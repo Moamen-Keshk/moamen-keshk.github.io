@@ -8,18 +8,25 @@ import 'package:lotel_pms/app/payments/services/payment.service.dart';
 class PaymentVM {
   final PaymentService _paymentService = PaymentService();
 
-  Future<void> makePayment(BuildContext context, int bookingId, double amount,
-      {bool isVcc = false, VoidCallback? onPaymentSuccess}) async {
+  Future<void> makePayment(
+    BuildContext context,
+    int propertyId,
+    int bookingId,
+    double amount, {
+    bool isVcc = false,
+    VoidCallback? onPaymentSuccess,
+  }) async {
     final messenger = ScaffoldMessenger.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
 
     try {
-      // 1. Ask Backend to create a PaymentIntent
       final paymentData =
-          await _paymentService.createPaymentIntent(bookingId, amount, isVcc);
-      final clientSecret = paymentData['clientSecret'];
+          await _paymentService.createPaymentIntent(propertyId, bookingId, amount, isVcc);
+      final payload = paymentData['data'] is Map<String, dynamic>
+          ? paymentData['data'] as Map<String, dynamic>
+          : paymentData;
+      final clientSecret = payload['clientSecret'];
 
-      // 2. Initialize the Stripe Payment Sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
@@ -31,7 +38,6 @@ class PaymentVM {
         ),
       );
 
-      // 3. Display the Payment Sheet
       await displayPaymentSheet(
         messenger,
         container,
@@ -50,7 +56,6 @@ class PaymentVM {
     try {
       await Stripe.instance.presentPaymentSheet();
 
-      // Payment Successful
       messenger.showSnackBar(
         SnackBar(content: Text('Payment completed successfully!')),
       );
@@ -72,48 +77,44 @@ class PaymentVM {
     }
   }
 
-  // --- NEW: Direct VCC Charge Method for Front Desk ---
-  Future<bool> chargeVCC(
+  Future<bool> recordManualPayment(
     BuildContext context, {
+    required int propertyId,
     required int bookingId,
     required double amount,
-    required String cardNumber,
-    required String expMonth,
-    required String expYear,
-    required String cvc,
+    required String paymentMethod,
+    String source = 'manual',
+    String? reference,
+    String? notes,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
 
     try {
-      final success = await _paymentService.chargeVCC(
+      await _paymentService.recordPayment(
+        propertyId: propertyId,
         bookingId: bookingId,
         amount: amount,
-        cardNumber: cardNumber,
-        expMonth: expMonth,
-        expYear: expYear,
-        cvc: cvc,
+        paymentMethod: paymentMethod,
+        source: source,
+        reference: reference,
+        notes: notes,
+      );
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Payment recorded successfully.'),
+          backgroundColor: Colors.green,
+        ),
       );
 
-      if (success) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('VCC Charged successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Refresh UI state to reflect new payments
-        container.invalidate(bookingDetailsProvider);
-        container.invalidate(bookingListByDateVM);
-        container.invalidate(bookingListVM);
-        return true;
-      }
-      return false;
+      container.invalidate(bookingDetailsProvider);
+      container.invalidate(bookingListByDateVM);
+      container.invalidate(bookingListVM);
+      return true;
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Error charging VCC: $e'),
+          content: Text('Error recording payment: $e'),
           backgroundColor: Colors.red,
         ),
       );

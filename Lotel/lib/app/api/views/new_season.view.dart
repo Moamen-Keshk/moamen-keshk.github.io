@@ -95,46 +95,16 @@ class _NewSeasonFormState extends ConsumerState<NewSeasonView> {
                             excludeSeasonId: null,
                           );
 
-                          bool override = false;
-
                           if (conflicts.isNotEmpty && context.mounted) {
-                            override = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: const Text('Conflict Detected'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'This season overlaps with the following existing season(s):',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        ...conflicts.map((s) =>
-                                            Text('- ${s.label ?? "Unnamed"}')),
-                                        const SizedBox(height: 16),
-                                        const Text(
-                                            'Do you want to override them?'),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(ctx).pop(false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(ctx).pop(true),
-                                        child: const Text('Override'),
-                                      ),
-                                    ],
-                                  ),
-                                ) ??
-                                false;
+                            setState(() => isSubmitting = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'This season overlaps ${conflicts.first.label ?? "an existing season"}. Adjust the dates before saving.',
+                                ),
+                              ),
+                            );
+                            return;
                           }
 
                           final success = await seasonVM.saveSeason(
@@ -143,7 +113,6 @@ class _NewSeasonFormState extends ConsumerState<NewSeasonView> {
                             endDate: endDate!,
                             label: label,
                             seasonId: null,
-                            overrideConflicts: override,
                           );
 
                           if (mounted) {
@@ -160,7 +129,7 @@ class _NewSeasonFormState extends ConsumerState<NewSeasonView> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                      'Failed to create season or conflict not overridden'),
+                                      'Failed to create season'),
                                 ),
                               );
                             }

@@ -212,6 +212,9 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     case 'staff':
                       router.push('staff_management');
                       break;
+                    case 'invoices':
+                      router.push('invoices');
+                      break;
                     // ---> NEW: Route for Amenities Management <---
                     case 'amenities':
                       router.push('amenities_management');
@@ -225,6 +228,7 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   PopupMenuItem(value: 'seasons', child: Text('Seasons')),
                   PopupMenuItem(
                       value: 'channels', child: Text('Channel Manager')),
+                  PopupMenuItem(value: 'invoices', child: Text('Invoices')),
                   PopupMenuItem(value: 'staff', child: Text('Staff & Roles')),
                   // ---> NEW: Dropdown item for Amenities <---
                   PopupMenuItem(

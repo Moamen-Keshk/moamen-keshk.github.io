@@ -153,6 +153,7 @@ class _RatePlanCardState extends State<_RatePlanCard> {
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text("Base Rate: \$${plan.baseRate.toStringAsFixed(2)}"),
+                  Text("Pricing: ${plan.pricingType.toUpperCase()}"),
                   Row(
                     children: [
                       Icon(plan.isActive ? Icons.check : Icons.close,
@@ -165,6 +166,18 @@ class _RatePlanCardState extends State<_RatePlanCard> {
                   const SizedBox(height: 4),
                   Text("Start: ${_formatDate(plan.startDate)}"),
                   Text("End: ${_formatDate(plan.endDate)}"),
+                  if (plan.minLos != null || plan.maxLos != null)
+                    Text(
+                      "LOS Restriction: ${plan.minLos ?? '-'} to ${plan.maxLos ?? '-'}",
+                    ),
+                  if (plan.closed || plan.closedToArrival || plan.closedToDeparture)
+                    Text(
+                      "Closed Flags: ${[
+                        if (plan.closed) 'closed',
+                        if (plan.closedToArrival) 'cta',
+                        if (plan.closedToDeparture) 'ctd',
+                      ].join(', ')}",
+                    ),
                   if (plan.seasonalMultiplier != null)
                     Text(
                         "Season Multiplier: ×${plan.seasonalMultiplier!.toStringAsFixed(2)}"),

@@ -14,7 +14,7 @@ const Map<int, String> cleaningStatusNames = {
   3: 'Clean',
   4: 'Refresh',
   5: 'Service',
-  6: 'Idle',
+  6: 'Occupied',
   7: 'Ready',
 };
 
@@ -36,7 +36,7 @@ const List<int> statusPriority = [
   2, // Waiting (will be dirty soon)
   4, // Refresh
   3, // Clean
-  6, // Idle
+  6, // Occupied
 ];
 
 class HousekeepingView extends ConsumerWidget {
@@ -213,7 +213,7 @@ class HousekeepingView extends ConsumerWidget {
       'To be cleaned',
       'To be refreshed',
       'Ready',
-      'Expected Idle',
+      'Expected Occupied',
       'Clean'
     ];
     List<dynamic> listItems = [];

@@ -46,6 +46,22 @@ class RatePlanService {
       "end_date": ratePlan.endDate.toIso8601String(),
       "weekend_rate": ratePlan.weekendRate,
       "seasonal_multiplier": ratePlan.seasonalMultiplier,
+      "pricing_type": ratePlan.pricingType,
+      "parent_rate_plan_id": ratePlan.parentRatePlanId,
+      "derived_adjustment_type": ratePlan.derivedAdjustmentType,
+      "derived_adjustment_value": ratePlan.derivedAdjustmentValue,
+      "included_occupancy": ratePlan.includedOccupancy,
+      "single_occupancy_rate": ratePlan.singleOccupancyRate,
+      "extra_adult_rate": ratePlan.extraAdultRate,
+      "extra_child_rate": ratePlan.extraChildRate,
+      "min_los": ratePlan.minLos,
+      "max_los": ratePlan.maxLos,
+      "closed": ratePlan.closed,
+      "closed_to_arrival": ratePlan.closedToArrival,
+      "closed_to_departure": ratePlan.closedToDeparture,
+      "meal_plan_code": ratePlan.mealPlanCode,
+      "cancellation_policy": ratePlan.cancellationPolicy,
+      "los_pricing": ratePlan.losPricing,
       "is_active": ratePlan.isActive,
     };
 
@@ -86,6 +102,22 @@ class RatePlanService {
       "end_date": ratePlan.endDate.toIso8601String(),
       "weekend_rate": ratePlan.weekendRate,
       "seasonal_multiplier": ratePlan.seasonalMultiplier,
+      "pricing_type": ratePlan.pricingType,
+      "parent_rate_plan_id": ratePlan.parentRatePlanId,
+      "derived_adjustment_type": ratePlan.derivedAdjustmentType,
+      "derived_adjustment_value": ratePlan.derivedAdjustmentValue,
+      "included_occupancy": ratePlan.includedOccupancy,
+      "single_occupancy_rate": ratePlan.singleOccupancyRate,
+      "extra_adult_rate": ratePlan.extraAdultRate,
+      "extra_child_rate": ratePlan.extraChildRate,
+      "min_los": ratePlan.minLos,
+      "max_los": ratePlan.maxLos,
+      "closed": ratePlan.closed,
+      "closed_to_arrival": ratePlan.closedToArrival,
+      "closed_to_departure": ratePlan.closedToDeparture,
+      "meal_plan_code": ratePlan.mealPlanCode,
+      "cancellation_policy": ratePlan.cancellationPolicy,
+      "los_pricing": ratePlan.losPricing,
       "is_active": ratePlan.isActive,
     };
 
@@ -116,6 +148,25 @@ class RatePlanService {
       return false;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getRatePlanQuote({
+    required int propertyId,
+    required String ratePlanId,
+    required DateTime checkIn,
+    required DateTime checkOut,
+    int adults = 2,
+    int children = 0,
+  }) async {
+    try {
+      final query = await sendGetRequest(
+        await _auth.currentUser?.getIdToken(),
+        "/api/v1/properties/$propertyId/rate_plans/$ratePlanId/quote?check_in=${checkIn.toIso8601String().split('T').first}&check_out=${checkOut.toIso8601String().split('T').first}&adults=$adults&children=$children",
+      );
+      return query['data'] as Map<String, dynamic>?;
+    } catch (e) {
+      return null;
     }
   }
 }

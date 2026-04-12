@@ -43,6 +43,12 @@ class DashboardDrawer extends ConsumerWidget {
             },
           ),
           ListTile(
+            title: const Text("Invoices"),
+            onTap: () {
+              ref.read(routerProvider).push('invoices');
+            },
+          ),
+          ListTile(
             title: Text(themeModeVM.themeMode == ThemeMode.dark
                 ? "Light Theme"
                 : "Dark Theme"),

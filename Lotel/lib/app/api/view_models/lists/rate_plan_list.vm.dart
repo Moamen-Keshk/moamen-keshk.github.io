@@ -32,20 +32,7 @@ class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
 
   Future<bool> saveRatePlan({
     required RatePlan ratePlan,
-    bool overrideConflicts = false,
   }) async {
-    final conflicts = await getConflictingPlans(ratePlan);
-
-    if (conflicts.isNotEmpty && !overrideConflicts) {
-      return false;
-    }
-
-    if (overrideConflicts) {
-      for (final plan in conflicts) {
-        await RatePlanService().deleteRatePlan(plan.propertyId, plan.id);
-      }
-    }
-
     final success = ratePlan.id.isNotEmpty
         ? await RatePlanService().updateRatePlan(ratePlan)
         : await RatePlanService().addRatePlan(ratePlan);

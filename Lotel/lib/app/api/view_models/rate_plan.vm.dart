@@ -14,6 +14,22 @@ class RatePlanVM {
   DateTime get endDate => ratePlan.endDate;
   double? get weekendRate => ratePlan.weekendRate;
   double? get seasonalMultiplier => ratePlan.seasonalMultiplier;
+  String get pricingType => ratePlan.pricingType;
+  String? get parentRatePlanId => ratePlan.parentRatePlanId;
+  String? get derivedAdjustmentType => ratePlan.derivedAdjustmentType;
+  double? get derivedAdjustmentValue => ratePlan.derivedAdjustmentValue;
+  int? get includedOccupancy => ratePlan.includedOccupancy;
+  double? get singleOccupancyRate => ratePlan.singleOccupancyRate;
+  double? get extraAdultRate => ratePlan.extraAdultRate;
+  double? get extraChildRate => ratePlan.extraChildRate;
+  int? get minLos => ratePlan.minLos;
+  int? get maxLos => ratePlan.maxLos;
+  bool get closed => ratePlan.closed;
+  bool get closedToArrival => ratePlan.closedToArrival;
+  bool get closedToDeparture => ratePlan.closedToDeparture;
+  String? get mealPlanCode => ratePlan.mealPlanCode;
+  String? get cancellationPolicy => ratePlan.cancellationPolicy;
+  List<Map<String, dynamic>> get losPricing => ratePlan.losPricing;
   bool get isActive => ratePlan.isActive;
 
   /// Example computed property

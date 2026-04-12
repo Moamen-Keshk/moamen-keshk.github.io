@@ -7,6 +7,7 @@ class RoomOnline {
   final double price;
   final int propertyId;
   final String categoryId;
+  final String? ratePlanId;
   final int? roomStatusId; // ✅ New field
 
   RoomOnline(
@@ -16,6 +17,7 @@ class RoomOnline {
       required this.price,
       required this.propertyId,
       required this.categoryId,
+      this.ratePlanId,
       this.roomStatusId});
 
   RoomOnline copyWith({
@@ -25,6 +27,7 @@ class RoomOnline {
     double? price,
     int? propertyId,
     String? categoryId,
+    String? ratePlanId,
     int? roomStatusId,
   }) {
     return RoomOnline(
@@ -34,6 +37,7 @@ class RoomOnline {
         price: price ?? this.price,
         propertyId: propertyId ?? this.propertyId,
         categoryId: categoryId ?? this.categoryId,
+        ratePlanId: ratePlanId ?? this.ratePlanId,
         roomStatusId: roomStatusId ?? this.roomStatusId);
   }
 
@@ -44,7 +48,8 @@ class RoomOnline {
       'date': date.toIso8601String(),
       'price': price,
       'property_id': propertyId,
-      'category_id': categoryId
+      'category_id': categoryId,
+      'rate_plan_id': ratePlanId,
     };
   }
 
@@ -60,6 +65,7 @@ class RoomOnline {
             ? int.tryParse(map['property_id']) ?? 0
             : (map['property_id'] ?? 0),
         categoryId: map['category_id'].toString(),
+        ratePlanId: map['rate_plan_id']?.toString(),
         roomStatusId: map['room_status_id']);
   }
 
@@ -75,6 +81,7 @@ class RoomOnline {
             ? int.tryParse(map['property_id']) ?? 0
             : (map['property_id'] ?? 0),
         categoryId: map['category_id'].toString(),
+        ratePlanId: map['rate_plan_id']?.toString(),
         roomStatusId: map['room_status_id']);
   }
 
@@ -85,7 +92,7 @@ class RoomOnline {
 
   @override
   String toString() {
-    return 'RoomOnline(id: $id, roomId: $roomId, date: $date, price: $price, propertyId: $propertyId, categoryId: $categoryId, roomStatusId: $roomStatusId)';
+    return 'RoomOnline(id: $id, roomId: $roomId, date: $date, price: $price, propertyId: $propertyId, categoryId: $categoryId, ratePlanId: $ratePlanId, roomStatusId: $roomStatusId)';
   }
 
   @override
@@ -99,6 +106,7 @@ class RoomOnline {
         other.price == price &&
         other.propertyId == propertyId &&
         other.categoryId == categoryId &&
+        other.ratePlanId == ratePlanId &&
         other.roomStatusId == roomStatusId;
   }
 
@@ -110,6 +118,7 @@ class RoomOnline {
         price.hashCode ^
         propertyId.hashCode ^
         categoryId.hashCode ^
+        ratePlanId.hashCode ^
         roomStatusId.hashCode;
   }
 }

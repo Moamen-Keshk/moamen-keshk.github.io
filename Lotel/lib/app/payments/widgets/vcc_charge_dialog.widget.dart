@@ -16,46 +16,40 @@ class VccChargeDialog extends ConsumerStatefulWidget {
 class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
   final _formKey = GlobalKey<FormState>();
   final PaymentVM _paymentVM = PaymentVM();
-  final PaymentService _paymentService =
-      PaymentService(); // Instantiate service
+  final PaymentService _paymentService = PaymentService();
 
   bool _isProcessing = false;
-  bool _isFetchingVCC = true; // NEW: State for initial data fetch
+  bool _isFetchingVCC = true;
 
   late TextEditingController _amountController;
-  final _cardNumberController = TextEditingController();
-  final _expMonthController = TextEditingController();
-  final _expYearController = TextEditingController();
-  final _cvcController = TextEditingController();
+  final _referenceController = TextEditingController();
+  final _notesController = TextEditingController();
+  Map<String, dynamic>? _vccData;
 
   @override
   void initState() {
     super.initState();
     final double balance = widget.booking.balanceDue;
     _amountController = TextEditingController(text: balance.toStringAsFixed(2));
-
-    // Fetch VCC details automatically on load
     _fetchSavedVccDetails();
   }
 
   Future<void> _fetchSavedVccDetails() async {
+    final propertyId = widget.booking.propertyID;
     final bookingId = int.tryParse(widget.booking.id);
     if (bookingId != null) {
-      final vccData = await _paymentService.fetchBookingVCC(bookingId);
+      final vccData = await _paymentService.fetchBookingVCC(propertyId, bookingId);
 
       if (vccData != null && mounted) {
         setState(() {
-          _cardNumberController.text = vccData['card_number'] ?? '';
-          _expMonthController.text = vccData['exp_month'] ?? '';
-          _expYearController.text = vccData['exp_year'] ?? '';
-          _cvcController.text = vccData['cvc'] ?? '';
+          _vccData = vccData;
         });
       }
     }
 
     if (mounted) {
       setState(() {
-        _isFetchingVCC = false; // Turn off initial loading spinner
+        _isFetchingVCC = false;
       });
     }
   }
@@ -63,10 +57,8 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
   @override
   void dispose() {
     _amountController.dispose();
-    _cardNumberController.dispose();
-    _expMonthController.dispose();
-    _expYearController.dispose();
-    _cvcController.dispose();
+    _referenceController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -75,17 +67,23 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
 
     setState(() => _isProcessing = true);
 
+    final propertyId = widget.booking.propertyID;
     final bookingId = int.tryParse(widget.booking.id);
     if (bookingId == null) return;
 
-    final success = await _paymentVM.chargeVCC(
+    final success = await _paymentVM.recordManualPayment(
       context,
+      propertyId: propertyId,
       bookingId: bookingId,
       amount: double.parse(_amountController.text),
-      cardNumber: _cardNumberController.text,
-      expMonth: _expMonthController.text,
-      expYear: _expYearController.text,
-      cvc: _cvcController.text,
+      paymentMethod: 'ota_vcc',
+      source: 'manual',
+      reference: _referenceController.text.trim().isEmpty
+          ? 'OTA VCC'
+          : _referenceController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? 'Recorded against OTA virtual card'
+          : _notesController.text.trim(),
     );
 
     if (mounted) {
@@ -99,24 +97,51 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Charge VCC - Booking #${widget.booking.id}'),
+      title: Text('VCC Payment - Booking #${widget.booking.id}'),
       content: SizedBox(
         width: 400,
-        // Show a spinner while fetching the card details
         child: _isFetchingVCC
             ? const Padding(
                 padding: EdgeInsets.all(40.0),
                 child: Center(child: CircularProgressIndicator()),
               )
+            : _vccData == null
+                ? const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      'No OTA virtual card details were found for this booking.',
+                    ),
+                  )
             : Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _readOnlyField('Card Number', _vccData?['card_number']),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _readOnlyField(
+                              'Exp Month', _vccData?['exp_month']),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child:
+                              _readOnlyField('Exp Year', _vccData?['exp_year']),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _readOnlyField('CVC', _vccData?['cvc']),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _amountController,
                       decoration: const InputDecoration(
-                        labelText: 'Amount to Charge (\$)',
+                        labelText: 'Amount to Record',
                         prefixIcon: Icon(Icons.attach_money),
                         border: OutlineInputBorder(),
                       ),
@@ -127,46 +152,22 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _cardNumberController,
+                      controller: _referenceController,
                       decoration: const InputDecoration(
-                        labelText: 'Virtual Card Number',
-                        prefixIcon: Icon(Icons.credit_card),
+                        labelText: 'Reference',
+                        prefixIcon: Icon(Icons.tag),
                         border: OutlineInputBorder(),
                       ),
-                      keyboardType: TextInputType.number,
-                      validator: (val) => val == null || val.isEmpty
-                          ? 'Enter card number'
-                          : null,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _expMonthController,
-                            decoration: const InputDecoration(
-                                labelText: 'Exp Month (MM)',
-                                border: OutlineInputBorder()),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _expYearController,
-                            decoration: const InputDecoration(
-                                labelText: 'Exp Year (YY)',
-                                border: OutlineInputBorder()),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cvcController,
-                            decoration: const InputDecoration(
-                                labelText: 'CVC', border: OutlineInputBorder()),
-                          ),
-                        ),
-                      ],
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes',
+                        border: OutlineInputBorder(),
+                      ),
+                      minLines: 2,
+                      maxLines: 3,
                     ),
                   ],
                 ),
@@ -178,17 +179,29 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton.icon(
-          onPressed: (_isProcessing || _isFetchingVCC) ? null : _processCharge,
+          onPressed:
+              (_isProcessing || _isFetchingVCC || _vccData == null) ? null : _processCharge,
           icon: _isProcessing
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.payment),
-          label: Text(_isProcessing ? 'Processing...' : 'Charge VCC'),
+          label: Text(_isProcessing ? 'Recording...' : 'Record VCC Payment'),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
         ),
       ],
+    );
+  }
+
+  Widget _readOnlyField(String label, dynamic value) {
+    return TextFormField(
+      initialValue: value?.toString() ?? '-',
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      readOnly: true,
     );
   }
 }

@@ -33,6 +33,9 @@ class Booking {
   final List<BookingRate> bookingRates;
   final double amountPaid;
   final double balanceDue;
+  final String? invoiceId;
+  final String? invoiceNumber;
+  final String? invoiceStatus;
 
   Booking({
     required this.id,
@@ -63,6 +66,9 @@ class Booking {
     required this.bookingRates,
     required this.amountPaid,
     required this.balanceDue,
+    this.invoiceId,
+    this.invoiceNumber,
+    this.invoiceStatus,
   });
 
   Booking copyWith({
@@ -94,6 +100,9 @@ class Booking {
     List<BookingRate>? bookingRates,
     double? amountPaid,
     double? balanceDue,
+    String? invoiceId,
+    String? invoiceNumber,
+    String? invoiceStatus,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -124,6 +133,9 @@ class Booking {
       bookingRates: bookingRates ?? this.bookingRates,
       amountPaid: amountPaid ?? this.amountPaid,
       balanceDue: balanceDue ?? this.balanceDue,
+      invoiceId: invoiceId ?? this.invoiceId,
+      invoiceNumber: invoiceNumber ?? this.invoiceNumber,
+      invoiceStatus: invoiceStatus ?? this.invoiceStatus,
     );
   }
 
@@ -157,6 +169,9 @@ class Booking {
       'booking_rates': bookingRates.map((r) => r.toMap()).toList(),
       'amount_paid': amountPaid,
       'balance_due': balanceDue,
+      'invoice_id': invoiceId,
+      'invoice_number': invoiceNumber,
+      'invoice_status': invoiceStatus,
     };
   }
 
@@ -201,6 +216,9 @@ class Booking {
           [],
       amountPaid: (map['amount_paid'] as num?)?.toDouble() ?? 0.0,
       balanceDue: (map['balance_due'] as num?)?.toDouble() ?? 0.0,
+      invoiceId: map['invoice_id']?.toString(),
+      invoiceNumber: map['invoice_number']?.toString(),
+      invoiceStatus: map['invoice_status']?.toString(),
     );
   }
 
@@ -250,7 +268,10 @@ class Booking {
         other.roomID == roomID &&
         other.bookingRates == bookingRates &&
         other.amountPaid == amountPaid &&
-        other.balanceDue == balanceDue;
+        other.balanceDue == balanceDue &&
+        other.invoiceId == invoiceId &&
+        other.invoiceNumber == invoiceNumber &&
+        other.invoiceStatus == invoiceStatus;
   }
 
   @override
@@ -282,6 +303,9 @@ class Booking {
         roomID.hashCode ^
         bookingRates.hashCode ^
         amountPaid.hashCode ^
-        balanceDue.hashCode;
+        balanceDue.hashCode ^
+        invoiceId.hashCode ^
+        invoiceNumber.hashCode ^
+        invoiceStatus.hashCode;
   }
 }

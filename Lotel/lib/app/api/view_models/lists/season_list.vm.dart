@@ -49,7 +49,6 @@ class SeasonListVM extends StateNotifier<List<SeasonVM>> {
     required DateTime endDate,
     String? label,
     String? seasonId, // null = new season
-    bool overrideConflicts = false,
   }) async {
     final conflicts = await getConflictingSeasons(
       propertyId: propertyId,
@@ -58,14 +57,8 @@ class SeasonListVM extends StateNotifier<List<SeasonVM>> {
       excludeSeasonId: seasonId,
     );
 
-    if (conflicts.isNotEmpty && !overrideConflicts) {
+    if (conflicts.isNotEmpty) {
       return false;
-    }
-
-    if (overrideConflicts) {
-      for (final conflict in conflicts) {
-        await SeasonService().deleteSeason(conflict.propertyId, conflict.id);
-      }
     }
 
     final result = seasonId == null
