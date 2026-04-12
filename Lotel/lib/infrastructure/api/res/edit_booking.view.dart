@@ -17,7 +17,7 @@ class RateResolver {
     required DateTime date,
     required String categoryId,
   }) {
-    final roomOnline = ref.read(roomOnlineListVM);
+    final roomOnline = ref.read(roomOnlineItemsProvider);
     final ratePlans = ref.read(ratePlanListVM);
 
     final match = roomOnline.firstWhereOrNull(

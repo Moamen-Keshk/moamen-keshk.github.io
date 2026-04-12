@@ -7,18 +7,14 @@ class RoomOnlineService {
 
   /// Fetch all room rates for a specific property
   Future<List<RoomOnline>> getAllRoomOnline(int propertyId) async {
-    try {
-      final query = await sendGetRequest(
-        await _auth.currentUser?.getIdToken(),
-        // UPDATED PATH:
-        "/api/v1/properties/$propertyId/room_online",
-      );
-      return (query['data'] as List)
-          .map((e) => RoomOnline.fromResMap(e))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    final query = await sendGetRequestOrThrow(
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/room_online",
+      fallbackMessage: 'Failed to load nightly rates.',
+    );
+    return (query['data'] as List)
+        .map((e) => RoomOnline.fromResMap(e))
+        .toList();
   }
 
   /// Fetch user-specific room rates (if needed)
@@ -39,7 +35,7 @@ class RoomOnlineService {
   }
 
   /// Add a new room rate
-  Future<bool> addRoomOnline(RoomOnline roomOnline) async {
+  Future<RoomOnline> addRoomOnline(RoomOnline roomOnline) async {
     final payload = {
       "room_id": roomOnline.roomId,
       "date": roomOnline.date.toIso8601String(),
@@ -48,20 +44,17 @@ class RoomOnlineService {
       "category_id": roomOnline.categoryId
     };
 
-    try {
-      return await sendPostRequest(
-        payload,
-        await _auth.currentUser?.getIdToken(),
-        // UPDATED PATH:
-        "/api/v1/properties/${roomOnline.propertyId}/room_online",
-      );
-    } catch (e) {
-      return false;
-    }
+    final response = await sendPostWithResponseRequestOrThrow(
+      payload,
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/${roomOnline.propertyId}/room_online",
+      fallbackMessage: 'Failed to create nightly rate.',
+    );
+    return RoomOnline.fromResMap(response['data']);
   }
 
   /// Update an existing room rate (by ID)
-  Future<bool> updateRoomOnline(RoomOnline roomOnline) async {
+  Future<RoomOnline> updateRoomOnline(RoomOnline roomOnline) async {
     final payload = {
       "price": roomOnline.price,
       "date": roomOnline.date.toIso8601String(),
@@ -70,35 +63,23 @@ class RoomOnlineService {
       "room_status_id": roomOnline.roomStatusId
     };
 
-    try {
-      return await sendPutRequest(
-        payload,
-        await _auth.currentUser?.getIdToken(),
-        // UPDATED PATH:
-        "/api/v1/properties/${roomOnline.propertyId}/room_online/${roomOnline.id}",
-      );
-    } catch (e) {
-      return false;
-    }
+    final response = await sendPutWithResponseRequestOrThrow(
+      payload,
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/${roomOnline.propertyId}/room_online/${roomOnline.id}",
+      fallbackMessage: 'Failed to update nightly rate.',
+    );
+    return RoomOnline.fromResMap(response['data']);
   }
 
   /// Delete a room rate by ID
   /// UPDATED: Added propertyId parameter because backend URL requires it
-  Future<bool> deleteRoomOnline(int propertyId, String roomOnlineId) async {
-    try {
-      final dynamic response = await sendDeleteRequest(
-        await _auth.currentUser?.getIdToken(),
-        // UPDATED PATH:
-        "/api/v1/properties/$propertyId/room_online/$roomOnlineId",
-      );
-      if (response is bool) return response;
-      if (response is Map<String, dynamic>) {
-        return response['status'] == 'success';
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
+  Future<void> deleteRoomOnline(int propertyId, String roomOnlineId) async {
+    await sendDeleteRequestOrThrow(
+      await _auth.currentUser?.getIdToken(),
+      "/api/v1/properties/$propertyId/room_online/$roomOnlineId",
+      fallbackMessage: 'Failed to delete nightly rate.',
+    );
   }
 
   /// Fetch a single room rate by ID

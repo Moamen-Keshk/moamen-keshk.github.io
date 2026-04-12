@@ -57,6 +57,7 @@ class NotificationsView extends StatelessWidget {
                   title: notifications[index].title,
                   body: notifications[index].body,
                   fireDate: notifications[index].fireDate,
+                  notificationType: notifications[index].notificationType,
                   onActionPressed: () {},
                 ),
               ),

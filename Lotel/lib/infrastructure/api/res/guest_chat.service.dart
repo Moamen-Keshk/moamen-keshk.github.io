@@ -11,13 +11,15 @@ class GuestMessageService {
       int propertyId, int bookingId) async {
     final token = await _auth.currentUser?.getIdToken();
 
-    // Adjust the base path (/api/v1/) if your backend routing requires it
-    final query = await sendGetRequest(
-        token, "/api/v1/properties/$propertyId/bookings/$bookingId/chat");
+    final query = await sendGetRequestOrThrow(
+      token,
+      "/api/v1/properties/$propertyId/bookings/$bookingId/chat",
+      fallbackMessage: 'Failed to load guest communication.',
+    );
 
-    if (query == null || !query.containsKey('data')) {
-      debugPrint("Failed to fetch chat history. Returning empty list.");
-      return [];
+    if (query is! Map<String, dynamic> || query['data'] is! List) {
+      debugPrint("Guest communication response was malformed: $query");
+      throw ApiRequestException('Failed to load guest communication.');
     }
 
     return (query['data'] as List)
@@ -26,11 +28,23 @@ class GuestMessageService {
   }
 
   // 2. SEND A NEW CHAT MESSAGE TO THE GUEST
-  Future<bool> sendChatMessage(int propertyId, int bookingId, String message,
+  Future<GuestMessage> sendChatMessage(
+      int propertyId, int bookingId, String message,
       {String channel = 'whatsapp'}) async {
     final token = await _auth.currentUser?.getIdToken();
 
-    return await sendPostRequest({"message": message, "channel": channel},
-        token, "/api/v1/properties/$propertyId/bookings/$bookingId/chat");
+    final query = await sendPostWithResponseRequestOrThrow(
+      {"message": message, "channel": channel},
+      token,
+      "/api/v1/properties/$propertyId/bookings/$bookingId/chat",
+      fallbackMessage: 'Failed to send guest message.',
+    );
+
+    if (query is! Map<String, dynamic> || query['data'] is! Map<String, dynamic>) {
+      debugPrint("Guest communication send response was malformed: $query");
+      throw ApiRequestException('Failed to send guest message.');
+    }
+
+    return GuestMessage.fromResMap(query['data']);
   }
 }

@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/views/new_booking.view.dart';
@@ -12,19 +11,19 @@ import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-Map<int, int> roomsCategoryMapping = {};
-
 class AvailableSlot extends ConsumerWidget {
   final int tabDay;
   final String tabRoom;
   final DateTime date;
   final bool showRates;
+  final String categoryId;
 
   const AvailableSlot({
     super.key,
     required this.tabDay,
     required this.tabRoom,
     required this.date,
+    required this.categoryId,
     this.showRates = false,
   });
 
@@ -35,7 +34,7 @@ class AvailableSlot extends ConsumerWidget {
     final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
 
     return GestureDetector(
-      onTap: canManageBookings ? () => _onTap(context, ref) : null,
+      onTap: !showRates && canManageBookings ? () => _onTap(context, ref) : null,
       onLongPress: (!showRates && canManageBookings) ||
               (showRates && canManageRates)
           ? () => _onLongPress(context, ref)
@@ -52,26 +51,27 @@ class AvailableSlot extends ConsumerWidget {
         child: DragTarget<BookingVM>(
           onWillAcceptWithDetails: (details) {
             return canManageBookings &&
-                roomsCategoryMapping[details.data.roomID] ==
-                roomsCategoryMapping[int.parse(tabRoom)];
+                details.data.roomID != int.tryParse(tabRoom);
           },
           onAcceptWithDetails: (details) async {
             if (!canManageBookings) return;
             int numberOfNights = details.data.numberOfNights;
-            int checkInYear = details.data.checkInYear;
-            int checkInMonth = details.data.checkInMonth;
+            final checkInDate = DateTime(date.year, date.month, date.day);
+            final checkOutDate =
+                checkInDate.add(Duration(days: numberOfNights));
 
             if (await ref.read(bookingListVM.notifier).editBooking(
               int.parse(details.data.id),
               {
                 'room_id': tabRoom,
-                'check_in': DateTime(checkInYear, checkInMonth, tabDay)
-                    .toIso8601String(),
-                'check_out':
-                    DateTime(checkInYear, checkInMonth, tabDay + numberOfNights)
-                        .toIso8601String(),
-                'check_in_day': tabDay,
-                'check_out_day': tabDay + numberOfNights,
+                'check_in': checkInDate.toIso8601String(),
+                'check_out': checkOutDate.toIso8601String(),
+                'check_in_day': checkInDate.day,
+                'check_in_month': checkInDate.month,
+                'check_in_year': checkInDate.year,
+                'check_out_day': checkOutDate.day,
+                'check_out_month': checkOutDate.month,
+                'check_out_year': checkOutDate.year,
               },
             )) {
               if (context.mounted) {
@@ -89,7 +89,11 @@ class AvailableSlot extends ConsumerWidget {
                 margin: const EdgeInsets.all(2),
                 color: Colors.grey[200], // Static background color
                 child: showRates
-                    ? RateBadgeWidget(roomId: tabRoom, date: date)
+                    ? RateBadgeWidget(
+                        roomId: tabRoom,
+                        date: date,
+                        categoryId: categoryId,
+                      )
                     : null,
               ),
             );
@@ -110,11 +114,8 @@ class AvailableSlot extends ConsumerWidget {
       return;
     }
 
-    final existing = ref.read(roomOnlineListVM).firstWhereOrNull(
-          (vm) =>
-              vm.roomOnline.roomId == tabRoom &&
-              DateUtils.isSameDay(vm.roomOnline.date, date),
-        );
+    final existing =
+        ref.read(roomOnlineIndexProvider)[roomOnlineCellKey(tabRoom, date)];
 
     if (existing != null) {
       final confirm = await showDialog<bool>(
@@ -145,6 +146,11 @@ class AvailableSlot extends ConsumerWidget {
         if (deleted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Custom rate removed')),
+          );
+        } else if (!deleted && context.mounted) {
+          final error = ref.read(roomOnlineListVM).errorMessage;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error ?? 'Failed to remove custom rate.')),
           );
         }
       }

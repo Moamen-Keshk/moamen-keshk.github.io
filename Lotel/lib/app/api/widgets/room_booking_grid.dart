@@ -31,7 +31,6 @@ class RoomBookingGrid extends ConsumerWidget {
   final int currentMonth;
   final int currentYear;
   final TabController tabController;
-  final WidgetRef ref;
   final bool showRates;
   final ScrollController horizontalScrollController;
 
@@ -44,7 +43,6 @@ class RoomBookingGrid extends ConsumerWidget {
     required this.currentMonth,
     required this.currentYear,
     required this.tabController,
-    required this.ref,
     required this.showRates,
     required this.horizontalScrollController,
   });
@@ -52,6 +50,10 @@ class RoomBookingGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     int tabIndexCounter = 0;
+    final bookingsByRoom = _groupBookingsByRoom(bookings);
+    final blocksByRoom = _groupBlocksByRoom(blocks);
+    final bookingsTabSizesByRoom = <int, Map<int, BookingWithTab>>{};
+    final blocksTabSizesByRoom = <int, Map<int, BlockWithTab>>{};
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -65,26 +67,24 @@ class RoomBookingGrid extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 25),
               child: Column(
                 children: floor.rooms.map<Row>((Room room) {
-                  final bookingsPerRoom = bookings
-                      .where((b) => b.roomID == int.tryParse(room.id))
-                      .toList();
-
-                  final blocksPerRoom = blocks
-                      .where((b) => b.roomID == int.tryParse(room.id))
-                      .toList();
-
-                  final bookingsTabSizes = _buildBookingTabSizeMap(
-                    bookingsPerRoom,
-                    numberOfDays,
-                    currentMonth,
-                    currentYear,
+                  final roomId = int.tryParse(room.id) ?? 0;
+                  final bookingsTabSizes = bookingsTabSizesByRoom.putIfAbsent(
+                    roomId,
+                    () => _buildBookingTabSizeMap(
+                      bookingsByRoom[roomId] ?? const <BookingVM>[],
+                      numberOfDays,
+                      currentMonth,
+                      currentYear,
+                    ),
                   );
-
-                  final blocksTabSizes = _buildBlockTabSizeMap(
-                    blocksPerRoom,
-                    numberOfDays,
-                    currentMonth,
-                    currentYear,
+                  final blocksTabSizes = blocksTabSizesByRoom.putIfAbsent(
+                    roomId,
+                    () => _buildBlockTabSizeMap(
+                      blocksByRoom[roomId] ?? const <BlockVM>[],
+                      numberOfDays,
+                      currentMonth,
+                      currentYear,
+                    ),
                   );
 
                   List<Widget> rowChildren = [];
@@ -129,6 +129,7 @@ class RoomBookingGrid extends ConsumerWidget {
                           tabDay: currentDay,
                           tabRoom: room.id,
                           date: DateTime(currentYear, currentMonth, currentDay),
+                          categoryId: room.categoryId.toString(),
                           showRates: showRates,
                         ),
                       );
@@ -147,6 +148,22 @@ class RoomBookingGrid extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Map<int, List<BookingVM>> _groupBookingsByRoom(List<BookingVM> source) {
+    final grouped = <int, List<BookingVM>>{};
+    for (final booking in source) {
+      grouped.putIfAbsent(booking.roomID, () => []).add(booking);
+    }
+    return grouped;
+  }
+
+  Map<int, List<BlockVM>> _groupBlocksByRoom(List<BlockVM> source) {
+    final grouped = <int, List<BlockVM>>{};
+    for (final block in source) {
+      grouped.putIfAbsent(block.roomID, () => []).add(block);
+    }
+    return grouped;
   }
 
   Map<int, BookingWithTab> _buildBookingTabSizeMap(

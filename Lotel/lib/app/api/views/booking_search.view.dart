@@ -25,15 +25,48 @@ final paymentStatusMappingProvider =
   return await PaymentStatusListVM().paymentStatusMapping();
 });
 
-final bookingSearchListProvider =
-    FutureProvider.autoDispose<List<BookingVM>>((ref) async {
-  final propertyId = ref.watch(selectedPropertyVM);
-  if (propertyId == null || propertyId <= 0) {
+class BookingSearchRequest {
+  final int propertyId;
+  final String query;
+  final DateTime? checkInFrom;
+  final DateTime? checkOutTo;
+
+  const BookingSearchRequest({
+    required this.propertyId,
+    required this.query,
+    required this.checkInFrom,
+    required this.checkOutTo,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is BookingSearchRequest &&
+            other.propertyId == propertyId &&
+            other.query == query &&
+            other.checkInFrom == checkInFrom &&
+            other.checkOutTo == checkOutTo;
+  }
+
+  @override
+  int get hashCode => Object.hash(propertyId, query, checkInFrom, checkOutTo);
+}
+
+final bookingSearchResultsProvider = FutureProvider.autoDispose
+    .family<List<BookingVM>, BookingSearchRequest>((ref, request) async {
+  if (request.propertyId <= 0) {
     return const [];
   }
 
-  final bookings = await BookingService().getBookingsForProperty(propertyId);
-  return bookings.map((booking) => BookingVM(booking)).toList();
+  final bookings = await BookingService().searchBookings(
+    request.propertyId,
+    query: request.query,
+    checkInFrom: request.checkInFrom,
+    checkOutTo: request.checkOutTo,
+  );
+  final mapped = bookings.map((booking) => BookingVM(booking)).toList();
+  mapped.sort((left, right) => right.checkIn.compareTo(left.checkIn));
+  return mapped;
 });
 
 class BookingSearchView extends ConsumerStatefulWidget {
@@ -60,7 +93,14 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
   @override
   Widget build(BuildContext context) {
     final selectedPropertyId = ref.watch(selectedPropertyVM);
-    final allBookingsAsync = ref.watch(bookingSearchListProvider);
+    final searchRequest = BookingSearchRequest(
+      propertyId: selectedPropertyId ?? 0,
+      query: _query,
+      checkInFrom: checkInFrom,
+      checkOutTo: checkOutTo,
+    );
+    final allBookingsAsync =
+        ref.watch(bookingSearchResultsProvider(searchRequest));
     final roomMapping = ref.watch(roomMappingProvider);
     final paymentStatus = ref.watch(paymentStatusMappingProvider).maybeWhen(
           data: (value) => Map<int, String>.from(value),
@@ -124,22 +164,16 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
                         const Center(child: CircularProgressIndicator()),
                     error: (error, _) =>
                         Center(child: Text('Failed to load bookings: $error')),
-                    data: (allBookings) {
-                      final filtered = _filterBookings(
-                        allBookings,
-                        roomMapping,
-                        paymentStatus,
-                      );
-
-                      if (filtered.isEmpty) {
+                    data: (bookings) {
+                      if (bookings.isEmpty) {
                         return const Center(child: Text('No bookings found'));
                       }
 
                       return ListView.builder(
                         padding: const EdgeInsets.only(top: 8),
-                        itemCount: filtered.length,
+                        itemCount: bookings.length,
                         itemBuilder: (context, index) {
-                          final booking = filtered[index];
+                          final booking = bookings[index];
                           return _bookingRow(
                             context,
                             ref,
@@ -169,60 +203,6 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
         _query = value.trim().toLowerCase();
       });
     });
-  }
-
-  List<BookingVM> _filterBookings(
-    List<BookingVM> bookings,
-    Map<int, String> roomMapping,
-    Map<int, String> paymentMapping,
-  ) {
-    final filtered = bookings.where((booking) {
-      final matchesQuery = _query.isEmpty || _matchesQuery(
-        booking,
-        roomMapping,
-        paymentMapping,
-      );
-      final matchesCheckIn = checkInFrom == null ||
-          !_startOfDay(booking.checkIn).isBefore(_startOfDay(checkInFrom!));
-      final matchesCheckOut = checkOutTo == null ||
-          !_startOfDay(booking.checkOut).isAfter(_startOfDay(checkOutTo!));
-
-      return matchesQuery && matchesCheckIn && matchesCheckOut;
-    }).toList();
-
-    filtered.sort((left, right) => right.checkIn.compareTo(left.checkIn));
-    return filtered;
-  }
-
-  bool _matchesQuery(
-    BookingVM booking,
-    Map<int, String> roomMapping,
-    Map<int, String> paymentMapping,
-  ) {
-    final roomNumber = roomMapping[booking.roomID] ?? '';
-    final searchableFields = <String>[
-      booking.id,
-      booking.firstName,
-      booking.lastName,
-      '${booking.firstName} ${booking.lastName}',
-      booking.email ?? '',
-      booking.phone ?? '',
-      booking.confirmationNumber.toString(),
-      roomNumber,
-      booking.invoiceNumber ?? '',
-      booking.invoiceStatus ?? '',
-      paymentMapping[booking.paymentStatusID] ?? '',
-      booking.note ?? '',
-      booking.specialRequest ?? '',
-    ];
-
-    return searchableFields
-        .map((field) => field.toLowerCase())
-        .any((field) => field.contains(_query));
-  }
-
-  DateTime _startOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
   }
 
   Widget _buildDatePicker({

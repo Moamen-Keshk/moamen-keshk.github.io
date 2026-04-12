@@ -43,7 +43,8 @@ class _GuestChatViewState extends ConsumerState<GuestChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(guestMessageListVM);
+    final state = ref.watch(guestMessageListVM);
+    final messages = state.messages;
 
     return Scaffold(
       appBar: AppBar(
@@ -147,7 +148,6 @@ class _GuestChatViewState extends ConsumerState<GuestChatView> {
             propertyId: widget.propertyId,
             bookingId: widget.bookingId,
             message: text.trim(),
-            channel: 'whatsapp',
           );
       _controller.clear();
     }

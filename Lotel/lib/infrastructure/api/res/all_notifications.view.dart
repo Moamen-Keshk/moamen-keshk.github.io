@@ -22,6 +22,8 @@ class AllNotificationsView extends StatelessWidget {
                   title: notification.title,
                   body: notification.body,
                   fireDate: notification.fireDate,
+                  notificationType: notification.notificationType,
+                  isRead: notification.isRead,
                   onActionPressed: () {},
                 )),
           ),

@@ -155,8 +155,8 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
       final blocks = ref.watch(blockListVM); // 👈 watch blocks
       final selectedDate = ref.watch(selectedMonthVM);
       final numberOfDays = ref.watch(numberOfDaysVM);
-      final categories = ref.read(categoryListVM);
-      final rooms = ref.read(roomListVM);
+      final categories = ref.watch(categoryListVM);
+      final rooms = ref.watch(roomListVM);
 
       final selectedMonth = selectedDate.month;
       final selectedYear = selectedDate.year;
@@ -308,12 +308,12 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
               ],
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: MediaQuery.of(context).size.height - 218,
+            Expanded(
               child: SingleChildScrollView(
                 controller: _verticalScrollController,
                 scrollDirection: Axis.vertical,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RoomLabelColumn(
                       floors: floors,
@@ -329,7 +329,6 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                         currentMonth: selectedMonth,
                         currentYear: selectedYear,
                         tabController: _tabController,
-                        ref: ref,
                         showRates: _showRates,
                         horizontalScrollController: _gridScrollController,
                       ),

@@ -32,20 +32,26 @@ class GuestMessageListVM extends StateNotifier<List<GuestMessageVM>> {
       messageBody: message,
       timestamp: DateTime.now(),
       isRead: true,
+      deliveryStatus: 'pending',
     ));
 
     // It's safe to update state here because the user just tapped a button inside the active UI
     state = [...state, optimisticMessage];
 
     // Wait for the backend request to finish...
-    final success = await GuestMessageService()
+    final sentMessage = await GuestMessageService()
         .sendChatMessage(propertyId, bookingId, message, channel: channel);
 
     // THE FIX: Check if the user closed the chat while the network request was running!
     // If they did, stop executing immediately.
-    if (!mounted) return success;
+    if (!mounted) return true;
 
-    return success;
+    state = [
+      ...state.where((item) => item.id != optimisticMessage.id),
+      GuestMessageVM(sentMessage),
+    ];
+
+    return true;
   }
 }
 

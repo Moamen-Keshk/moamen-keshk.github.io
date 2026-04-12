@@ -139,28 +139,27 @@ class _BookingViewState extends ConsumerState<BookingView> {
 
                           setState(() => isSending = true);
 
-                          final success = await ref
-                              .read(bookingListVM.notifier)
-                              .sendGuestMessage(
-                                bookingId,
-                                subjectController.text,
-                                messageController.text,
-                              );
+                          try {
+                            await ref.read(bookingListVM.notifier).sendGuestMessage(
+                                  bookingId,
+                                  subjectController.text,
+                                  messageController.text,
+                                );
 
-                          setState(() => isSending = false);
+                            setState(() => isSending = false);
 
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext);
-                          }
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
 
-                          if (success) {
                             messenger.showSnackBar(
                               const SnackBar(
                                 content:
                                     Text('Email sent to guest successfully.'),
                               ),
                             );
-                          } else {
+                          } catch (_) {
+                            setState(() => isSending = false);
                             messenger.showSnackBar(
                               const SnackBar(
                                 content: Text('Failed to send email.'),

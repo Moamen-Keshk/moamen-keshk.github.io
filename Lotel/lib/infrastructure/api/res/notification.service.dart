@@ -11,12 +11,14 @@ class NotificationService {
   Future<List<Notification>> getNotifications() async {
     final token = await _auth.currentUser?.getIdToken();
 
-    // 👉 Using the global RESTful pattern
-    final query = await sendGetRequest(token, "/api/v1/notifications");
+    final query = await sendGetRequestOrThrow(
+      token,
+      "/api/v1/notifications",
+      fallbackMessage: 'Failed to fetch notifications.',
+    );
 
-    // 👉 THE SAFETY NET: Prevent the 'null' crash
-    if (query == null || !query.containsKey('data')) {
-      debugPrint("Failed to fetch notifications. Returning empty list.");
+    if (query is! Map<String, dynamic> || query['data'] is! List) {
+      debugPrint("Notifications response was malformed. Returning empty list.");
       return [];
     }
 
@@ -30,17 +32,40 @@ class NotificationService {
   Future<List<Notification>> getAllNotifications() async {
     final token = await _auth.currentUser?.getIdToken();
 
-    // 👉 Using the global RESTful pattern
-    final query = await sendGetRequest(token, "/api/v1/all-notifications");
+    final query = await sendGetRequestOrThrow(
+      token,
+      "/api/v1/all-notifications",
+      fallbackMessage: 'Failed to fetch all notifications.',
+    );
 
-    // 👉 THE SAFETY NET
-    if (query == null || !query.containsKey('data')) {
-      debugPrint("Failed to fetch all notifications. Returning empty list.");
+    if (query is! Map<String, dynamic> || query['data'] is! List) {
+      debugPrint(
+          "All notifications response was malformed. Returning empty list.");
       return [];
     }
 
     return (query['data'] as List)
         .map((e) => Notification.fromResMap(e))
         .toList();
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    final token = await _auth.currentUser?.getIdToken();
+    await sendPutWithResponseRequestOrThrow(
+      const {},
+      token,
+      "/api/v1/notifications/$notificationId/read",
+      fallbackMessage: 'Failed to mark notification as read.',
+    );
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    final token = await _auth.currentUser?.getIdToken();
+    await sendPutWithResponseRequestOrThrow(
+      const {},
+      token,
+      "/api/v1/notifications/read-all",
+      fallbackMessage: 'Failed to mark notifications as read.',
+    );
   }
 }

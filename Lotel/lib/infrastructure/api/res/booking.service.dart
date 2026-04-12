@@ -18,6 +18,30 @@ class BookingService {
     return (query['data'] as List).map((e) => Booking.fromResMap(e)).toList();
   }
 
+  Future<List<Booking>> searchBookings(
+    int propertyId, {
+    String query = '',
+    DateTime? checkInFrom,
+    DateTime? checkOutTo,
+  }) async {
+    final token = await _auth.currentUser?.getIdToken();
+    final response = await sendGetWithParamsRequest(
+      token,
+      "/api/v1/properties/$propertyId/bookings",
+      {
+        'q': query.trim().isEmpty ? null : query.trim(),
+        'check_in_from': checkInFrom?.toIso8601String().split('T')[0],
+        'check_out_to': checkOutTo?.toIso8601String().split('T')[0],
+      },
+    );
+
+    if (response == null || !response.containsKey('data')) return [];
+
+    return (response['data'] as List)
+        .map((e) => Booking.fromResMap(e))
+        .toList();
+  }
+
   // Backwards-compatible alias for older call sites.
   Future<List<Booking>> getBooking(int propertyId) async {
     return getBookingsForProperty(propertyId);
@@ -152,22 +176,18 @@ class BookingService {
   }
 
   // Add this method to your BookingService class
-  Future<bool> sendGuestMessage(
+  Future<void> sendGuestMessage(
       int propertyId, int bookingId, String subject, String message) async {
-    try {
-      final token = await _auth.currentUser?.getIdToken();
-      return await sendPostRequest(
-        {
-          'subject': subject,
-          'message': message,
-        },
-        token,
-        "/api/v1/properties/$propertyId/bookings/$bookingId/send_message",
-      );
-    } catch (e) {
-      debugPrint("Error sending message: $e");
-      return false;
-    }
+    final token = await _auth.currentUser?.getIdToken();
+    await sendPostWithResponseRequestOrThrow(
+      {
+        'subject': subject,
+        'message': message,
+      },
+      token,
+      "/api/v1/properties/$propertyId/bookings/$bookingId/send_message",
+      fallbackMessage: 'Failed to send email to guest.',
+    );
   }
 
   Future<bool> extendBooking(

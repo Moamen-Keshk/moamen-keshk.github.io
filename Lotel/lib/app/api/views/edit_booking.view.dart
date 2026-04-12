@@ -17,16 +17,10 @@ class RateResolver {
     required DateTime date,
     required String categoryId,
   }) {
-    final roomOnline = ref.read(roomOnlineListVM);
+    final roomOnlineIndex = ref.read(roomOnlineIndexProvider);
     final ratePlans = ref.read(ratePlanListVM);
 
-    final match = roomOnline.firstWhereOrNull(
-      (r) =>
-          r.roomId == roomId &&
-          r.date.year == date.year &&
-          r.date.month == date.month &&
-          r.date.day == date.day,
-    );
+    final match = roomOnlineIndex[roomOnlineCellKey(roomId, date)];
     if (match != null) {
       return match.price;
     }

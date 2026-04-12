@@ -24,35 +24,25 @@ class RoomOnlineListVM extends StateNotifier<List<RoomOnlineVM>> {
 
   /// Add a new custom room rate
   Future<bool> addRoomOnline(RoomOnline rate) async {
-    final result = await roomOnlineService.addRoomOnline(rate);
-    if (result) {
-      await fetchRoomOnline();
-      return true;
-    }
-    return false;
+    await roomOnlineService.addRoomOnline(rate);
+    await fetchRoomOnline();
+    return true;
   }
 
   /// Update a room rate by ID with new data
   Future<bool> updateRoomOnline(RoomOnline rate) async {
-    final result = await roomOnlineService.updateRoomOnline(rate);
-    if (result) {
-      await fetchRoomOnline();
-      return true;
-    }
-    return false;
+    await roomOnlineService.updateRoomOnline(rate);
+    await fetchRoomOnline();
+    return true;
   }
 
   /// Delete a room rate by ID
   Future<bool> deleteRoomOnline(String roomOnlineId) async {
     if (propertyId == null) return false;
-    final result =
-        await roomOnlineService.deleteRoomOnline(propertyId!, roomOnlineId);
-    if (result) {
-      state = state.where((rate) => rate.id != roomOnlineId).toList();
-      await fetchRoomOnline();
-      return true;
-    }
-    return false;
+    await roomOnlineService.deleteRoomOnline(propertyId!, roomOnlineId);
+    state = state.where((rate) => rate.id != roomOnlineId).toList();
+    await fetchRoomOnline();
+    return true;
   }
 
   /// Add or update (upsert) a room rate

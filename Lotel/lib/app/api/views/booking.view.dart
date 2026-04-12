@@ -127,8 +127,10 @@ class _BookingViewState extends ConsumerState<BookingView> {
                       : () async {
                           final messenger = ScaffoldMessenger.of(dialogContext);
 
-                          if (subjectController.text.isEmpty ||
-                              messageController.text.isEmpty) {
+                          final subject = subjectController.text.trim();
+                          final message = messageController.text.trim();
+
+                          if (subject.isEmpty || message.isEmpty) {
                             messenger.showSnackBar(
                               const SnackBar(
                                 content:
@@ -140,31 +142,30 @@ class _BookingViewState extends ConsumerState<BookingView> {
 
                           setState(() => isSending = true);
 
-                          final success = await ref
-                              .read(bookingListVM.notifier)
-                              .sendGuestMessage(
-                                bookingId,
-                                subjectController.text,
-                                messageController.text,
-                              );
+                          try {
+                            await ref.read(bookingListVM.notifier).sendGuestMessage(
+                                  bookingId,
+                                  subject,
+                                  message,
+                                );
 
-                          setState(() => isSending = false);
+                            setState(() => isSending = false);
 
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext);
-                          }
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
 
-                          if (success) {
                             messenger.showSnackBar(
                               const SnackBar(
                                 content:
                                     Text('Email sent to guest successfully.'),
                               ),
                             );
-                          } else {
+                          } catch (e) {
+                            setState(() => isSending = false);
                             messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text('Failed to send email.'),
+                              SnackBar(
+                                content: Text(e.toString()),
                               ),
                             );
                           }
@@ -845,6 +846,10 @@ class _BookingViewState extends ConsumerState<BookingView> {
                 }
 
                 final format = DateFormat.yMMMd();
+                final hasGuestPhone =
+                    booking.phone != null && booking.phone!.trim().isNotEmpty;
+                final hasGuestEmail =
+                    booking.email != null && booking.email!.trim().isNotEmpty;
 
                 return Padding(
                   padding: const EdgeInsets.all(12),
@@ -861,48 +866,58 @@ class _BookingViewState extends ConsumerState<BookingView> {
                             if (canManageBookings)
                               ElevatedButton.icon(
                                 icon: const Icon(Icons.chat),
-                                label: const Text("Chat Guest"),
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => Padding(
-                                      padding: EdgeInsets.only(
-                                        bottom: MediaQuery.of(context)
-                                            .viewInsets
-                                            .bottom,
-                                      ),
-                                      child: FractionallySizedBox(
-                                        heightFactor: 0.85,
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              const BorderRadius.vertical(
-                                                  top: Radius.circular(20)),
-                                          child: GuestChatView(
-                                            propertyId: propertyId,
-                                            bookingId: bookingId,
-                                            guestName:
-                                                '${booking.firstName} ${booking.lastName}',
+                                label: Text(
+                                  hasGuestPhone
+                                      ? "Open Messages"
+                                      : "No Phone for Chat",
+                                ),
+                                onPressed: hasGuestPhone
+                                    ? () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) => Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: MediaQuery.of(context)
+                                                  .viewInsets
+                                                  .bottom,
+                                            ),
+                                            child: FractionallySizedBox(
+                                              heightFactor: 0.85,
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    const BorderRadius.vertical(
+                                                        top: Radius.circular(20)),
+                                                child: GuestChatView(
+                                                  propertyId: propertyId,
+                                                  bookingId: bookingId,
+                                                  guestName:
+                                                      '${booking.firstName} ${booking.lastName}',
+                                                ),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                        );
+                                      }
+                                    : null,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 20, vertical: 12),
                                 ),
                               ),
-                            if (canManageBookings &&
-                                booking.email != null &&
-                                booking.email!.isNotEmpty)
+                            if (canManageBookings)
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.email_outlined),
-                                label: const Text("Email Guest"),
-                                onPressed: () => _showSendMessageDialog(
-                                    context, ref, bookingId, booking),
+                                label: Text(
+                                  hasGuestEmail
+                                      ? "Email Guest"
+                                      : "No Email Address",
+                                ),
+                                onPressed: hasGuestEmail
+                                    ? () => _showSendMessageDialog(
+                                        context, ref, bookingId, booking)
+                                    : null,
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 20, vertical: 12),
@@ -913,81 +928,88 @@ class _BookingViewState extends ConsumerState<BookingView> {
                       ),
 
                       // --- Booking Details ---
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        alignment: WrapAlignment.start,
-                        children: [
-                          _section("Guest Info", {
-                            "Name": "${booking.firstName} ${booking.lastName}",
-                            "Phone": booking.phone ?? "-",
-                            "Adults": "${booking.numberOfAdults}",
-                            "Children": "${booking.numberOfChildren}",
-                          }),
-                          _section("Status & Meta", {
-                            "Payment Status":
-                                paymentStatusMapping[booking.paymentStatusID] ??
-                                    "Unknown",
-                            "Booking Status":
-                                bookingStatusMapping[booking.statusID] ??
-                                    'Unknown',
-                            "Room": roomMapping[booking.roomID] ??
-                                'Room ${booking.roomID}',
-                          }),
-                          _section("Dates", {
-                            "Check-in": format.format(booking.checkIn),
-                            "Check-out": format.format(booking.checkOut),
-                            "Created": format.format(booking.bookingDate),
-                          }),
-                          _section("Reference", {
-                            "Confirmation Number":
-                                booking.confirmationNumber.toString(),
-                            "Email": booking.email ?? "-",
-                            "Invoice Number": booking.invoiceNumber ?? "-",
-                          }),
-                          _section("Notes & Requests", {
-                            "Special Request": (booking.specialRequest !=
-                                        null &&
-                                    booking.specialRequest!.trim().isNotEmpty)
-                                ? booking.specialRequest!
-                                : "None",
-                            "Note": (booking.note != null &&
-                                    booking.note!.trim().isNotEmpty)
-                                ? booking.note!
-                                : "None",
-                          }),
-                          _section("Nightly Rates", {
-                            for (var rate in booking.bookingRates)
-                              DateFormat('dd MMM').format(rate.rateDate):
-                                  "£${rate.nightlyRate.toStringAsFixed(2)}"
-                          }),
-                          if (canViewFinance)
-                            bookingInvoiceAsync.when(
-                              loading: () => _financeCardSkeleton(),
-                              error: (err, _) => _infoCard(
-                                "Invoice",
-                                Text('Failed to load invoice: $err'),
-                              ),
-                              data: (invoice) => _invoiceCard(
-                                context,
-                                ref,
-                                booking,
-                                invoice,
-                              ),
-                            ),
-                          if (canViewFinance)
-                            bookingPaymentsAsync.when(
-                              loading: () => _financeCardSkeleton(),
-                              error: (err, _) => _infoCard(
-                                "Payments",
-                                Text('Failed to load payments: $err'),
-                              ),
-                              data: (payments) =>
-                                  _paymentsCard(context, ref, booking, payments),
-                            ),
-                        ],
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.start,
+                            children: [
+                              _section("Guest Info", {
+                                "Name": "${booking.firstName} ${booking.lastName}",
+                                "Phone": booking.phone ?? "-",
+                                "Adults": "${booking.numberOfAdults}",
+                                "Children": "${booking.numberOfChildren}",
+                              }),
+                              _section("Status & Meta", {
+                                "Payment Status":
+                                    paymentStatusMapping[booking.paymentStatusID] ??
+                                        "Unknown",
+                                "Booking Status":
+                                    bookingStatusMapping[booking.statusID] ??
+                                        'Unknown',
+                                "Room": roomMapping[booking.roomID] ??
+                                    'Room ${booking.roomID}',
+                              }),
+                              _section("Dates", {
+                                "Check-in": format.format(booking.checkIn),
+                                "Check-out": format.format(booking.checkOut),
+                                "Created": format.format(booking.bookingDate),
+                              }),
+                              _section("Reference", {
+                                "Confirmation Number":
+                                    booking.confirmationNumber.toString(),
+                                "Email": booking.email ?? "-",
+                                "Invoice Number": booking.invoiceNumber ?? "-",
+                              }),
+                              _section("Notes & Requests", {
+                                "Special Request": (booking.specialRequest !=
+                                            null &&
+                                        booking.specialRequest!.trim().isNotEmpty)
+                                    ? booking.specialRequest!
+                                    : "None",
+                                "Note": (booking.note != null &&
+                                        booking.note!.trim().isNotEmpty)
+                                    ? booking.note!
+                                    : "None",
+                              }),
+                              _section("Nightly Rates", {
+                                for (var rate in booking.bookingRates)
+                                  DateFormat('dd MMM').format(rate.rateDate):
+                                      "£${rate.nightlyRate.toStringAsFixed(2)}"
+                              }),
+                              if (canViewFinance)
+                                bookingInvoiceAsync.when(
+                                  loading: () => _financeCardSkeleton(),
+                                  error: (err, _) => _infoCard(
+                                    "Invoice",
+                                    Text('Failed to load invoice: $err'),
+                                  ),
+                                  data: (invoice) => _invoiceCard(
+                                    context,
+                                    ref,
+                                    booking,
+                                    invoice,
+                                  ),
+                                ),
+                              if (canViewFinance)
+                                bookingPaymentsAsync.when(
+                                  loading: () => _financeCardSkeleton(),
+                                  error: (err, _) => _infoCard(
+                                    "Payments",
+                                    Text('Failed to load payments: $err'),
+                                  ),
+                                  data: (payments) => _paymentsCard(
+                                    context,
+                                    ref,
+                                    booking,
+                                    payments,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const Spacer(),
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: Center(

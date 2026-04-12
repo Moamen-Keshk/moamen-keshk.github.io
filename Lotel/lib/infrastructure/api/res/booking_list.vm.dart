@@ -143,13 +143,13 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   Future<bool> sendGuestMessage(
       int bookingId, String subject, String message) async {
     try {
-      final success = await bookingService.sendGuestMessage(
+      await bookingService.sendGuestMessage(
         propertyId,
         bookingId,
         subject,
         message,
       );
-      return success;
+      return true;
     } catch (_) {
       return false;
     }
