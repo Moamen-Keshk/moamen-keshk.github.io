@@ -22,25 +22,21 @@ class PropertyService {
 
   // 2. GET ALL PROPERTIES
   Future<List<Property>> getAllProperties() async {
-    final token = await _auth.currentUser?.getIdToken();
-    final query = await sendGetRequest(token, "/api/v1/all-properties");
-
-    // 👉 THE SAFETY NET
-    if (query == null || !query.containsKey('data')) {
-      debugPrint("Failed to fetch all properties. Returning empty list.");
-      return [];
-    }
-
-    return (query['data'] as List).map((e) => Property.fromResMap(e)).toList();
+    return getProperty();
   }
 
   // 3. ADD PROPERTY
   // 👉 UPDATED: Now uses named parameters to accept the full Wizard payload
-  Future<bool> addProperty({
+  Future<Property?> addProperty({
     required String name,
     required String address,
     String? phone,
     String? email,
+    String? timezone,
+    String? currency,
+    double? taxRate,
+    String? defaultCheckInTime,
+    String? defaultCheckOutTime,
     List<int>? floors,
     List<int>? amenityIds,
   }) async {
@@ -54,27 +50,49 @@ class PropertyService {
 
     if (phone != null && phone.isNotEmpty) payload["phone_number"] = phone;
     if (email != null && email.isNotEmpty) payload["email"] = email;
+    if (timezone != null && timezone.isNotEmpty) payload["timezone"] = timezone;
+    if (currency != null && currency.isNotEmpty) payload["currency"] = currency;
+    if (taxRate != null) payload["tax_rate"] = taxRate;
+    if (defaultCheckInTime != null && defaultCheckInTime.isNotEmpty) {
+      payload["default_check_in_time"] = defaultCheckInTime;
+    }
+    if (defaultCheckOutTime != null && defaultCheckOutTime.isNotEmpty) {
+      payload["default_check_out_time"] = defaultCheckOutTime;
+    }
     if (floors != null && floors.isNotEmpty) payload["floors"] = floors;
     if (amenityIds != null && amenityIds.isNotEmpty) {
       payload["amenity_ids"] = amenityIds;
     }
 
-    return await sendPostRequest(payload, token, "/api/v1/new_property");
+    final response =
+        await sendPostWithResponseRequest(payload, token, "/api/v1/properties");
+    if (response is Map<String, dynamic> && response['data'] is Map<String, dynamic>) {
+      return Property.fromResMap(response['data'] as Map<String, dynamic>);
+    }
+    return null;
   }
 
   // 4. EDIT PROPERTY
-  Future<bool> editProperty(
+  Future<Property?> editProperty(
       int propertyId, Map<String, dynamic> updatedPropertyData) async {
     try {
       final token = await _auth.currentUser?.getIdToken();
-      return await sendPutRequest(
+      final success = await sendPutRequest(
         updatedPropertyData,
         token,
-        "/api/v1/edit_property/$propertyId",
+        "/api/v1/properties/$propertyId",
       );
+      if (!success) {
+        return null;
+      }
+      final response = await sendGetRequest(token, "/api/v1/properties/$propertyId");
+      if (response is Map<String, dynamic> && response['data'] is Map<String, dynamic>) {
+        return Property.fromResMap(response['data'] as Map<String, dynamic>);
+      }
+      return null;
     } catch (e) {
       debugPrint("Error editing property: $e");
-      return false;
+      return null;
     }
   }
 

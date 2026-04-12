@@ -84,8 +84,14 @@ class InvoiceService {
     required String paymentMethod,
     String source = 'manual',
     String status = 'succeeded',
+    bool isVcc = false,
+    String? externalChannel,
     String? reference,
+    String? processorReference,
+    String? processorStatus,
     String? notes,
+    String? effectiveDate,
+    String? settlementDate,
     String currency = 'usd',
   }) async {
     final token = await _auth.currentUser?.getIdToken();
@@ -95,8 +101,14 @@ class InvoiceService {
         'payment_method': paymentMethod,
         'source': source,
         'status': status,
+        'is_vcc': isVcc,
+        'external_channel': externalChannel,
         'reference': reference,
+        'processor_reference': processorReference,
+        'processor_status': processorStatus,
         'notes': notes,
+        'effective_date': effectiveDate,
+        'settlement_date': settlementDate,
         'currency': currency,
       },
       token,
@@ -108,6 +120,32 @@ class InvoiceService {
     }
 
     throw Exception('Failed to record payment');
+  }
+
+  Future<Map<String, dynamic>> refundPayment({
+    required int propertyId,
+    required int bookingId,
+    required String transactionId,
+    required double amount,
+    String? reason,
+    String? settlementDate,
+  }) async {
+    final token = await _auth.currentUser?.getIdToken();
+    final response = await sendPostWithResponseRequest(
+      {
+        'amount': amount,
+        'reason': reason,
+        'settlement_date': settlementDate,
+      },
+      token,
+      '/api/v1/properties/$propertyId/bookings/$bookingId/payments/$transactionId/refund',
+    );
+
+    if (response != null && response is Map<String, dynamic>) {
+      return response;
+    }
+
+    throw Exception('Failed to record refund');
   }
 
   Future<Map<String, dynamic>?> fetchBookingVcc(

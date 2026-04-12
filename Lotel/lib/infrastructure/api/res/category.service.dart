@@ -7,9 +7,10 @@ import 'package:flutter/foundation.dart' hide Category;
 class CategoryService {
   final _auth = FirebaseAuth.instance;
 
-  Future<List<Category>> getAllCategories() async {
+  Future<List<Category>> getAllCategories(int propertyId) async {
     final token = await _auth.currentUser?.getIdToken();
-    final query = await sendGetRequest(token, "/api/v1/categories");
+    final query =
+        await sendGetRequest(token, "/api/v1/properties/$propertyId/room_types");
 
     if (query == null || !query.containsKey('data')) {
       debugPrint("Failed to fetch categories.");
@@ -19,6 +20,7 @@ class CategoryService {
   }
 
   Future<bool> addCategory({
+    required int propertyId,
     required String name,
     required int capacity,
     String? description,
@@ -28,29 +30,32 @@ class CategoryService {
       {
         "name": name,
         "capacity": capacity,
+        "max_guests": capacity,
+        "max_adults": capacity,
         "description": description ?? '',
       },
       token,
-      "/api/v1/categories",
+      "/api/v1/properties/$propertyId/room_types",
     );
   }
 
   Future<bool> editCategory(
-      String categoryId, Map<String, dynamic> updatedData) async {
+      int propertyId, String categoryId, Map<String, dynamic> updatedData) async {
     try {
       final token = await _auth.currentUser?.getIdToken();
       return await sendPutRequest(
-          updatedData, token, "/api/v1/categories/$categoryId");
+          updatedData, token, "/api/v1/properties/$propertyId/room_types/$categoryId");
     } catch (e) {
       return false;
     }
   }
 
-  Future<bool> deleteCategory(String categoryId) async {
+  Future<bool> deleteCategory(int propertyId, String categoryId) async {
     try {
       final token = await _auth.currentUser?.getIdToken();
       final dynamic response =
-          await sendDeleteRequest(token, "/api/v1/categories/$categoryId");
+          await sendDeleteRequest(
+              token, "/api/v1/properties/$propertyId/room_types/$categoryId");
 
       if (response == null) return false;
       if (response is bool) return response;

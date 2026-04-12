@@ -25,8 +25,7 @@ class RatePlanService {
     try {
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        // UPDATED PATH:
-        "/api/v1/properties/$propertyId/categories/$categoryId/rate_plans",
+        "/api/v1/properties/$propertyId/room_types/$categoryId/rate_plans",
       );
       return (query['data'] as List)
           .map((e) => RatePlan.fromResMap(e))
@@ -42,6 +41,7 @@ class RatePlanService {
       "base_rate": ratePlan.baseRate,
       "property_id": ratePlan.propertyId,
       "category_id": ratePlan.categoryId,
+      "room_type_id": ratePlan.categoryId,
       "start_date": ratePlan.startDate.toIso8601String(),
       "end_date": ratePlan.endDate.toIso8601String(),
       "weekend_rate": ratePlan.weekendRate,
@@ -98,6 +98,7 @@ class RatePlanService {
       "base_rate": ratePlan.baseRate,
       "property_id": ratePlan.propertyId,
       "category_id": ratePlan.categoryId,
+      "room_type_id": ratePlan.categoryId,
       "start_date": ratePlan.startDate.toIso8601String(),
       "end_date": ratePlan.endDate.toIso8601String(),
       "weekend_rate": ratePlan.weekendRate,

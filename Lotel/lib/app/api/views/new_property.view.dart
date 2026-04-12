@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/api/view_models/lists/property_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/amenity_list.vm.dart';
+import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,6 +21,13 @@ class _NewPropertyViewState extends ConsumerState<NewPropertyView> {
   final TextEditingController _address = TextEditingController();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _email = TextEditingController();
+  final TextEditingController _timezone = TextEditingController(text: 'UTC');
+  final TextEditingController _currency = TextEditingController(text: 'USD');
+  final TextEditingController _taxRate = TextEditingController(text: '0');
+  final TextEditingController _checkInTime =
+      TextEditingController(text: '15:00');
+  final TextEditingController _checkOutTime =
+      TextEditingController(text: '11:00');
 
   // Step 2: Floors
   final List<int> _floors = [];
@@ -34,6 +42,11 @@ class _NewPropertyViewState extends ConsumerState<NewPropertyView> {
     _address.dispose();
     _phone.dispose();
     _email.dispose();
+    _timezone.dispose();
+    _currency.dispose();
+    _taxRate.dispose();
+    _checkInTime.dispose();
+    _checkOutTime.dispose();
     _floorController.dispose();
     super.dispose();
   }
@@ -50,21 +63,46 @@ class _NewPropertyViewState extends ConsumerState<NewPropertyView> {
     }
   }
 
+  Future<void> _pickTime(
+      BuildContext context, TextEditingController controller) async {
+    final parts = controller.text.split(':');
+    final initialTime = TimeOfDay(
+      hour: int.tryParse(parts.first) ?? 12,
+      minute: parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
+    );
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+    if (selected != null) {
+      final formatted =
+          '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+      controller.text = formatted;
+    }
+  }
+
   Future<void> _submitWizard() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // NOTE: You will need to update your `addToProperties` method in `PropertyListVM`
-    // to accept these new parameters (phone, email, floors, amenityIds).
-    final success = await ref.read(propertyListVM.notifier).addToProperties(
+    final createdProperty = await ref.read(propertyListVM.notifier).addToProperties(
           name: _name.text,
           address: _address.text,
           phone: _phone.text,
           email: _email.text,
+          timezone: _timezone.text,
+          currency: _currency.text,
+          taxRate: double.tryParse(_taxRate.text) ?? 0,
+          defaultCheckInTime: _checkInTime.text,
+          defaultCheckOutTime: _checkOutTime.text,
           floors: _floors,
           amenityIds: _selectedAmenityIds.map((id) => int.parse(id)).toList(),
         );
 
-    if (success) {
+    if (createdProperty != null) {
+      final propertyId = int.tryParse(createdProperty.id);
+      if (propertyId != null) {
+        ref.read(selectedPropertyVM.notifier).updateProperty(propertyId);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Property added successfully.')),
@@ -150,6 +188,80 @@ class _NewPropertyViewState extends ConsumerState<NewPropertyView> {
                             decoration: const InputDecoration(
                                 labelText: "Contact Email"),
                             keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return null;
+                              }
+                              return value.contains('@')
+                                  ? null
+                                  : 'Use a valid email address';
+                            },
+                          ),
+                          TextFormField(
+                            controller: _timezone,
+                            decoration: const InputDecoration(
+                                labelText: "Timezone *"),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Required'
+                                : null,
+                          ),
+                          TextFormField(
+                            controller: _currency,
+                            decoration: const InputDecoration(
+                                labelText: "Currency *"),
+                            textCapitalization: TextCapitalization.characters,
+                            validator: (value) {
+                              final trimmed = value?.trim() ?? '';
+                              if (trimmed.length != 3) {
+                                return 'Use a 3-letter code';
+                              }
+                              return null;
+                            },
+                          ),
+                          TextFormField(
+                            controller: _taxRate,
+                            decoration:
+                                const InputDecoration(labelText: "Tax Rate %"),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            validator: (value) {
+                              final parsed = double.tryParse(value ?? '');
+                              if (parsed == null || parsed < 0 || parsed > 100) {
+                                return 'Use a value between 0 and 100';
+                              }
+                              return null;
+                            },
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _checkInTime,
+                                  readOnly: true,
+                                  decoration: const InputDecoration(
+                                      labelText: "Default Check-In *"),
+                                  onTap: () => _pickTime(context, _checkInTime),
+                                  validator: (value) =>
+                                      value == null || value.isEmpty
+                                          ? 'Required'
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _checkOutTime,
+                                  readOnly: true,
+                                  decoration: const InputDecoration(
+                                      labelText: "Default Check-Out *"),
+                                  onTap: () => _pickTime(context, _checkOutTime),
+                                  validator: (value) =>
+                                      value == null || value.isEmpty
+                                          ? 'Required'
+                                          : null,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 10),
                           const Align(

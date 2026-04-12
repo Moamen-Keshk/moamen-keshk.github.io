@@ -6,6 +6,7 @@ class ChannelRoomMap {
   final String
       channelCode; // FIX: Matched to Flask's 'channel_code' (e.g., 'booking_com')
   final String internalRoomId; // FIX: Matched to Flask's 'internal_room_id'
+  final String? internalRoomTypeId;
   final String?
       internalRoomName; // Optional: Kept for UI convenience if you join local data
   final String externalRoomId; // FIX: Matched to Flask's 'external_room_id'
@@ -18,6 +19,7 @@ class ChannelRoomMap {
     required this.propertyId,
     required this.channelCode,
     required this.internalRoomId,
+    this.internalRoomTypeId,
     this.internalRoomName,
     required this.externalRoomId,
     this.externalRoomName,
@@ -29,6 +31,7 @@ class ChannelRoomMap {
     int? propertyId,
     String? channelCode,
     String? internalRoomId,
+    String? internalRoomTypeId,
     String? internalRoomName,
     String? externalRoomId,
     String? externalRoomName,
@@ -39,6 +42,7 @@ class ChannelRoomMap {
       propertyId: propertyId ?? this.propertyId,
       channelCode: channelCode ?? this.channelCode,
       internalRoomId: internalRoomId ?? this.internalRoomId,
+      internalRoomTypeId: internalRoomTypeId ?? this.internalRoomTypeId,
       internalRoomName: internalRoomName ?? this.internalRoomName,
       externalRoomId: externalRoomId ?? this.externalRoomId,
       externalRoomName: externalRoomName ?? this.externalRoomName,
@@ -53,6 +57,7 @@ class ChannelRoomMap {
       'property_id': propertyId,
       'channel_code': channelCode,
       'internal_room_id': internalRoomId,
+      'internal_room_type_id': internalRoomTypeId ?? internalRoomId,
       'external_room_id': externalRoomId,
       'external_room_name': externalRoomName,
       'is_active': isActive,
@@ -65,6 +70,7 @@ class ChannelRoomMap {
       propertyId: map['property_id'] ?? 0,
       channelCode: map['channel_code'] ?? '',
       internalRoomId: map['internal_room_id']?.toString() ?? '',
+      internalRoomTypeId: map['internal_room_type_id']?.toString(),
       internalRoomName: map[
           'internal_room_name'], // Often null from backend, populated locally
       externalRoomId: map['external_room_id']?.toString() ?? '',
@@ -79,6 +85,7 @@ class ChannelRoomMap {
       propertyId: map['property_id'] ?? 0,
       channelCode: map['channel_code'] ?? '',
       internalRoomId: map['internal_room_id']?.toString() ?? '',
+      internalRoomTypeId: map['internal_room_type_id']?.toString(),
       internalRoomName: map['internal_room_name'],
       externalRoomId: map['external_room_id']?.toString() ?? '',
       externalRoomName: map['external_room_name'],
@@ -93,7 +100,7 @@ class ChannelRoomMap {
 
   @override
   String toString() {
-    return 'ChannelRoomMap(id: $id, propertyId: $propertyId, channelCode: $channelCode, internalRoomId: $internalRoomId, internalRoomName: $internalRoomName, externalRoomId: $externalRoomId, externalRoomName: $externalRoomName, isActive: $isActive)';
+    return 'ChannelRoomMap(id: $id, propertyId: $propertyId, channelCode: $channelCode, internalRoomId: $internalRoomId, internalRoomTypeId: $internalRoomTypeId, internalRoomName: $internalRoomName, externalRoomId: $externalRoomId, externalRoomName: $externalRoomName, isActive: $isActive)';
   }
 
   @override
@@ -105,6 +112,7 @@ class ChannelRoomMap {
         other.propertyId == propertyId &&
         other.channelCode == channelCode &&
         other.internalRoomId == internalRoomId &&
+        other.internalRoomTypeId == internalRoomTypeId &&
         other.internalRoomName == internalRoomName &&
         other.externalRoomId == externalRoomId &&
         other.externalRoomName == externalRoomName &&
@@ -117,6 +125,7 @@ class ChannelRoomMap {
         propertyId.hashCode ^
         channelCode.hashCode ^
         internalRoomId.hashCode ^
+        internalRoomTypeId.hashCode ^
         internalRoomName.hashCode ^
         externalRoomId.hashCode ^
         externalRoomName.hashCode ^

@@ -1,5 +1,6 @@
 import 'package:lotel_pms/app/req/request.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lotel_pms/infrastructure/api/model/housekeeping.model.dart';
 import 'package:lotel_pms/infrastructure/api/model/room.model.dart';
 import 'package:flutter/foundation.dart'; // Added for debugPrint
 
@@ -47,6 +48,7 @@ class RoomService {
       "room_number": roomNumber,
       "property_id": propertyId,
       "category_id": categoryId,
+      "room_type_id": categoryId,
       "floor_id": floorId
     }, token, "/api/v1/properties/$propertyId/rooms");
   }
@@ -94,6 +96,18 @@ class RoomService {
       debugPrint("Error updating cleaning status: $e");
       return false;
     }
+  }
+
+  Future<List<HousekeepingRoom>> getTodayHousekeeping(int propertyId) async {
+    final result = await getHousekeepingByDate(propertyId, DateTime.now());
+    if (result == null || result['type'] != 'today' || result['data'] is! List) {
+      debugPrint("Failed to fetch today's housekeeping data. Returning empty list.");
+      return [];
+    }
+
+    return (result['data'] as List)
+        .map((entry) => HousekeepingRoom.fromMap(entry as Map<String, dynamic>))
+        .toList();
   }
 
   // Fetch Past Logs or Future Forecasts

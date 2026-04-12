@@ -15,6 +15,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 Map<int, int> roomsCategoryMapping = {};
 Map<int, String> roomMapping = {};
 Map<int, String> categoryMapping = {};
+const Map<int, String> propertyStatusOptions = {
+  1: 'Open',
+  2: 'Pre-Open',
+  3: 'Hold',
+  4: 'Closed',
+  5: 'Maintain',
+};
 
 class EditPropertyView extends ConsumerStatefulWidget {
   const EditPropertyView({super.key});
@@ -118,6 +125,40 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                       Text(property.email.isNotEmpty
                           ? property.email
                           : 'No email set'),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.public, size: 20, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${property.timezone} • ${property.currency} • ${property.taxRate.toStringAsFixed(2)}% tax',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.schedule, size: 20, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Check-in ${property.defaultCheckInTime} • Check-out ${property.defaultCheckOutTime}',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.flag, size: 20, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text('Status: ${property.status}'),
+                      ),
                     ],
                   ),
                 ],
@@ -339,75 +380,172 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
     final addressController = TextEditingController(text: property.address);
     final phoneController = TextEditingController(text: property.phoneNumber);
     final emailController = TextEditingController(text: property.email);
+    final timezoneController = TextEditingController(text: property.timezone);
+    final currencyController = TextEditingController(text: property.currency);
+    final taxRateController =
+        TextEditingController(text: property.taxRate.toStringAsFixed(2));
+    final checkInController =
+        TextEditingController(text: property.defaultCheckInTime);
+    final checkOutController =
+        TextEditingController(text: property.defaultCheckOutTime);
+    int selectedStatusId = property.statusId ?? 1;
 
     return showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Property Details"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: "Property Name"),
+      builder: (dialogContext) {
+        Future<void> pickTime(TextEditingController controller) async {
+          final parts = controller.text.split(':');
+          final initialTime = TimeOfDay(
+            hour: int.tryParse(parts.first) ?? 12,
+            minute: parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
+          );
+          final selected = await showTimePicker(
+            context: dialogContext,
+            initialTime: initialTime,
+          );
+          if (selected != null) {
+            controller.text =
+                '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Edit Property Details"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration:
+                          const InputDecoration(labelText: "Property Name"),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: addressController,
+                      decoration: const InputDecoration(labelText: "Address"),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: phoneController,
+                      decoration:
+                          const InputDecoration(labelText: "Phone Number"),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: "Email"),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: timezoneController,
+                      decoration: const InputDecoration(labelText: "Timezone"),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: currencyController,
+                      decoration: const InputDecoration(labelText: "Currency"),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: taxRateController,
+                      decoration: const InputDecoration(labelText: "Tax Rate %"),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<int>(
+                      initialValue: selectedStatusId,
+                      decoration: const InputDecoration(labelText: "Status"),
+                      items: propertyStatusOptions.entries
+                          .map((entry) => DropdownMenuItem<int>(
+                                value: entry.key,
+                                child: Text(entry.value),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedStatusId = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: checkInController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                                labelText: "Default Check-In"),
+                            onTap: () => pickTime(checkInController),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: checkOutController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                                labelText: "Default Check-Out"),
+                            onTap: () => pickTime(checkOutController),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(labelText: "Address"),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text("Cancel"),
                 ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(labelText: "Phone Number"),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(labelText: "Email"),
-                  keyboardType: TextInputType.emailAddress,
+                ElevatedButton(
+                  onPressed: () async {
+                    final updatedData = {
+                      'name': nameController.text,
+                      'address': addressController.text,
+                      'phone_number': phoneController.text,
+                      'email': emailController.text,
+                      'timezone': timezoneController.text,
+                      'currency': currencyController.text,
+                      'tax_rate':
+                          double.tryParse(taxRateController.text) ?? 0.0,
+                      'status_id': selectedStatusId,
+                      'default_check_in_time': checkInController.text,
+                      'default_check_out_time': checkOutController.text,
+                    };
+
+                    final propertyId = int.tryParse(property.id);
+                    if (propertyId == null) return;
+
+                    final success = await ref
+                        .read(propertyListVM.notifier)
+                        .editProperty(propertyId, updatedData);
+
+                    if (!context.mounted) return;
+
+                    Navigator.of(dialogContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success
+                            ? 'Property updated successfully.'
+                            : 'Failed to save property changes.'),
+                      ),
+                    );
+                  },
+                  child: const Text("Save"),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final updatedData = {
-                  'name': nameController.text,
-                  'address': addressController.text,
-                  'phone_number': phoneController.text,
-                  'email': emailController.text,
-                };
-
-                final propertyId = int.tryParse(property.id);
-                if (propertyId == null) return;
-
-                final success = await ref
-                    .read(propertyListVM.notifier)
-                    .editProperty(propertyId, updatedData);
-
-                if (!context.mounted) return;
-
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success
-                        ? 'Property updated successfully.'
-                        : 'Failed to save property changes.'),
-                  ),
-                );
-              },
-              child: const Text("Save"),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -480,7 +618,7 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                 backgroundColor: Colors.red),
           );
           // 1. Reset the global selected property
-          ref.read(selectedPropertyVM.notifier).updateProperty(0);
+          ref.read(selectedPropertyVM.notifier).clear();
           // 2. Return to dashboard
           ref.read(routerProvider).replaceAllWith('dashboard');
         } else {

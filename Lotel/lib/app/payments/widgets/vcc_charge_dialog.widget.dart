@@ -64,6 +64,15 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
 
   Future<void> _processCharge() async {
     if (!_formKey.currentState!.validate()) return;
+    if ((_vccData?['can_charge_now'] ?? true) != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This OTA virtual card is not active yet.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isProcessing = true);
 
@@ -77,7 +86,9 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
       bookingId: bookingId,
       amount: double.parse(_amountController.text),
       paymentMethod: 'ota_vcc',
-      source: 'manual',
+      source: 'booking_com_vcc',
+      isVcc: true,
+      externalChannel: 'booking_com',
       reference: _referenceController.text.trim().isEmpty
           ? 'OTA VCC'
           : _referenceController.text.trim(),
@@ -137,6 +148,17 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
                         ),
                       ],
                     ),
+                    if (_vccData?['activation_date'] != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Activation: ${_vccData?['activation_date']}',
+                        style: TextStyle(
+                          color: (_vccData?['can_charge_now'] ?? true)
+                              ? Colors.black54
+                              : Colors.red,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _amountController,
@@ -180,7 +202,12 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
         ),
         ElevatedButton.icon(
           onPressed:
-              (_isProcessing || _isFetchingVCC || _vccData == null) ? null : _processCharge,
+              (_isProcessing ||
+                      _isFetchingVCC ||
+                      _vccData == null ||
+                      (_vccData?['can_charge_now'] ?? true) != true)
+                  ? null
+                  : _processCharge,
           icon: _isProcessing
               ? const SizedBox(
                   width: 16,

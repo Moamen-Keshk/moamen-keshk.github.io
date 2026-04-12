@@ -436,6 +436,285 @@ class _BookingViewState extends ConsumerState<BookingView> {
     }
   }
 
+  Future<void> _showRecordPaymentDialog(BuildContext context, WidgetRef ref,
+      int bookingId, Booking booking) async {
+    final TextEditingController amountController =
+        TextEditingController(text: booking.balanceDue.toStringAsFixed(2));
+    final TextEditingController referenceController = TextEditingController();
+    final TextEditingController notesController = TextEditingController();
+    String selectedMethod = 'cash';
+    String paymentFlow = 'settled';
+    String externalChannel = 'booking_com';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Record Payment'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Outstanding Balance: £${booking.balanceDue.toStringAsFixed(2)}'),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: paymentFlow,
+                  decoration: const InputDecoration(
+                    labelText: 'Entry Type',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'settled', child: Text('Settled Payment')),
+                    DropdownMenuItem(
+                        value: 'authorized', child: Text('Card Authorization')),
+                    DropdownMenuItem(
+                        value: 'ota_collected', child: Text('OTA Collected')),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      paymentFlow = value;
+                      if (paymentFlow == 'authorized') {
+                        selectedMethod = 'card';
+                      } else if (paymentFlow == 'ota_collected') {
+                        selectedMethod = 'ota_vcc';
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedMethod,
+                  decoration: const InputDecoration(
+                    labelText: 'Payment Method',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                    DropdownMenuItem(value: 'card', child: Text('Card')),
+                    DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
+                    DropdownMenuItem(value: 'ota_vcc', child: Text('OTA VCC')),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      selectedMethod = value;
+                    });
+                  },
+                ),
+                if (paymentFlow == 'ota_collected') ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: externalChannel,
+                    decoration: const InputDecoration(
+                      labelText: 'Channel',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'booking_com', child: Text('Booking.com')),
+                      DropdownMenuItem(
+                          value: 'expedia', child: Text('Expedia')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          externalChannel = value;
+                        });
+                      }
+                    },
+                  ),
+                ],
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '£ ',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => amountController.text =
+                          booking.balanceDue.toStringAsFixed(2),
+                      child: const Text('Full Balance'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => amountController.text =
+                          (booking.balanceDue / 2).toStringAsFixed(2),
+                      child: const Text('50%'),
+                    ),
+                  ],
+                ),
+                if (paymentFlow == 'authorized')
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Authorization records a hold only and does not reduce the invoice balance.',
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: referenceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reference',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: notesController,
+                  minLines: 2,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel')),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(paymentFlow == 'authorized'
+                      ? 'Save Authorization'
+                      : 'Save Entry')),
+            ],
+          );
+        });
+      },
+    );
+
+    if (confirm == true && context.mounted) {
+      final double? amount = double.tryParse(amountController.text);
+      if (amount != null) {
+        final status = paymentFlow == 'authorized' ? 'authorized' : 'succeeded';
+        final source = paymentFlow == 'ota_collected'
+            ? 'ota_collect'
+            : paymentFlow == 'authorized'
+                ? 'front_desk_authorization'
+                : 'front_desk';
+        final success = await _paymentVM.recordManualPayment(
+          context,
+          propertyId: booking.propertyID,
+          bookingId: bookingId,
+          amount: amount,
+          paymentMethod: selectedMethod,
+          source: source,
+          status: status,
+          isVcc: selectedMethod == 'ota_vcc',
+          externalChannel:
+              paymentFlow == 'ota_collected' ? externalChannel : null,
+          reference: referenceController.text.trim(),
+          notes: notesController.text.trim(),
+        );
+        if (success && context.mounted) {
+          ref.invalidate(bookingDetailsProvider);
+          ref.invalidate(bookingInvoiceProvider);
+          ref.invalidate(bookingPaymentsProvider);
+          ref.invalidate(bookingListByDateVM);
+          ref.invalidate(bookingListVM);
+        }
+      }
+    }
+  }
+
+  Future<void> _showRefundPaymentDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+    PaymentTransaction payment,
+  ) async {
+    final amountController =
+        TextEditingController(text: payment.amount.toStringAsFixed(2));
+    final reasonController = TextEditingController();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Record Refund'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Refunding ${payment.paymentMethod.replaceAll('_', ' ').toUpperCase()}',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Refund Amount',
+                prefixText: '£ ',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              minLines: 2,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Reason',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Save Refund'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    final amount = double.tryParse(amountController.text);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid refund amount.')),
+      );
+      return;
+    }
+
+    final success = await _paymentVM.refundPayment(
+      context,
+      propertyId: booking.propertyID,
+      bookingId: int.parse(booking.id),
+      transactionId: payment.id,
+      amount: amount,
+      reason: reasonController.text.trim().isEmpty
+          ? null
+          : reasonController.text.trim(),
+    );
+
+    if (success && context.mounted) {
+      ref.invalidate(bookingDetailsProvider);
+      ref.invalidate(bookingInvoiceProvider);
+      ref.invalidate(bookingPaymentsProvider);
+      ref.invalidate(bookingListByDateVM);
+      ref.invalidate(bookingListVM);
+    }
+  }
+
   Future<void> _showStripePaymentDialog(
     BuildContext context,
     WidgetRef ref,
@@ -695,7 +974,12 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                   "Payments",
                                   Text('Failed to load payments: $err'),
                                 ),
-                                data: (payments) => _paymentsCard(payments),
+                                data: (payments) => _paymentsCard(
+                                  context,
+                                  ref,
+                                  booking,
+                                  payments,
+                                ),
                               ),
                             ],
                           ),
@@ -738,6 +1022,12 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                     ? null
                                     : () => _showStripePaymentDialog(
                                         context, ref, bookingId, booking),
+                              ),
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.point_of_sale),
+                                label: const Text("Record Payment"),
+                                onPressed: () => _showRecordPaymentDialog(
+                                    context, ref, bookingId, booking),
                               ),
                               ElevatedButton.icon(
                                 icon: const Icon(Icons.payments_outlined),
@@ -983,7 +1273,12 @@ class _BookingViewState extends ConsumerState<BookingView> {
     );
   }
 
-  Widget _paymentsCard(List<PaymentTransaction> payments) {
+  Widget _paymentsCard(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+    List<PaymentTransaction> payments,
+  ) {
     final currency = NumberFormat.currency(symbol: '£');
 
     return _infoCard(
@@ -995,35 +1290,62 @@ class _BookingViewState extends ConsumerState<BookingView> {
                 final createdAt = payment.createdAt != null
                     ? DateFormat.yMMMd().add_jm().format(payment.createdAt!)
                     : '-';
+                final canRefund = payment.transactionType == 'payment' &&
+                    const {'succeeded', 'captured', 'settled'}
+                        .contains(payment.status);
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              payment.paymentMethod.replaceAll('_', ' ').toUpperCase(),
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${payment.transactionType.replaceAll('_', ' ').toUpperCase()} • ${payment.paymentMethod.replaceAll('_', ' ').toUpperCase()}',
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  '${payment.status.toUpperCase()} • $createdAt',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                if ((payment.externalChannel ?? '').isNotEmpty)
+                                  Text(
+                                    'Channel: ${payment.externalChannel}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                if ((payment.reference ?? '').isNotEmpty)
+                                  Text(
+                                    'Ref: ${payment.reference}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                              ],
                             ),
-                            Text(
-                              '${payment.status.toUpperCase()} • $createdAt',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            if ((payment.reference ?? '').isNotEmpty)
-                              Text(
-                                'Ref: ${payment.reference}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                          ],
-                        ),
+                          ),
+                          Text(currency.format(payment.amount)),
+                        ],
                       ),
-                      Text(currency.format(payment.amount)),
+                      if (canRefund)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () => _showRefundPaymentDialog(
+                              context,
+                              ref,
+                              booking,
+                              payment,
+                            ),
+                            icon: const Icon(Icons.reply, size: 18),
+                            label: const Text('Refund'),
+                          ),
+                        ),
                     ],
                   ),
                 );

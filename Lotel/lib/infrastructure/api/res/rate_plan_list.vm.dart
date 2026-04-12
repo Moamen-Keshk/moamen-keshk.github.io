@@ -1,0 +1,58 @@
+import 'package:lotel_pms/app/api/view_models/rate_plan.vm.dart';
+import 'package:lotel_pms/infrastructure/api/model/rate_plan.model.dart';
+import 'package:lotel_pms/infrastructure/api/res/rate_plan.service.dart';
+import 'package:lotel_pms/app/global/selected_property.global.dart';
+import 'package:flutter_riverpod/legacy.dart';
+
+class RatePlanListVM extends StateNotifier<List<RatePlanVM>> {
+  final int? propertyId;
+
+  RatePlanListVM(this.propertyId) : super([]) {
+    if (propertyId != null && propertyId != 0) {
+      fetchRatePlans();
+    }
+  }
+
+  Future<void> fetchRatePlans() async {
+    if (propertyId == null) return;
+    final plans = await RatePlanService().getRatePlans(propertyId!);
+    state = plans.map((plan) => RatePlanVM(plan)).toList();
+  }
+
+  Future<List<RatePlan>> getConflictingPlans(RatePlan newPlan) async {
+    final existingPlans =
+        await RatePlanService().getRatePlans(newPlan.propertyId);
+    return existingPlans.where((plan) {
+      if (plan.id == newPlan.id) return false;
+      return plan.categoryId == newPlan.categoryId &&
+          !(newPlan.endDate.isBefore(plan.startDate) ||
+              newPlan.startDate.isAfter(plan.endDate));
+    }).toList();
+  }
+
+  Future<bool> saveRatePlan({
+    required RatePlan ratePlan,
+  }) async {
+    final success = ratePlan.id.isNotEmpty
+        ? await RatePlanService().updateRatePlan(ratePlan)
+        : await RatePlanService().addRatePlan(ratePlan);
+
+    if (success) await fetchRatePlans();
+
+    return success;
+  }
+
+  Future<bool> deleteRatePlan(String ratePlanId) async {
+    if (propertyId == null) return false;
+    final success = await RatePlanService().deleteRatePlan(
+      propertyId!,
+      ratePlanId,
+    );
+    if (success) await fetchRatePlans();
+    return success;
+  }
+}
+
+final ratePlanListVM = StateNotifierProvider<RatePlanListVM, List<RatePlanVM>>(
+  (ref) => RatePlanListVM(ref.watch(selectedPropertyVM)),
+);

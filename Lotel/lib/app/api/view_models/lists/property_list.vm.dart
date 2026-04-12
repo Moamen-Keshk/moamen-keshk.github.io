@@ -15,35 +15,51 @@ class PropertyListVM extends StateNotifier<List<PropertyVM>> {
   }
 
   // 👉 UPDATED: Accepts the new parameters from the New Property Wizard
-  Future<bool> addToProperties({
+  Future<PropertyVM?> addToProperties({
     required String name,
     required String address,
     String? phone,
     String? email,
+    String? timezone,
+    String? currency,
+    double? taxRate,
+    String? defaultCheckInTime,
+    String? defaultCheckOutTime,
     List<int>? floors,
     List<int>? amenityIds,
   }) async {
     // 👉 UPDATED: Uses named parameters to pass data cleanly to the service
-    if (await propertyService.addProperty(
+    final createdProperty = await propertyService.addProperty(
       name: name,
       address: address,
       phone: phone,
       email: email,
+      timezone: timezone,
+      currency: currency,
+      taxRate: taxRate,
+      defaultCheckInTime: defaultCheckInTime,
+      defaultCheckOutTime: defaultCheckOutTime,
       floors: floors,
       amenityIds: amenityIds,
-    )) {
+    );
+    if (createdProperty != null) {
       await fetchProperties();
-      return true;
+      for (final property in state) {
+        if (property.id == createdProperty.id) {
+          return property;
+        }
+      }
+      return PropertyVM(createdProperty);
     }
-    return false;
+    return null;
   }
 
   Future<bool> editProperty(
       int propertyId, Map<String, dynamic> updatedData) async {
     try {
-      final success =
+      final updatedProperty =
           await propertyService.editProperty(propertyId, updatedData);
-      if (success) {
+      if (updatedProperty != null) {
         await fetchProperties();
         return true;
       }

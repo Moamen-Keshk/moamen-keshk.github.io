@@ -84,8 +84,15 @@ class PaymentVM {
     required double amount,
     required String paymentMethod,
     String source = 'manual',
+    String status = 'succeeded',
+    bool isVcc = false,
+    String? externalChannel,
     String? reference,
+    String? processorReference,
+    String? processorStatus,
     String? notes,
+    String? effectiveDate,
+    String? settlementDate,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
@@ -97,8 +104,15 @@ class PaymentVM {
         amount: amount,
         paymentMethod: paymentMethod,
         source: source,
+        status: status,
+        isVcc: isVcc,
+        externalChannel: externalChannel,
         reference: reference,
+        processorReference: processorReference,
+        processorStatus: processorStatus,
         notes: notes,
+        effectiveDate: effectiveDate,
+        settlementDate: settlementDate,
       );
       messenger.showSnackBar(
         const SnackBar(
@@ -115,6 +129,50 @@ class PaymentVM {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Error recording payment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> refundPayment(
+    BuildContext context, {
+    required int propertyId,
+    required int bookingId,
+    required String transactionId,
+    required double amount,
+    String? reason,
+    String? settlementDate,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final container = ProviderScope.containerOf(context, listen: false);
+
+    try {
+      await _paymentService.refundPayment(
+        propertyId: propertyId,
+        bookingId: bookingId,
+        transactionId: transactionId,
+        amount: amount,
+        reason: reason,
+        settlementDate: settlementDate,
+      );
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Refund recorded successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      container.invalidate(bookingDetailsProvider);
+      container.invalidate(bookingListByDateVM);
+      container.invalidate(bookingListVM);
+      return true;
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error recording refund: $e'),
           backgroundColor: Colors.red,
         ),
       );

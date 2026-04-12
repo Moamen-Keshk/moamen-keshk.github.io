@@ -11,8 +11,14 @@ class Property {
   final String address;
   final String phoneNumber;
   final String email;
+  final int? statusId;
   final String status;
   final DateTime publishedDate;
+  final String timezone;
+  final String currency;
+  final double taxRate;
+  final String defaultCheckInTime;
+  final String defaultCheckOutTime;
   final List<Amenity> amenities;
 
   Property({
@@ -21,8 +27,14 @@ class Property {
     required this.address,
     required this.phoneNumber,
     required this.email,
+    this.statusId,
     required this.status,
     required this.publishedDate,
+    required this.timezone,
+    required this.currency,
+    required this.taxRate,
+    required this.defaultCheckInTime,
+    required this.defaultCheckOutTime,
     this.amenities = const [],
   });
 
@@ -32,8 +44,14 @@ class Property {
     String? address,
     String? phoneNumber,
     String? email,
+    int? statusId,
     String? status,
     DateTime? publishedDate,
+    String? timezone,
+    String? currency,
+    double? taxRate,
+    String? defaultCheckInTime,
+    String? defaultCheckOutTime,
     List<Amenity>? amenities,
   }) {
     return Property(
@@ -42,8 +60,14 @@ class Property {
       address: address ?? this.address,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
+      statusId: statusId ?? this.statusId,
       status: status ?? this.status,
       publishedDate: publishedDate ?? this.publishedDate,
+      timezone: timezone ?? this.timezone,
+      currency: currency ?? this.currency,
+      taxRate: taxRate ?? this.taxRate,
+      defaultCheckInTime: defaultCheckInTime ?? this.defaultCheckInTime,
+      defaultCheckOutTime: defaultCheckOutTime ?? this.defaultCheckOutTime,
       amenities: amenities ?? this.amenities,
     );
   }
@@ -55,8 +79,14 @@ class Property {
       'address': address,
       'phone_number': phoneNumber,
       'email': email,
+      'status_id': statusId,
       'status': status,
       'published_date': formatter.format(publishedDate),
+      'timezone': timezone,
+      'currency': currency,
+      'tax_rate': taxRate,
+      'default_check_in_time': defaultCheckInTime,
+      'default_check_out_time': defaultCheckOutTime,
       'amenities': amenities.map((x) => x.toMap()).toList(),
     };
   }
@@ -68,12 +98,14 @@ class Property {
       address: map['address'] ?? '',
       phoneNumber: map['phone_number'] ?? '',
       email: map['email'] ?? '',
+      statusId: _parseNullableInt(map['status_id']),
       status: map['status'] ?? '',
-      // Safely parse date, fallback to now if null or empty
-      publishedDate: (map['published_date'] != null &&
-              map['published_date'].toString().isNotEmpty)
-          ? formatter.parse(map['published_date'])
-          : DateTime.now(),
+      publishedDate: _parsePublishedDate(map['published_date']),
+      timezone: map['timezone'] ?? 'UTC',
+      currency: map['currency'] ?? 'USD',
+      taxRate: _parseDouble(map['tax_rate']),
+      defaultCheckInTime: map['default_check_in_time'] ?? '15:00',
+      defaultCheckOutTime: map['default_check_out_time'] ?? '11:00',
       // Safely cast to List before mapping
       amenities: (map['amenities'] != null && map['amenities'] is List)
           ? (map['amenities'] as List)
@@ -90,12 +122,14 @@ class Property {
       address: map['address'] ?? '',
       phoneNumber: map['phone_number'] ?? '',
       email: map['email'] ?? '',
+      statusId: _parseNullableInt(map['status_id']),
       status: map['status'] ?? '',
-      // Safely parse date, fallback to now if null or empty
-      publishedDate: (map['published_date'] != null &&
-              map['published_date'].toString().isNotEmpty)
-          ? formatter.parse(map['published_date'])
-          : DateTime.now(),
+      publishedDate: _parsePublishedDate(map['published_date']),
+      timezone: map['timezone'] ?? 'UTC',
+      currency: map['currency'] ?? 'USD',
+      taxRate: _parseDouble(map['tax_rate']),
+      defaultCheckInTime: map['default_check_in_time'] ?? '15:00',
+      defaultCheckOutTime: map['default_check_out_time'] ?? '11:00',
       // Safely cast to List before mapping
       amenities: (map['amenities'] != null && map['amenities'] is List)
           ? (map['amenities'] as List)
@@ -125,8 +159,14 @@ class Property {
         other.address == address &&
         other.phoneNumber == phoneNumber &&
         other.email == email &&
+        other.statusId == statusId &&
         other.status == status &&
         other.publishedDate == publishedDate &&
+        other.timezone == timezone &&
+        other.currency == currency &&
+        other.taxRate == taxRate &&
+        other.defaultCheckInTime == defaultCheckInTime &&
+        other.defaultCheckOutTime == defaultCheckOutTime &&
         listEquals(other.amenities, amenities);
   }
 
@@ -137,8 +177,48 @@ class Property {
         address.hashCode ^
         phoneNumber.hashCode ^
         email.hashCode ^
+        statusId.hashCode ^
         status.hashCode ^
         publishedDate.hashCode ^
+        timezone.hashCode ^
+        currency.hashCode ^
+        taxRate.hashCode ^
+        defaultCheckInTime.hashCode ^
+        defaultCheckOutTime.hashCode ^
         amenities.hashCode;
+  }
+
+  static DateTime _parsePublishedDate(dynamic value) {
+    if (value == null || value.toString().isEmpty) {
+      return DateTime.now();
+    }
+
+    final raw = value.toString();
+    try {
+      return formatter.parse(raw);
+    } catch (_) {
+      try {
+        return DateFormat('dd-MM-yy').parse(raw);
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+  }
+
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    return value is int ? value : int.tryParse(value.toString());
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value == null) {
+      return 0;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

@@ -41,13 +41,13 @@ class RoomFormRow extends StatelessWidget {
           child: DropdownButtonFormField<String>(
             initialValue: categoryId,
             isExpanded: true,
-            decoration: _smallInput("Category"),
+            decoration: _smallInput("Room Type"),
             style: const TextStyle(fontSize: 13),
             items: categories.map((cat) {
               return DropdownMenuItem(value: cat.id, child: Text(cat.name));
             }).toList(),
             onChanged: (val) => onCategoryChanged(val!),
-            validator: (val) => val == null ? "Select category" : null,
+            validator: (val) => val == null ? "Select room type" : null,
           ),
         ),
         IconButton(
@@ -90,13 +90,13 @@ class CategoryFormRow extends StatelessWidget {
           child: DropdownButtonFormField<String>(
             initialValue: initialValue,
             isExpanded: true,
-            decoration: _smallInput("Category"),
+            decoration: _smallInput("Room Type"),
             style: const TextStyle(fontSize: 13),
             items: categories.map((cat) {
               return DropdownMenuItem(value: cat.id, child: Text(cat.name));
             }).toList(),
             onChanged: (val) => onCategoryChanged(val!),
-            validator: (val) => val == null ? "Select category" : null,
+            validator: (val) => val == null ? "Select room type" : null,
           ),
         )
       ]),
@@ -153,13 +153,13 @@ class NewRoomRow extends StatelessWidget {
           child: DropdownButtonFormField<String>(
             initialValue: selectedValue,
             isExpanded: true,
-            decoration: _smallInput("Category"),
+            decoration: _smallInput("Room Type"),
             style: const TextStyle(fontSize: 13),
             items: categories.map((cat) {
               return DropdownMenuItem(value: cat.id, child: Text(cat.name));
             }).toList(),
             onChanged: onCategorySelected,
-            validator: (val) => val == null ? "Select category" : null,
+            validator: (val) => val == null ? "Select room type" : null,
           ),
         ),
       ]),

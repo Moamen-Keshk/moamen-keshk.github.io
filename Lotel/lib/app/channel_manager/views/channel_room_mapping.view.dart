@@ -6,7 +6,7 @@ import 'package:lotel_pms/app/channel_manager/models/external_room.dart';
 import 'package:lotel_pms/app/channel_manager/view_models/channel_connection_list.vm.dart';
 import 'package:lotel_pms/app/channel_manager/view_models/channel_room_mapping.vm.dart';
 import 'package:lotel_pms/app/channel_manager/view_models/external_room.vm.dart';
-import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
+import 'package:lotel_pms/app/api/view_models/lists/category_list.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 
 // Assuming this is where your ExternalRoomSelector is located!
@@ -49,7 +49,7 @@ class _ChannelRoomMappingViewState
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddMappingModal(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add Mapping'),
+        label: const Text('Add Room Type'),
       ),
     );
   }
@@ -57,6 +57,9 @@ class _ChannelRoomMappingViewState
   // Extracted the list rendering logic to keep the build method clean
   Widget _buildList(BuildContext context, WidgetRef ref) {
     final mappingState = ref.watch(channelRoomMappingVMProvider);
+    final roomTypeMap = {
+      for (final roomType in ref.watch(categoryListVM)) roomType.id: roomType.name,
+    };
 
     return mappingState.when(
       data: (mappings) {
@@ -68,7 +71,7 @@ class _ChannelRoomMappingViewState
                 Icon(Icons.link_off, size: 64, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
-                  'No rooms mapped yet.\nTap + to link a local room to the OTA.',
+                  'No room types mapped yet.\nTap + to link a local room type to the OTA.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 16),
                 ),
@@ -93,7 +96,7 @@ class _ChannelRoomMappingViewState
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   title: Text(
-                    'Local Room ID: ${map.internalRoomId} ↔ ${map.externalRoomName ?? "Unknown OTA Room"}',
+                    'Local Room Type: ${roomTypeMap[map.internalRoomTypeId ?? map.internalRoomId] ?? map.internalRoomName ?? map.internalRoomId} ↔ ${map.externalRoomName ?? "Unknown OTA Room"}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text('OTA Room ID: ${map.externalRoomId}'),
@@ -146,8 +149,8 @@ class _ChannelRoomMappingViewState
   // Your exact Form logic, moved securely into the state class!
   void _showAddMappingModal(BuildContext context, WidgetRef ref) {
     final formKey = GlobalKey<FormState>();
-    String? selectedInternalRoomId;
-    String? selectedInternalRoomName;
+    String? selectedInternalRoomTypeId;
+    String? selectedInternalRoomTypeName;
     ExternalRoom? selectedExternalRoom;
 
     showModalBottomSheet(
@@ -162,7 +165,7 @@ class _ChannelRoomMappingViewState
             return Consumer(
               builder: (context, ref, _) {
                 final propertyId = ref.watch(selectedPropertyVM) ?? 0;
-                final localRooms = ref.watch(roomListVM);
+                final localRoomTypes = ref.watch(categoryListVM);
                 final channelConnectionsAsync =
                     ref.watch(channelConnectionListVMProvider);
                 final parsedConnectionId = int.tryParse(widget.connectionId);
@@ -181,41 +184,40 @@ class _ChannelRoomMappingViewState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Add Room Mapping',
+                          'Add Room Type Mapping',
                           style: TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          initialValue: selectedInternalRoomId,
+                          initialValue: selectedInternalRoomTypeId,
                           decoration: const InputDecoration(
-                            labelText: 'Select Local Room',
+                            labelText: 'Select Local Room Type',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.meeting_room_outlined),
+                            prefixIcon: Icon(Icons.hotel_outlined),
                           ),
-                          items: localRooms.map((room) {
+                          items: localRoomTypes.map((roomType) {
                             return DropdownMenuItem<String>(
-                              value: room.id,
-                              child: Text('Room ${room.roomNumber}'),
+                              value: roomType.id,
+                              child: Text(roomType.name),
                             );
                           }).toList(),
                           onChanged: (value) {
-                            dynamic matchedRoom;
-                            for (final room in localRooms) {
-                              if (room.id == value) {
-                                matchedRoom = room;
+                            dynamic matchedRoomType;
+                            for (final roomType in localRoomTypes) {
+                              if (roomType.id == value) {
+                                matchedRoomType = roomType;
                                 break;
                               }
                             }
                             setModalState(() {
-                              selectedInternalRoomId = value;
-                              selectedInternalRoomName = matchedRoom == null
-                                  ? null
-                                  : 'Room ${matchedRoom.roomNumber}';
+                              selectedInternalRoomTypeId = value;
+                              selectedInternalRoomTypeName =
+                                  matchedRoomType?.name;
                             });
                           },
                           validator: (value) => value == null || value.isEmpty
-                              ? 'Please select a local room'
+                              ? 'Please select a local room type'
                               : null,
                         ),
                         const SizedBox(height: 16),
@@ -291,9 +293,11 @@ class _ChannelRoomMappingViewState
                                             propertyId: propertyId,
                                             channelCode: channelCode,
                                             internalRoomId:
-                                                selectedInternalRoomId!,
+                                                selectedInternalRoomTypeId!,
+                                            internalRoomTypeId:
+                                                selectedInternalRoomTypeId!,
                                             internalRoomName:
-                                                selectedInternalRoomName,
+                                                selectedInternalRoomTypeName,
                                             externalRoomId:
                                                 selectedExternalRoom!.id,
                                             externalRoomName:
@@ -309,7 +313,7 @@ class _ChannelRoomMappingViewState
                                           .showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              'Room mapping added successfully'),
+                                              'Room type mapping added successfully'),
                                         ),
                                       );
                                     } else {
@@ -317,7 +321,7 @@ class _ChannelRoomMappingViewState
                                           .showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              'Failed to add room mapping'),
+                                              'Failed to add room type mapping'),
                                           backgroundColor: Colors.red,
                                         ),
                                       );
