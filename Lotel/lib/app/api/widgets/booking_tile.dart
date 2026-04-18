@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/calendar_header.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
@@ -32,7 +34,63 @@ class _BookingTileState extends ConsumerState<BookingTile> {
     final selectedId = ref.watch(selectedBookingIdProvider);
     final canManageBookings =
         hasPmsPermission(ref, PmsPermission.manageBookings);
+    final isCompact = context.showCompactLayout;
     _isSelected = selectedId == int.parse(widget.booking.booking.id);
+
+    final tile = canManageBookings
+        ? Draggable<BookingVM>(
+            data: widget.booking,
+            feedback: _buildTile(
+              context,
+              color: Colors.blue[300]!,
+              opacity: 1.0,
+            ),
+            childWhenDragging: _buildTile(
+              context,
+              color: Colors.grey[300]!,
+              opacity: 0.5,
+            ),
+            child: _buildTile(
+              context,
+              color: _isSelected
+                  ? Colors.indigo[400]!
+                  : widget.booking.booking.statusID == 2
+                      ? Colors.brown[200]!
+                      : widget.booking.booking.statusID == 1
+                          ? Colors.blue[300]!
+                          : widget.booking.paymentStatusID == 3
+                              ? Colors.red[300]!
+                              : Colors.blue[300]!,
+              opacity: isCompact ? 1.0 : (_isHovered ? 0.85 : 1.0),
+            ),
+          )
+        : _buildTile(
+            context,
+            color: _isSelected
+                ? Colors.indigo[400]!
+                : widget.booking.booking.statusID == 2
+                    ? Colors.brown[200]!
+                    : widget.booking.booking.statusID == 1
+                        ? Colors.blue[300]!
+                        : widget.booking.paymentStatusID == 3
+                            ? Colors.red[300]!
+                            : Colors.blue[300]!,
+            opacity: isCompact ? 1.0 : (_isHovered ? 0.85 : 1.0),
+          );
+
+    final interactiveTile = isCompact
+        ? tile
+        : MouseRegion(
+            onEnter: (_) => setState(() => _isHovered = true),
+            onExit: (_) => setState(() => _isHovered = false),
+            child: Tooltip(
+              message: _generateRatesTooltip(widget.booking),
+              padding: const EdgeInsets.all(8),
+              preferBelow: false,
+              verticalOffset: 40,
+              child: tile,
+            ),
+          );
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -47,61 +105,13 @@ class _BookingTileState extends ConsumerState<BookingTile> {
             int.parse(widget.booking.booking.id);
         ref.read(routerProvider).push('booking');
       },
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: Tooltip(
-          message: _generateRatesTooltip(widget.booking),
-          padding: const EdgeInsets.all(8),
-          preferBelow: false,
-          verticalOffset: 40,
-          child: canManageBookings
-              ? Draggable<BookingVM>(
-                  data: widget.booking,
-                  feedback: _buildTile(
-                    context,
-                    color: Colors.blue[300]!,
-                    opacity: 1.0,
-                  ),
-                  childWhenDragging: _buildTile(
-                    context,
-                    color: Colors.grey[300]!,
-                    opacity: 0.5,
-                  ),
-                  child: _buildTile(
-                    context,
-                    color: _isSelected
-                        ? Colors.indigo[400]!
-                        : widget.booking.booking.statusID == 2
-                            ? Colors.brown[200]!
-                            : widget.booking.booking.statusID == 1
-                                ? Colors.blue[300]!
-                                : widget.booking.paymentStatusID == 3
-                                    ? Colors.red[300]!
-                                    : Colors.blue[300]!,
-                    opacity: _isHovered ? 0.85 : 1.0,
-                  ),
-                )
-              : _buildTile(
-                  context,
-                  color: _isSelected
-                      ? Colors.indigo[400]!
-                      : widget.booking.booking.statusID == 2
-                          ? Colors.brown[200]!
-                          : widget.booking.booking.statusID == 1
-                              ? Colors.blue[300]!
-                              : widget.booking.paymentStatusID == 3
-                                  ? Colors.red[300]!
-                                  : Colors.blue[300]!,
-                  opacity: _isHovered ? 0.85 : 1.0,
-                ),
-        ),
-      ),
+      child: interactiveTile,
     );
   }
 
   Widget _buildTile(BuildContext context,
       {required Color color, double opacity = 1.0}) {
+    final isCompact = context.showCompactLayout;
     // Check if there is a special request
     final hasSpecialRequest = widget.booking.booking.specialRequest != null &&
         widget.booking.booking.specialRequest!.trim().isNotEmpty;
@@ -109,11 +119,14 @@ class _BookingTileState extends ConsumerState<BookingTile> {
     return Opacity(
       opacity: opacity,
       child: Container(
-        height: 35,
-        width: 93.9 * widget.tabSize,
+        height: isCompact ? 36 : 35,
+        width: (isCompact
+                ? CalendarHeader.compactDayColumnWidth
+                : CalendarHeader.regularDayColumnWidth) *
+            widget.tabSize,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(isCompact ? 14 : 18),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -126,7 +139,11 @@ class _BookingTileState extends ConsumerState<BookingTile> {
                     child: Text(
                       "${widget.booking.firstName} ${widget.booking.lastName}",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isCompact ? 10 : 13,
+                      ),
+                      maxLines: isCompact ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

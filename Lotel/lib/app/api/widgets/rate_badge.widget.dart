@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/room_online_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/room_online.vm.dart';
 import 'package:lotel_pms/app/api/widgets/rate_input.widget.dart';
@@ -53,6 +54,7 @@ class RateBadgeWidget extends ConsumerWidget {
           ? () => _removeRate(context, ref, override)
           : null,
       child: _buildBadge(
+        context,
         price,
         isOverride: isOverride,
         isLoading: hasLoadingPlaceholder,
@@ -81,7 +83,8 @@ class RateBadgeWidget extends ConsumerWidget {
     if (propertyId == null || propertyId == 0) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Select a property before editing rates.')),
+          const SnackBar(
+              content: Text('Select a property before editing rates.')),
         );
       }
       return;
@@ -96,8 +99,9 @@ class RateBadgeWidget extends ConsumerWidget {
       categoryId: categoryId,
     );
 
-    final saved =
-        await ref.read(roomOnlineListVM.notifier).upsertRoomOnline(newRoomOnline);
+    final saved = await ref
+        .read(roomOnlineListVM.notifier)
+        .upsertRoomOnline(newRoomOnline);
     if (!context.mounted) return;
     if (!saved) {
       final error = ref.read(roomOnlineListVM).errorMessage;
@@ -143,12 +147,14 @@ class RateBadgeWidget extends ConsumerWidget {
   }
 
   Widget _buildBadge(
+    BuildContext context,
     double? price, {
     required bool isOverride,
     required bool isLoading,
     required bool hasError,
     required bool canManageRates,
   }) {
+    final isCompact = context.showCompactLayout;
     Widget content;
     if (isLoading) {
       content = const SizedBox(
@@ -161,8 +167,8 @@ class RateBadgeWidget extends ConsumerWidget {
     } else {
       content = Text(
         price == null ? '--' : '\$${price.toStringAsFixed(0)}',
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: isCompact ? 11 : 12,
           color: Colors.black87,
           fontWeight: FontWeight.w500,
         ),
@@ -170,7 +176,7 @@ class RateBadgeWidget extends ConsumerWidget {
     }
 
     return SizedBox(
-      height: 35,
+      height: isCompact ? 42 : 35,
       width: 93.9,
       child: Stack(
         alignment: Alignment.center,
@@ -184,7 +190,8 @@ class RateBadgeWidget extends ConsumerWidget {
                     : (isOverride ? Colors.blueAccent : Colors.transparent),
                 width: 2,
               ),
-              color: canManageRates ? null : Colors.grey.withValues(alpha: 0.06),
+              color:
+                  canManageRates ? null : Colors.grey.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(4),
             ),
           ),

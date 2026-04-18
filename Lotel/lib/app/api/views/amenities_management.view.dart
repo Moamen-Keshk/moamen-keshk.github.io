@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/amenity_list.vm.dart';
 
 class AmenitiesManagementView extends ConsumerStatefulWidget {
@@ -16,22 +17,29 @@ class _AmenitiesManagementViewState
   Widget build(BuildContext context) {
     final amenities = ref.watch(amenityListVM);
     final amenityVM = ref.read(amenityListVM.notifier);
+    final isCompact = context.showCompactLayout;
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 800),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(isCompact ? 16 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
+              Flex(
+                direction: isCompact ? Axis.vertical : Axis.horizontal,
+                crossAxisAlignment: isCompact
+                    ? CrossAxisAlignment.stretch
+                    : CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Manage Amenities',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
+                  SizedBox(
+                      height: isCompact ? 12 : 0, width: isCompact ? 0 : 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('New Amenity'),

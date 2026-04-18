@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/widgets/home_drawer.widget.dart';
 import 'package:lotel_pms/app/api/widgets/home_nav.widget.dart';
 
@@ -8,7 +8,8 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PublicPageScaffold(
+      drawer: const DrawerNav(),
       body: ListView(
         children: const <Widget>[
           TopNav(),
@@ -18,9 +19,6 @@ class AboutPage extends StatelessWidget {
           )
         ],
       ),
-      drawer: MediaQuery.of(context).size.width > ScreenSizes.md
-          ? null
-          : const DrawerNav(),
     );
   }
 }

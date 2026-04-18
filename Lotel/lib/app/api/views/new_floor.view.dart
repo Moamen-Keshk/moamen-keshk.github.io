@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/category_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/floor_list.vm.dart';
@@ -63,126 +64,135 @@ class _NewFloorViewState extends ConsumerState<NewFloorView> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-        width: 500,
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.all(16.0),
-            children: <Widget>[
-              Text(
-                "New Floor",
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 20.0),
-              DropdownMenu<int>(
-                  initialSelection: floorInitialSelection,
-                  requestFocusOnTap: true,
-                  label:
-                      const Text('Floor No.', style: TextStyle(fontSize: 13)),
-                  onSelected: (int? value) {
-                    setState(() {
-                      floorSelectedValue = value;
-                      return;
-                    });
-                  },
-                  dropdownMenuEntries: floorDropdownItems
-                      .map<DropdownMenuEntry<int>>((DropdownData data) {
-                    return DropdownMenuEntry<int>(
-                      value: data.value,
-                      label: data.label,
-                      style: MenuItemButton.styleFrom(),
-                    );
-                  }).toList()),
-              const SizedBox(height: 20.0),
-              DropdownMenu<int>(
-                  initialSelection: roomsInitialSelection,
-                  requestFocusOnTap: true,
-                  label: const Text('No. of Rooms',
-                      style: TextStyle(fontSize: 13)),
-                  onSelected: (int? newValue) {
-                    setState(() {
-                      _updateDropdownCount(newValue!);
-                    });
-                  },
-                  dropdownMenuEntries: _roomsDropdownItems
-                      .map<DropdownMenuEntry<int>>((DropdownData data) {
-                    return DropdownMenuEntry<int>(
-                      value: data.value,
-                      label: data.label,
-                      style: MenuItemButton.styleFrom(),
-                    );
-                  }).toList()),
-              const SizedBox(height: 20.0),
-              ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  shrinkWrap: true,
-                  itemCount: dropdownCount,
-                  itemBuilder: (context, index) {
-                    return SingleChildScrollView(
-                        child: Row(
-                      children: [
-                        Expanded(
-                            child: Padding(
-                                padding: const EdgeInsets.all(3.0),
-                                child: TextFormField(
-                                  decoration: const InputDecoration(
-                                      border: OutlineInputBorder(),
-                                      labelText: 'Room No.',
-                                      labelStyle: TextStyle(fontSize: 13)),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter room number';
-                                    }
-                                    return null;
-                                  },
-                                  onSaved: (value) {
-                                    _roomsNumbers[value!] = value;
-                                  },
-                                ))),
-                        Consumer(builder: (context, ref, child) {
-                          final categories = ref.watch(categoryListVM);
-                          return Expanded(
-                              child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border:
-                                    Border.all(color: Colors.grey, width: 1)),
-                            child: DropdownButton<String>(
-                                value: selectedValues[index],
-                                hint: Text("Select category"),
-                                isExpanded: true,
-                                underline: SizedBox(),
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    selectedValues[index] = newValue;
-                                  });
-                                },
-                                icon: Icon(Icons.arrow_drop_down,
-                                    color: Colors.black),
-                                items: categories.map<DropdownMenuItem<String>>(
-                                    (CategoryVM category) {
-                                  return DropdownMenuItem<String>(
-                                    value: category.id,
-                                    child: Text(category.name),
-                                  );
-                                }).toList()),
-                          ));
-                        })
-                      ],
-                    ));
-                  }),
-              const SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: () => _submitForm(context),
-                child: const Text("Add Floor"),
-              )
-            ],
-          ),
-        ));
+    return ResponsiveFormCard(
+      maxWidth: 560,
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(16.0),
+          children: <Widget>[
+            Text(
+              "New Floor",
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 20.0),
+            DropdownMenu<int>(
+              initialSelection: floorInitialSelection,
+              requestFocusOnTap: true,
+              width: double.infinity,
+              label: const Text('Floor No.', style: TextStyle(fontSize: 13)),
+              onSelected: (int? value) {
+                setState(() {
+                  floorSelectedValue = value;
+                });
+              },
+              dropdownMenuEntries: floorDropdownItems
+                  .map<DropdownMenuEntry<int>>((DropdownData data) {
+                return DropdownMenuEntry<int>(
+                  value: data.value,
+                  label: data.label,
+                  style: MenuItemButton.styleFrom(),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20.0),
+            DropdownMenu<int>(
+              initialSelection: roomsInitialSelection,
+              requestFocusOnTap: true,
+              width: double.infinity,
+              label: const Text('No. of Rooms', style: TextStyle(fontSize: 13)),
+              onSelected: (int? newValue) {
+                setState(() {
+                  _updateDropdownCount(newValue!);
+                });
+              },
+              dropdownMenuEntries: _roomsDropdownItems
+                  .map<DropdownMenuEntry<int>>((DropdownData data) {
+                return DropdownMenuEntry<int>(
+                  value: data.value,
+                  label: data.label,
+                  style: MenuItemButton.styleFrom(),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20.0),
+            ListView.builder(
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: dropdownCount,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ResponsiveFormRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(3.0),
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Room No.',
+                            labelStyle: TextStyle(fontSize: 13),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter room number';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            _roomsNumbers[value!] = value;
+                          },
+                        ),
+                      ),
+                      Consumer(builder: (context, ref, child) {
+                        final categories = ref.watch(categoryListVM);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          child: DropdownButton<String>(
+                            value: selectedValues[index],
+                            hint: const Text("Select category"),
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedValues[index] = newValue;
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                            items: categories.map<DropdownMenuItem<String>>(
+                                (CategoryVM category) {
+                              return DropdownMenuItem<String>(
+                                value: category.id,
+                                child: Text(category.name),
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20.0),
+            ElevatedButton(
+              onPressed: () => _submitForm(context),
+              child: const Text("Add Floor"),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   void _submitForm(BuildContext context) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 
 import 'package:lotel_pms/app/channel_manager/models/channel_room_map.dart';
 import 'package:lotel_pms/app/channel_manager/models/external_room.dart';
@@ -41,6 +42,7 @@ class _ChannelRoomMappingViewState
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = context.showCompactLayout;
     // We use a nested Scaffold with a transparent background to natively support
     // the FloatingActionButton without needing a parent Scaffold!
     return Scaffold(
@@ -49,7 +51,7 @@ class _ChannelRoomMappingViewState
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddMappingModal(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add Room Type'),
+        label: Text(isCompact ? 'Add' : 'Add Room Type'),
       ),
     );
   }
@@ -57,8 +59,10 @@ class _ChannelRoomMappingViewState
   // Extracted the list rendering logic to keep the build method clean
   Widget _buildList(BuildContext context, WidgetRef ref) {
     final mappingState = ref.watch(channelRoomMappingVMProvider);
+    final isCompact = context.showCompactLayout;
     final roomTypeMap = {
-      for (final roomType in ref.watch(categoryListVM)) roomType.id: roomType.name,
+      for (final roomType in ref.watch(categoryListVM))
+        roomType.id: roomType.name,
     };
 
     return mappingState.when(
@@ -88,38 +92,89 @@ class _ChannelRoomMappingViewState
             itemCount: mappings.length,
             itemBuilder: (context, index) {
               final map = mappings[index];
+              final localRoomName =
+                  roomTypeMap[map.internalRoomTypeId ?? map.internalRoomId] ??
+                      map.internalRoomName ??
+                      map.internalRoomId;
 
               return Card(
                 elevation: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  title: Text(
-                    'Local Room Type: ${roomTypeMap[map.internalRoomTypeId ?? map.internalRoomId] ?? map.internalRoomName ?? map.internalRoomId} ↔ ${map.externalRoomName ?? "Unknown OTA Room"}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text('OTA Room ID: ${map.externalRoomId}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    tooltip: 'Remove Mapping',
-                    onPressed: () async {
-                      final success = await ref
-                          .read(channelRoomMappingVMProvider.notifier)
-                          .deleteRoomMapping(map.id.toString());
-
-                      if (!success && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Failed to remove mapping. Please try again.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                margin: EdgeInsets.symmetric(
+                  horizontal: isCompact ? 12 : 16,
+                  vertical: 8,
                 ),
+                child: isCompact
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Local Room Type: $localRoomName',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${map.externalRoomName ?? "Unknown OTA Room"}\nOTA Room ID: ${map.externalRoomId}',
+                            ),
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                icon: const Icon(Icons.delete_outline,
+                                    color: Colors.red),
+                                tooltip: 'Remove Mapping',
+                                onPressed: () async {
+                                  final success = await ref
+                                      .read(
+                                          channelRoomMappingVMProvider.notifier)
+                                      .deleteRoomMapping(map.id.toString());
+
+                                  if (!success && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Failed to remove mapping. Please try again.'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        title: Text(
+                          'Local Room Type: $localRoomName ↔ ${map.externalRoomName ?? "Unknown OTA Room"}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text('OTA Room ID: ${map.externalRoomId}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.red),
+                          tooltip: 'Remove Mapping',
+                          onPressed: () async {
+                            final success = await ref
+                                .read(channelRoomMappingVMProvider.notifier)
+                                .deleteRoomMapping(map.id.toString());
+
+                            if (!success && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Failed to remove mapping. Please try again.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
               );
             },
           ),
@@ -164,6 +219,7 @@ class _ChannelRoomMappingViewState
           builder: (context, setModalState) {
             return Consumer(
               builder: (context, ref, _) {
+                final isCompact = context.showCompactLayout;
                 final propertyId = ref.watch(selectedPropertyVM) ?? 0;
                 final localRoomTypes = ref.watch(categoryListVM);
                 final channelConnectionsAsync =
@@ -173,8 +229,8 @@ class _ChannelRoomMappingViewState
                 return Padding(
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(context).viewInsets.bottom,
-                    left: 16,
-                    right: 16,
+                    left: isCompact ? 16 : 24,
+                    right: isCompact ? 16 : 24,
                     top: 24,
                   ),
                   child: Form(

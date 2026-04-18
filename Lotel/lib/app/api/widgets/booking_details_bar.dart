@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/views/edit_booking.view.dart';
@@ -29,6 +30,7 @@ class BookingDetailsBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final canManageBookings =
         hasPmsPermission(ref, PmsPermission.manageBookings);
+    final isCompact = context.showCompactLayout;
     final selectedId = ref.watch(selectedBookingIdProvider);
     final booking = bookings.firstWhereOrNull(
       (b) => int.parse(b.booking.id) == selectedId,
@@ -36,147 +38,270 @@ class BookingDetailsBar extends ConsumerWidget {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      height: 80,
-      padding: const EdgeInsets.all(4),
+      height: isCompact ? null : 80,
+      padding: EdgeInsets.all(isCompact ? 6 : 8),
       decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isCompact ? 14 : 18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: booking == null
           ? const Center(
               child: Text(
                 'Select a booking to see details.',
-                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.black54,
+                ),
               ),
             )
           : Padding(
-              padding: const EdgeInsets.all(3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${booking.firstName} ${booking.lastName}',
-                          style: const TextStyle(fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              padding: EdgeInsets.all(isCompact ? 2 : 4),
+              child: isCompact
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: _CompactStatusChip(
+                                          icon: Icons.payments_outlined,
+                                          label: paymentStatusMapping[
+                                                  booking.paymentStatusID] ??
+                                              'N/A',
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      _CompactStatusChip(
+                                        icon: Icons.attach_money_outlined,
+                                        label: '${booking.rate}',
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (canManageBookings)
+                              IconButton.filledTonal(
+                                visualDensity: VisualDensity.compact,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEAF2FF),
+                                  foregroundColor: const Color(0xFF2D6CDF),
+                                ),
+                                onPressed: () {
+                                  _showEditBookingDialog(context, booking, ref);
+                                },
+                                icon: const Icon(Icons.edit_outlined, size: 16),
+                              ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        child: _EllipsisTooltipText(
-                          booking.email ?? 'N/A',
-                          style: const TextStyle(fontSize: 13),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _CompactInfoRow(
+                                icon: Icons.email_outlined,
+                                child: _EllipsisTooltipText(
+                                  booking.email ?? 'N/A',
+                                  style: const TextStyle(fontSize: 11.5),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _CompactInfoRow(
+                                icon: Icons.phone_outlined,
+                                child: Text(
+                                  booking.phone ?? 'N/A',
+                                  style: const TextStyle(fontSize: 11.5),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          booking.phone ?? 'N/A',
-                          style: const TextStyle(fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _CompactInfoRow(
+                                icon: Icons.event_outlined,
+                                child: Text(
+                                  _format.format(booking.bookingDate),
+                                  style: const TextStyle(fontSize: 11.5),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _CompactInfoRow(
+                                icon: Icons.info_outline,
+                                child: Text(
+                                  booking.booking.statusID == 2
+                                      ? 'Checked in'
+                                      : booking.booking.statusID == 1
+                                          ? 'Reserved'
+                                          : booking.booking.statusID == 3
+                                              ? 'Checked out'
+                                              : booking.booking.statusID == 4
+                                                  ? 'Cancelled'
+                                                  : 'Unknown',
+                                  style: const TextStyle(fontSize: 11.5),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          '${booking.numberOfNights} nights',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${booking.firstName} ${booking.lastName}',
+                                style: const TextStyle(fontSize: 13),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: _EllipsisTooltipText(
+                                booking.email ?? 'N/A',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                booking.phone ?? 'N/A',
+                                style: const TextStyle(fontSize: 13),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '${booking.numberOfNights} nights',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
+                                style: const TextStyle(fontSize: 13),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 130,
+                              child: Text(
+                                paymentStatusMapping[booking.paymentStatusID] ??
+                                    '',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Category: ${categoryMapping[roomsCategoryMapping[booking.roomID]] ?? 'N/A'}',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'created: ${_format.format(booking.bookingDate)}',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Adults: ${booking.numberOfAdults}',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Children: ${booking.numberOfChildren}',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Price: ${booking.rate}',
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: _EllipsisTooltipText(
+                                'Note: ${booking.note ?? ''}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            if (canManageBookings)
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () {
+                                  _showEditBookingDialog(context, booking, ref);
+                                },
+                              ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
-                          style: const TextStyle(fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 130,
-                        child: Text(
-                          paymentStatusMapping[booking.paymentStatusID] ?? '',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Category: ${categoryMapping[roomsCategoryMapping[booking.roomID]] ?? 'N/A'}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'created: ${_format.format(booking.bookingDate)}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Adults: ${booking.numberOfAdults}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Children: ${booking.numberOfChildren}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Price: ${booking.rate}',
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: _EllipsisTooltipText(
-                          'Note: ${booking.note ?? ''}',
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      if (canManageBookings)
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            _showEditBookingDialog(context, booking, ref);
-                          },
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                      ],
+                    ),
             ),
     );
   }
@@ -191,18 +316,81 @@ class BookingDetailsBar extends ConsumerWidget {
       builder: (context) {
         return AlertDialog(
           title: const Text('Edit Booking'),
-          content: EditBookingForm(
-            booking: booking,
-            onSubmit: (bookingData) {
-              return ref.read(bookingListVM.notifier).editBooking(
-                    int.parse(booking.id),
-                    bookingData,
-                  );
-            },
-            ref: ref,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: context.showCompactLayout ? 320 : 560,
+            ),
+            child: EditBookingForm(
+              booking: booking,
+              onSubmit: (bookingData) {
+                return ref.read(bookingListVM.notifier).editBooking(
+                      int.parse(booking.id),
+                      bookingData,
+                    );
+              },
+              ref: ref,
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _CompactInfoRow extends StatelessWidget {
+  final IconData icon;
+  final Widget child;
+
+  const _CompactInfoRow({
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey[700]),
+        const SizedBox(width: 6),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+class _CompactStatusChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _CompactStatusChip({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF4FF),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF2D6CDF)),
+          const SizedBox(width: 6),
+          Text(
+            label.trim().isEmpty ? 'N/A' : label,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF244B9A),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

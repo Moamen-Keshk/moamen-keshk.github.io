@@ -47,6 +47,16 @@ class AppRouterDelegate extends RouterDelegate<Object>
   Page _page(Widget child, String keyName) =>
       MaterialPage(child: child, key: ValueKey(keyName));
 
+  String? get currentRouteName {
+    final lastPage = _pages.isNotEmpty ? _pages.last : null;
+    final keyValue = (lastPage?.key as ValueKey?)?.value?.toString();
+    if (keyValue == null) return null;
+
+    if (keyValue.startsWith('course_')) return 'course_details';
+    if (keyValue == 'error') return 'error_404';
+    return keyValue;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Navigator(

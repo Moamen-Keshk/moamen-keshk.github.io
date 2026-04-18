@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/calendar_header.dart';
 import 'package:lotel_pms/app/api/view_models/block.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/block_list.vm.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -123,6 +125,7 @@ class _BlockTileState extends ConsumerState<BlockTile> {
 
   Widget _buildTile(BuildContext context,
       {required Color color, double opacity = 1.0, bool showDelete = false}) {
+    final isCompact = context.showCompactLayout;
     final note = widget.block.note?.trim();
     final hasNote = note != null && note.isNotEmpty;
 
@@ -140,29 +143,35 @@ class _BlockTileState extends ConsumerState<BlockTile> {
         child: Opacity(
           opacity: opacity,
           child: Container(
-            height: 35,
-            width: 93.9 * widget.tabSize,
+            height: isCompact ? 36 : 35,
+            width: (isCompact
+                    ? CalendarHeader.compactDayColumnWidth
+                    : CalendarHeader.regularDayColumnWidth) *
+                widget.tabSize,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(isCompact ? 14 : 18),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Expanded(
+                Expanded(
                   child: Center(
                     child: Text(
                       "Blocked",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isCompact ? 10 : 13,
+                      ),
                     ),
                   ),
                 ),
                 if (showDelete)
                   IconButton(
-                    icon:
-                        const Icon(Icons.delete, size: 18, color: Colors.white),
-                    padding: const EdgeInsets.only(right: 4),
+                    icon: Icon(Icons.delete,
+                        size: isCompact ? 16 : 18, color: Colors.white),
+                    padding: EdgeInsets.only(right: isCompact ? 2 : 4),
                     constraints: const BoxConstraints(),
                     onPressed: () => _handleDelete(context),
                   ),

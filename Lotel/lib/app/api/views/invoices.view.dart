@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/invoice_list.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
@@ -72,6 +73,7 @@ class _InvoiceCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final color = _statusColor(context);
+    final isCompact = context.showCompactLayout;
 
     return Card(
       elevation: 1,
@@ -80,10 +82,8 @@ class _InvoiceCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
+            isCompact
+                ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -94,34 +94,81 @@ class _InvoiceCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(invoice.guestName.isEmpty ? 'Guest not set' : invoice.guestName),
+                      Text(invoice.guestName.isEmpty
+                          ? 'Guest not set'
+                          : invoice.guestName),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          invoice.status.replaceAll('_', ' ').toUpperCase(),
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              invoice.invoiceNumber,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(invoice.guestName.isEmpty
+                                ? 'Guest not set'
+                                : invoice.guestName),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          invoice.status.replaceAll('_', ' ').toUpperCase(),
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    invoice.status.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 18,
               runSpacing: 10,
               children: [
-                _meta('Issued', invoice.issueDate != null ? _date.format(invoice.issueDate!) : '-'),
-                _meta('Due', invoice.dueDate != null ? _date.format(invoice.dueDate!) : '-'),
+                _meta(
+                    'Issued',
+                    invoice.issueDate != null
+                        ? _date.format(invoice.issueDate!)
+                        : '-'),
+                _meta(
+                    'Due',
+                    invoice.dueDate != null
+                        ? _date.format(invoice.dueDate!)
+                        : '-'),
                 _meta('Total', _money.format(invoice.totalAmount)),
                 _meta('Paid', _money.format(invoice.amountPaid)),
                 _meta('Balance', _money.format(invoice.balanceDue)),
@@ -135,7 +182,8 @@ class _InvoiceCard extends ConsumerWidget {
                   final bookingId = int.tryParse(invoice.bookingId);
                   if (bookingId == null) return;
                   ref.read(bookingIdProvider.notifier).state = bookingId;
-                  ref.read(selectedBookingIdProvider.notifier).state = bookingId;
+                  ref.read(selectedBookingIdProvider.notifier).state =
+                      bookingId;
                   ref.read(routerProvider).push('booking');
                 },
                 icon: const Icon(Icons.receipt_long),

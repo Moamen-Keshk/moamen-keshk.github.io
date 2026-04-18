@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/app/channel_manager/models/channel_connection.dart';
@@ -20,6 +21,7 @@ class ChannelManagerView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final propertyId = ref.watch(selectedPropertyVM);
+    final isCompact = context.showCompactLayout;
 
     if (propertyId == null || propertyId == 0) {
       return const Center(child: Text("Please select a property first."));
@@ -145,8 +147,9 @@ class ChannelManagerView extends ConsumerWidget {
                               style: TextStyle(color: Colors.grey),
                             ),
                             const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
                               children: [
                                 OutlinedButton.icon(
                                   icon: const Icon(Icons.bed),
@@ -156,7 +159,8 @@ class ChannelManagerView extends ConsumerWidget {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => RoomMappingPage(
-                                            connectionId: connection.id),
+                                          connectionId: connection.id,
+                                        ),
                                       ),
                                     );
                                   },
@@ -170,7 +174,8 @@ class ChannelManagerView extends ConsumerWidget {
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             RatePlanMappingPage(
-                                                connectionId: connection.id),
+                                          connectionId: connection.id,
+                                        ),
                                       ),
                                     );
                                   },
@@ -209,7 +214,7 @@ class ChannelManagerView extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddChannelDialog(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add OTA'),
+        label: Text(isCompact ? 'Add' : 'Add OTA'),
       ),
     );
   }

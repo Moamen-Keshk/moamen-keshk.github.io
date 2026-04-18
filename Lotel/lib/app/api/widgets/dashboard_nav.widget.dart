@@ -32,6 +32,8 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
 
   @override
   Widget build(BuildContext context) {
+    final useCollapsedActions = context.screenWidth < ScreenSizes.lg;
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     final int? currentPropertyId = ref.watch(selectedPropertyVM);
     final authState = ref.watch(authVM);
     final effectivePropertyId = ref.watch(effectivePropertyIdProvider);
@@ -69,14 +71,42 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
         (effectivePropertyId == null || effectivePropertyId == 0)
             ? null
             : effectivePropertyId.toString();
+    final properties = ref.watch(propertyListVM);
+    propertiesMapping = propertyMapping(properties);
 
     return AppBar(
-      title: const Text('Lotel'),
+      leading: useCollapsedActions && canPop
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => ref.read(routerProvider).pop(),
+              tooltip: 'Back',
+            )
+          : null,
+      title: useCollapsedActions
+          ? _buildPropertyDropdown(
+              properties: properties,
+              dropdownValue: dropdownValue,
+              canManageProperty: canManageProperty,
+              compact: true,
+            )
+          : const Text('Lotel'),
       elevation: kIsWeb ? 0 : null,
-      centerTitle: kIsWeb ? false : null,
+      centerTitle: useCollapsedActions ? false : (kIsWeb ? false : null),
       backgroundColor: const Color.fromARGB(255, 241, 236, 245),
-      actions: (MediaQuery.of(context).size.width <= ScreenSizes.md)
+      actions: useCollapsedActions
           ? [
+              if (canManageBookings)
+                IconButton(
+                  icon: const Icon(Icons.block_outlined),
+                  tooltip: 'Create Block',
+                  onPressed: effectivePropertyId != null
+                      ? () {
+                          showBlockDialog(context, ref);
+                          ref.read(routerProvider).replaceAllWith('dashboard');
+                        }
+                      : null,
+                ),
+              const NotificationsView(),
               Consumer(builder: (context, ref, child) {
                 return IconButton(
                   icon: const Icon(Icons.exit_to_app),
@@ -100,7 +130,9 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     onPressed: effectivePropertyId != null
                         ? () {
                             showBlockDialog(context, ref);
-                            ref.read(routerProvider).replaceAllWith('dashboard');
+                            ref
+                                .read(routerProvider)
+                                .replaceAllWith('dashboard');
                           }
                         : null,
                     child: const Text("Create Block"),
@@ -117,7 +149,9 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                     onPressed: effectivePropertyId != null
                         ? () {
                             showBookingDialog(context, ref);
-                            ref.read(routerProvider).replaceAllWith('dashboard');
+                            ref
+                                .read(routerProvider)
+                                .replaceAllWith('dashboard');
                           }
                         : null,
                     child: const Text("New booking"),
@@ -126,57 +160,12 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
               if (canManageBookings) const SizedBox(width: 10.0),
 
               // THE DROPDOWN FIX
-              Consumer(builder: (context, ref, child) {
-                final properties = ref.watch(propertyListVM);
-                propertiesMapping = propertyMapping(properties);
-
-                return Container(
-                  width: 130,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey, width: 1),
-                  ),
-                  child: DropdownButton<String>(
-                    value: dropdownValue, // ✅ Driven entirely by Riverpod
-                    hint: const Text("Property"),
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    onChanged: (newValue) {
-                      if (newValue == 'add') {
-                        ref.read(routerProvider).push('new_property');
-                      } else if (newValue != null) {
-                        ref
-                            .read(selectedPropertyVM.notifier)
-                            .updateProperty(int.parse(newValue));
-                      }
-                    },
-                    items: [
-                      ...properties.map<DropdownMenuItem<String>>(
-                          (PropertyVM property) {
-                        return DropdownMenuItem<String>(
-                          value: property.id,
-                          child: Text(property.name),
-                        );
-                      }),
-                      if (canManageProperty)
-                        const DropdownMenuItem(
-                          value: 'add',
-                          child: Row(
-                            children: [
-                              Icon(Icons.add),
-                              SizedBox(width: 8),
-                              Text("Add"),
-                            ],
-                          ),
-                        ),
-                    ],
-                    icon:
-                        const Icon(Icons.arrow_drop_down, color: Colors.black),
-                  ),
-                );
-              }),
+              _buildPropertyDropdown(
+                properties: properties,
+                dropdownValue: dropdownValue,
+                canManageProperty: canManageProperty,
+                compact: false,
+              ),
               TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,
@@ -328,13 +317,18 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
       builder: (context) {
         return AlertDialog(
           title: const Text('New Booking'),
-          content: BookingForm(
-            onSubmit: (bookingData) async {
-              return ref
-                  .read(bookingListVM.notifier)
-                  .addToBookings(bookingData);
-            },
-            ref: ref,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: context.showCompactLayout ? 320 : 720,
+            ),
+            child: BookingForm(
+              onSubmit: (bookingData) async {
+                return ref
+                    .read(bookingListVM.notifier)
+                    .addToBookings(bookingData);
+              },
+              ref: ref,
+            ),
           ),
         );
       },
@@ -347,14 +341,75 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
       builder: (context) {
         return AlertDialog(
           title: const Text('New Block'),
-          content: BlockForm(
-            onSubmit: (blockData) async {
-              return ref.read(blockListVM.notifier).addToBlocks(blockData);
-            },
-            ref: ref,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: context.showCompactLayout ? 320 : 560,
+            ),
+            child: BlockForm(
+              onSubmit: (blockData) async {
+                return ref.read(blockListVM.notifier).addToBlocks(blockData);
+              },
+              ref: ref,
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPropertyDropdown({
+    required List<PropertyVM> properties,
+    required String? dropdownValue,
+    required bool canManageProperty,
+    required bool compact,
+  }) {
+    return Container(
+      width: compact ? 170 : 130,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey, width: 1),
+      ),
+      child: DropdownButton<String>(
+        value: dropdownValue,
+        hint: const Text('Property'),
+        isExpanded: true,
+        underline: const SizedBox(),
+        onChanged: (newValue) {
+          if (newValue == 'add') {
+            ref.read(routerProvider).push('new_property');
+          } else if (newValue != null) {
+            ref
+                .read(selectedPropertyVM.notifier)
+                .updateProperty(int.parse(newValue));
+          }
+        },
+        items: [
+          ...properties.map<DropdownMenuItem<String>>((PropertyVM property) {
+            return DropdownMenuItem<String>(
+              value: property.id,
+              child: Text(
+                property.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }),
+          if (canManageProperty)
+            const DropdownMenuItem(
+              value: 'add',
+              child: Row(
+                children: [
+                  Icon(Icons.add),
+                  SizedBox(width: 8),
+                  Text('Add'),
+                ],
+              ),
+            ),
+        ],
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+      ),
     );
   }
 

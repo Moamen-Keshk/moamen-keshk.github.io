@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/auth/view_models/auth.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/main.dart';
@@ -26,8 +27,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 500,
+    return ResponsiveFormCard(
+      maxWidth: 520,
       child: Form(
         key: _formKey,
         child: ListView(
@@ -54,6 +55,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
               return ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final router = ref.read(routerProvider);
                     // 1. Authenticate with Firebase
                     bool success = await ref
                         .read(authVM)
@@ -67,13 +70,26 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       // 2. Check Firebase Email Verification
                       if (!authState.isEmailVerified) {
                         authState.verifyEmailVerfication();
-                        ref.read(routerProvider).push('email_verification');
+                        router.push('email_verification');
                         return;
                       }
 
                       // 3. Sync with Python Backend for Role & Status
                       // We await this explicitly to ensure data is loaded before routing
-                      await authState.syncWithBackend();
+                      final synced = await authState.syncWithBackend();
+                      if (!mounted) return;
+                      if (!synced) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              authState.error.isNotEmpty
+                                  ? authState.error
+                                  : "Failed to load your account status.",
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       final initialPropertyId = authState.user?.propertyId;
                       if (initialPropertyId != null && initialPropertyId != 0) {
                         ref
@@ -88,31 +104,39 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
                       if (statusId == 1) {
                         // 1 = Pending
-                        ScaffoldMessenger.of(this.context).showSnackBar(
+                        messenger.showSnackBar(
                             const SnackBar(
                                 content: Text(
                                     "Your account is Pending approval from an Admin.")));
                         // Optionally: ref.read(routerProvider).push('pending_approval_page');
                       } else if (statusId == 3) {
                         // 3 = Suspended
-                        ScaffoldMessenger.of(this.context).showSnackBar(
+                        messenger.showSnackBar(
                             const SnackBar(
                                 content: Text(
                                     "Your account is Suspended. Please contact management.")));
-                      } else if (statusId == 2) {
-                        // 2 = Active -> Safe to enter the app
-                        ref.read(routerProvider).replaceAllWith('dashboard');
-                      } else {
-                        // Unknown/Cancelled/Error
-                        ScaffoldMessenger.of(this.context).showSnackBar(
+                      } else if (statusId == 4) {
+                        // 4 = Cancelled
+                        messenger.showSnackBar(
                             const SnackBar(
                                 content: Text(
-                                    "Account status is invalid or cancelled.")));
+                                    "Your account has been cancelled. Please contact management.")));
+                      } else if (statusId == 2) {
+                        // 2 = Active -> Safe to enter the app
+                        router.replaceAllWith('dashboard');
+                      } else {
+                        // Unknown or missing status
+                        messenger.showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    authState.error.isNotEmpty
+                                        ? authState.error
+                                        : "Unable to determine your account status.")));
                       }
                     } else {
                       // error: Firebase login failed
                       debugPrint(ref.read(authVM).error);
-                      ScaffoldMessenger.of(this.context).showSnackBar(
+                      messenger.showSnackBar(
                           SnackBar(content: Text(ref.read(authVM).error)));
                     }
                   }

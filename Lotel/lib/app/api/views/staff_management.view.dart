@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/role.vm.dart';
 import 'package:lotel_pms/app/api/view_models/staff_management.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
@@ -180,8 +181,10 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
       builder: (ctx) {
         return AlertDialog(
           title: const Text('Invite Staff'),
-          content: SizedBox(
-            width: 400,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: context.showCompactLayout ? 320 : 400,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -238,30 +241,31 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
               onPressed: allowedRoles.isEmpty
                   ? null
                   : () async {
-                if (_formKey.currentState!.validate() &&
-                    _selectedRoleId != null) {
-                  final success = await ref.read(staffManagementVM).sendInvite(
-                        propertyId: propertyId,
-                        email: _emailController.text.trim(),
-                        roleId: _selectedRoleId!,
-                      );
+                      if (_formKey.currentState!.validate() &&
+                          _selectedRoleId != null) {
+                        final success =
+                            await ref.read(staffManagementVM).sendInvite(
+                                  propertyId: propertyId,
+                                  email: _emailController.text.trim(),
+                                  roleId: _selectedRoleId!,
+                                );
 
-                  if (!ctx.mounted) return;
-                  Navigator.of(ctx).pop();
-                  final messenger = ScaffoldMessenger.of(ctx);
+                        if (!ctx.mounted) return;
+                        Navigator.of(ctx).pop();
+                        final messenger = ScaffoldMessenger.of(ctx);
 
-                  if (success) {
-                    messenger.showSnackBar(const SnackBar(
-                        content: Text('Invitation sent!'),
-                        backgroundColor: Colors.green));
-                    _emailController.clear();
-                  } else {
-                    messenger.showSnackBar(SnackBar(
-                        content: Text(ref.read(staffManagementVM).error),
-                        backgroundColor: Colors.red));
-                  }
-                }
-              },
+                        if (success) {
+                          messenger.showSnackBar(const SnackBar(
+                              content: Text('Invitation sent!'),
+                              backgroundColor: Colors.green));
+                          _emailController.clear();
+                        } else {
+                          messenger.showSnackBar(SnackBar(
+                              content: Text(ref.read(staffManagementVM).error),
+                              backgroundColor: Colors.red));
+                        }
+                      }
+                    },
               child: const Text("Send Invite"),
             ),
           ],
@@ -286,28 +290,33 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
       builder: (ctx) {
         return AlertDialog(
           title: Text('Edit Role: ${member.username}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (allowedRoles.isEmpty)
-                const Text("You don't have permission to assign any roles.",
-                    style: TextStyle(color: Colors.red))
-              else
-                DropdownButtonFormField<int>(
-                  initialValue: editRoleId,
-                  decoration: const InputDecoration(
-                      labelText: 'New Role', border: OutlineInputBorder()),
-                  items: allowedRoles.map((role) {
-                    return DropdownMenuItem<int>(
-                      value: role.id,
-                      child: Text(role.name),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    editRoleId = val;
-                  },
-                ),
-            ],
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: context.showCompactLayout ? 320 : 400,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (allowedRoles.isEmpty)
+                  const Text("You don't have permission to assign any roles.",
+                      style: TextStyle(color: Colors.red))
+                else
+                  DropdownButtonFormField<int>(
+                    initialValue: editRoleId,
+                    decoration: const InputDecoration(
+                        labelText: 'New Role', border: OutlineInputBorder()),
+                    items: allowedRoles.map((role) {
+                      return DropdownMenuItem<int>(
+                        value: role.id,
+                        child: Text(role.name),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      editRoleId = val;
+                    },
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -346,8 +355,8 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
     );
   }
 
-  void _showStatusDialog(BuildContext context, int propertyId, StaffMember member,
-      _StatusAction action) {
+  void _showStatusDialog(BuildContext context, int propertyId,
+      StaffMember member, _StatusAction action) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -381,8 +390,8 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                       backgroundColor: Colors.red));
                 }
               },
-              child:
-                  Text(action.label, style: const TextStyle(color: Colors.white)),
+              child: Text(action.label,
+                  style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -395,6 +404,7 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
     final staffVM = ref.watch(staffManagementVM);
     final propertyId = ref.watch(selectedPropertyVM);
     final List<RoleVM> allowedRoles = ref.watch(roleListVM);
+    final isCompact = context.showCompactLayout;
 
     // Re-fetch staff if property changes
     ref.listen(selectedPropertyVM, (previous, next) {
@@ -417,7 +427,8 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
       floatingActionButton: propertyId == null
           ? null
           : FloatingActionButton.extended(
-              onPressed: () => _showInviteDialog(context, propertyId, allowedRoles),
+              onPressed: () =>
+                  _showInviteDialog(context, propertyId, allowedRoles),
               icon: const Icon(Icons.person_add),
               label: const Text("Invite"),
             ),
@@ -457,82 +468,151 @@ class _StaffManagementViewState extends ConsumerState<StaffManagementView> {
                       return Card(
                         color: _cardColorForStatus(staff.statusId),
                         margin: const EdgeInsets.only(bottom: 12.0),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _avatarColorForStatus(staff.statusId),
-                            child: Text(
-                              staff.username.isNotEmpty
-                                  ? staff.username[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          title: Text(
-                            staff.username.isEmpty ? staff.email : staff.username,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: _textColorForStatus(staff.statusId),
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${staff.roleName} • Status: ${staff.statusName}'
-                            '${staff.isCurrentUser ? ' • You' : ''}',
-                          ),
-                          trailing: staff.canManage
-                              ? PopupMenuButton<String>(
-                                  onSelected: (value) {
-                                    if (value == 'edit') {
-                                      _showEditRoleDialog(context, propertyId!,
-                                          staff, allowedRoles);
-                                      return;
-                                    }
-
-                                    for (final action in statusActions) {
-                                      if (value ==
-                                          'status:${action.targetStatusId}') {
-                                        _showStatusDialog(
-                                            context, propertyId!, staff, action);
-                                        return;
-                                      }
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.edit, size: 18),
-                                          SizedBox(width: 8),
-                                          Text('Edit Role')
-                                        ],
-                                      ),
-                                    ),
-                                    ...statusActions.map(
-                                      (action) => PopupMenuItem(
-                                        value: 'status:${action.targetStatusId}',
-                                        child: Row(
-                                          children: [
-                                            Icon(action.icon,
-                                                color: action.color, size: 18),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              action.label,
-                                              style:
-                                                  TextStyle(color: action.color),
-                                            ),
-                                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: isCompact
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor:
+                                              _avatarColorForStatus(
+                                                  staff.statusId),
+                                          child: Text(
+                                            staff.username.isNotEmpty
+                                                ? staff.username[0]
+                                                    .toUpperCase()
+                                                : '?',
+                                            style: const TextStyle(
+                                                color: Colors.white),
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            staff.username.isEmpty
+                                                ? staff.email
+                                                : staff.username,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: _textColorForStatus(
+                                                  staff.statusId),
+                                            ),
+                                          ),
+                                        ),
+                                        if (staff.canManage)
+                                          _buildActionsMenu(
+                                            context,
+                                            propertyId!,
+                                            staff,
+                                            allowedRoles,
+                                            statusActions,
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '${staff.roleName} • Status: ${staff.statusName}'
+                                      '${staff.isCurrentUser ? ' • You' : ''}',
                                     ),
                                   ],
                                 )
-                              : null,
+                              : ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: CircleAvatar(
+                                    backgroundColor:
+                                        _avatarColorForStatus(staff.statusId),
+                                    child: Text(
+                                      staff.username.isNotEmpty
+                                          ? staff.username[0].toUpperCase()
+                                          : '?',
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    staff.username.isEmpty
+                                        ? staff.email
+                                        : staff.username,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          _textColorForStatus(staff.statusId),
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${staff.roleName} • Status: ${staff.statusName}'
+                                    '${staff.isCurrentUser ? ' • You' : ''}',
+                                  ),
+                                  trailing: staff.canManage
+                                      ? _buildActionsMenu(
+                                          context,
+                                          propertyId!,
+                                          staff,
+                                          allowedRoles,
+                                          statusActions,
+                                        )
+                                      : null,
+                                ),
                         ),
                       );
                     }),
                 ],
               ),
             ),
+    );
+  }
+
+  PopupMenuButton<String> _buildActionsMenu(
+    BuildContext context,
+    int propertyId,
+    StaffMember staff,
+    List<RoleVM> allowedRoles,
+    List<_StatusAction> statusActions,
+  ) {
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'edit') {
+          _showEditRoleDialog(context, propertyId, staff, allowedRoles);
+          return;
+        }
+
+        for (final action in statusActions) {
+          if (value == 'status:${action.targetStatusId}') {
+            _showStatusDialog(context, propertyId, staff, action);
+            return;
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit, size: 18),
+              SizedBox(width: 8),
+              Text('Edit Role')
+            ],
+          ),
+        ),
+        ...statusActions.map(
+          (action) => PopupMenuItem(
+            value: 'status:${action.targetStatusId}',
+            child: Row(
+              children: [
+                Icon(action.icon, color: action.color, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  action.label,
+                  style: TextStyle(color: action.color),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

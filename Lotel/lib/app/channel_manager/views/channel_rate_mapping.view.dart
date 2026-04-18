@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 
 import 'package:lotel_pms/app/channel_manager/models/channel_rate_plan_map.dart';
 import 'package:lotel_pms/app/channel_manager/models/external_rate_plan.dart';
@@ -41,6 +42,7 @@ class _ChannelRateMappingViewState
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = context.showCompactLayout;
     // Transparent Scaffold allows the FAB to float perfectly over the list
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -48,13 +50,14 @@ class _ChannelRateMappingViewState
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddMappingModal(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add Mapping'),
+        label: Text(isCompact ? 'Add' : 'Add Mapping'),
       ),
     );
   }
 
   Widget _buildList(BuildContext context, WidgetRef ref) {
     final mappingState = ref.watch(channelRateMappingVMProvider);
+    final isCompact = context.showCompactLayout;
 
     return mappingState.when(
       data: (mappings) {
@@ -86,35 +89,83 @@ class _ChannelRateMappingViewState
 
               return Card(
                 elevation: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  title: Text(
-                    'Local Rate ID: ${map.internalRatePlanId} ↔ ${map.externalRatePlanName ?? "Unknown OTA Rate"}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text('OTA Rate ID: ${map.externalRatePlanId}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    tooltip: 'Remove Mapping',
-                    onPressed: () async {
-                      final success = await ref
-                          .read(channelRateMappingVMProvider.notifier)
-                          .deleteRatePlanMapping(map.id.toString());
-
-                      if (!success && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Failed to remove mapping. Please try again.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                margin: EdgeInsets.symmetric(
+                  horizontal: isCompact ? 12 : 16,
+                  vertical: 8,
                 ),
+                child: isCompact
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Local Rate ID: ${map.internalRatePlanId}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${map.externalRatePlanName ?? "Unknown OTA Rate"}\nOTA Rate ID: ${map.externalRatePlanId}',
+                            ),
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                icon: const Icon(Icons.delete_outline,
+                                    color: Colors.red),
+                                tooltip: 'Remove Mapping',
+                                onPressed: () async {
+                                  final success = await ref
+                                      .read(
+                                          channelRateMappingVMProvider.notifier)
+                                      .deleteRatePlanMapping(map.id.toString());
+
+                                  if (!success && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Failed to remove mapping. Please try again.'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        title: Text(
+                          'Local Rate ID: ${map.internalRatePlanId} ↔ ${map.externalRatePlanName ?? "Unknown OTA Rate"}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle:
+                            Text('OTA Rate ID: ${map.externalRatePlanId}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.red),
+                          tooltip: 'Remove Mapping',
+                          onPressed: () async {
+                            final success = await ref
+                                .read(channelRateMappingVMProvider.notifier)
+                                .deleteRatePlanMapping(map.id.toString());
+
+                            if (!success && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Failed to remove mapping. Please try again.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
               );
             },
           ),
@@ -158,6 +209,7 @@ class _ChannelRateMappingViewState
           builder: (context, setModalState) {
             return Consumer(
               builder: (context, ref, _) {
+                final isCompact = context.showCompactLayout;
                 final propertyId = ref.watch(selectedPropertyVM) ?? 0;
                 // Make sure `ratePlanListVM` matches whatever provider holds your local rate plans!
                 final localRates = ref.watch(ratePlanListVM);
@@ -168,8 +220,8 @@ class _ChannelRateMappingViewState
                 return Padding(
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(context).viewInsets.bottom,
-                    left: 16,
-                    right: 16,
+                    left: isCompact ? 16 : 24,
+                    right: isCompact ? 16 : 24,
                     top: 24,
                   ),
                   child: Form(

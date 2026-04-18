@@ -49,6 +49,7 @@ class RoomBookingGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCompact = MediaQuery.sizeOf(context).width < 768;
     int tabIndexCounter = 0;
     final bookingsByRoom = _groupBookingsByRoom(bookings);
     final blocksByRoom = _groupBlocksByRoom(blocks);
@@ -64,7 +65,7 @@ class RoomBookingGrid extends ConsumerWidget {
         child: Column(
           children: floors.map<Padding>((floor) {
             return Padding(
-              padding: const EdgeInsets.only(top: 25),
+              padding: EdgeInsets.only(top: isCompact ? 22 : 25),
               child: Column(
                 children: floor.rooms.map<Row>((Room room) {
                   final roomId = int.tryParse(room.id) ?? 0;

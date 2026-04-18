@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
 import 'package:lotel_pms/app/api/view_models/property.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/category_list.vm.dart';
@@ -34,6 +36,7 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
   @override
   Widget build(BuildContext context) {
     final property = ref.watch(selectedPropertyProvider);
+    final isCompact = context.showCompactLayout;
 
     if (property == null) {
       return const Center(child: Text("No property selected."));
@@ -44,6 +47,7 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
       child: Column(
         children: [
           TabBar(
+            isScrollable: isCompact,
             labelColor: Theme.of(context).primaryColor,
             unselectedLabelColor: Colors.grey,
             indicatorColor: Theme.of(context).primaryColor,
@@ -71,6 +75,8 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
   // TAB 1: BASIC DETAILS & DANGER ZONE
   // ==========================================
   Widget _buildBasicDetailsTab(PropertyVM property) {
+    final isCompact = context.showCompactLayout;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -84,82 +90,79 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          property.name,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                          overflow: TextOverflow.ellipsis,
+                  isCompact
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              property.name,
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.edit, size: 16),
+                              label: const Text("Edit"),
+                              onPressed: () => _showEditPropertyDialog(
+                                  context, ref, property),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                property.name,
+                                style:
+                                    Theme.of(context).textTheme.headlineMedium,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.edit, size: 16),
+                              label: const Text("Edit"),
+                              onPressed: () => _showEditPropertyDialog(
+                                context,
+                                ref,
+                                property,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.edit, size: 16),
-                        label: const Text("Edit"),
-                        onPressed: () =>
-                            _showEditPropertyDialog(context, ref, property),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 8),
                   Text(
                     property.address,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const Divider(height: 30),
-                  Row(
-                    children: [
-                      const Icon(Icons.phone, size: 20, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Text(property.phoneNumber.isNotEmpty
-                          ? property.phoneNumber
-                          : 'No phone set'),
-                    ],
+                  _detailRow(
+                    const Icon(Icons.phone, size: 20, color: Colors.grey),
+                    property.phoneNumber.isNotEmpty
+                        ? property.phoneNumber
+                        : 'No phone set',
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.email, size: 20, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Text(property.email.isNotEmpty
-                          ? property.email
-                          : 'No email set'),
-                    ],
+                  _detailRow(
+                    const Icon(Icons.email, size: 20, color: Colors.grey),
+                    property.email.isNotEmpty ? property.email : 'No email set',
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.public, size: 20, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '${property.timezone} • ${property.currency} • ${property.taxRate.toStringAsFixed(2)}% tax',
-                        ),
-                      ),
-                    ],
+                  _detailRow(
+                    const Icon(Icons.public, size: 20, color: Colors.grey),
+                    '${property.timezone} • ${property.currency} • ${property.taxRate.toStringAsFixed(2)}% tax',
+                    expanded: true,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.schedule, size: 20, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Check-in ${property.defaultCheckInTime} • Check-out ${property.defaultCheckOutTime}',
-                        ),
-                      ),
-                    ],
+                  _detailRow(
+                    const Icon(Icons.schedule, size: 20, color: Colors.grey),
+                    'Check-in ${property.defaultCheckInTime} • Check-out ${property.defaultCheckOutTime}',
+                    expanded: true,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.flag, size: 20, color: Colors.grey),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text('Status: ${property.status}'),
-                      ),
-                    ],
+                  _detailRow(
+                    const Icon(Icons.flag, size: 20, color: Colors.grey),
+                    'Status: ${property.status}',
+                    expanded: true,
                   ),
                 ],
               ),
@@ -215,6 +218,13 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
   // TAB 3: FLOORS
   // ==========================================
   Widget _buildFloorsTab() {
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount = width < ScreenSizes.md
+        ? 1
+        : width < ScreenSizes.xl
+            ? 2
+            : 3;
+
     return Column(
       children: [
         Expanded(
@@ -229,11 +239,11 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
               }
 
               return GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
                   crossAxisSpacing: 10.0,
                   mainAxisSpacing: 10.0,
-                  childAspectRatio: 1,
+                  childAspectRatio: crossAxisCount == 1 ? 1.3 : 1,
                 ),
                 padding: const EdgeInsets.all(10.0),
                 itemCount: floors.length,
@@ -265,55 +275,97 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
                                 scrollDirection: Axis.vertical,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children:
-                                      floors[index].rooms.map<Row>((Room room) {
-                                    return Row(
-                                      children: [
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 2),
-                                          child: Container(
-                                            alignment: Alignment.center,
-                                            width: 90,
-                                            height: 35,
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue[200],
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                  children: floors[index]
+                                      .rooms
+                                      .map<Widget>((Room room) {
+                                    final categoryName = categoryMapping[
+                                            roomsCategoryMapping[
+                                                    int.parse(room.id)] ??
+                                                -1] ??
+                                        'Undefined Category';
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: crossAxisCount == 1
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                Container(
+                                                  alignment: Alignment.center,
+                                                  height: 35,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue[200],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Text(
+                                                    room.roomNumber.toString(),
+                                                    style: const TextStyle(
+                                                        fontSize: 16,
+                                                        height: 1.0),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Container(
+                                                  alignment: Alignment.center,
+                                                  height: 35,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue[100],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Text(
+                                                    categoryName,
+                                                    style: const TextStyle(
+                                                        fontSize: 13,
+                                                        height: 1.0),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Row(
+                                              children: [
+                                                Container(
+                                                  alignment: Alignment.center,
+                                                  width: 90,
+                                                  height: 35,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue[200],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Text(
+                                                    room.roomNumber.toString(),
+                                                    style: const TextStyle(
+                                                        fontSize: 16,
+                                                        height: 1.0),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Container(
+                                                    alignment: Alignment.center,
+                                                    height: 35,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.blue[100],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
+                                                    child: Text(
+                                                      categoryName,
+                                                      style: const TextStyle(
+                                                          fontSize: 13,
+                                                          height: 1.0),
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
                                             ),
-                                            child: Text(
-                                              room.roomNumber.toString(),
-                                              style: const TextStyle(
-                                                  fontSize: 16, height: 1.0),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 2),
-                                            child: Container(
-                                              alignment: Alignment.center,
-                                              height: 35,
-                                              decoration: BoxDecoration(
-                                                color: Colors.blue[100],
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                categoryMapping[
-                                                        roomsCategoryMapping[
-                                                                int.parse(
-                                                                    room.id)] ??
-                                                            -1] ??
-                                                    'Undefined Category',
-                                                style: const TextStyle(
-                                                    fontSize: 13, height: 1.0),
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      ],
                                     );
                                   }).toList(),
                                 ),
@@ -370,6 +422,17 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
     );
   }
 
+  Widget _detailRow(Widget icon, String text, {bool expanded = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        icon,
+        const SizedBox(width: 12),
+        if (expanded) Expanded(child: Text(text)) else Text(text),
+      ],
+    );
+  }
+
   // ==========================================
   // HELPER METHODS
   // ==========================================
@@ -414,92 +477,95 @@ class _EditPropertyViewState extends ConsumerState<EditPropertyView> {
             return AlertDialog(
               title: const Text("Edit Property Details"),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration:
-                          const InputDecoration(labelText: "Property Name"),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: addressController,
-                      decoration: const InputDecoration(labelText: "Address"),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: phoneController,
-                      decoration:
-                          const InputDecoration(labelText: "Phone Number"),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: emailController,
-                      decoration: const InputDecoration(labelText: "Email"),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: timezoneController,
-                      decoration: const InputDecoration(labelText: "Timezone"),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: currencyController,
-                      decoration: const InputDecoration(labelText: "Currency"),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: taxRateController,
-                      decoration: const InputDecoration(labelText: "Tax Rate %"),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                    const SizedBox(height: 10),
-                    DropdownButtonFormField<int>(
-                      initialValue: selectedStatusId,
-                      decoration: const InputDecoration(labelText: "Status"),
-                      items: propertyStatusOptions.entries
-                          .map((entry) => DropdownMenuItem<int>(
-                                value: entry.key,
-                                child: Text(entry.value),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedStatusId = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: context.showCompactLayout ? 320 : 480,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameController,
+                        decoration:
+                            const InputDecoration(labelText: "Property Name"),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: addressController,
+                        decoration: const InputDecoration(labelText: "Address"),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: phoneController,
+                        decoration:
+                            const InputDecoration(labelText: "Phone Number"),
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: emailController,
+                        decoration: const InputDecoration(labelText: "Email"),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: timezoneController,
+                        decoration:
+                            const InputDecoration(labelText: "Timezone"),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: currencyController,
+                        decoration:
+                            const InputDecoration(labelText: "Currency"),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: taxRateController,
+                        decoration:
+                            const InputDecoration(labelText: "Tax Rate %"),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                      ),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedStatusId,
+                        decoration: const InputDecoration(labelText: "Status"),
+                        items: propertyStatusOptions.entries
+                            .map((entry) => DropdownMenuItem<int>(
+                                  value: entry.key,
+                                  child: Text(entry.value),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedStatusId = value;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      ResponsiveFormRow(
+                        children: [
+                          TextField(
                             controller: checkInController,
                             readOnly: true,
                             decoration: const InputDecoration(
                                 labelText: "Default Check-In"),
                             onTap: () => pickTime(checkInController),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
+                          TextField(
                             controller: checkOutController,
                             readOnly: true,
                             decoration: const InputDecoration(
                                 labelText: "Default Check-Out"),
                             onTap: () => pickTime(checkOutController),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [

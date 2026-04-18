@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/category_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart'; // 👉 Needed for typing the edit dialog
 
@@ -17,22 +18,29 @@ class _CategoriesManagementViewState
   Widget build(BuildContext context) {
     final categories = ref.watch(categoryListVM);
     final categoryVM = ref.read(categoryListVM.notifier);
+    final isCompact = context.showCompactLayout;
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 800),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(isCompact ? 16 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
+              Flex(
+                direction: isCompact ? Axis.vertical : Axis.horizontal,
+                crossAxisAlignment: isCompact
+                    ? CrossAxisAlignment.stretch
+                    : CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Manage Room Types',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
+                  SizedBox(
+                      height: isCompact ? 12 : 0, width: isCompact ? 0 : 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('New Room Type'),
@@ -73,71 +81,138 @@ class _CategoriesManagementViewState
                               ),
                               subtitle: Text(
                                 "Capacity: ${category.capacity} ${category.description.isNotEmpty ? ' • ${category.description}' : ''}",
-                                maxLines: 1,
+                                maxLines: isCompact ? 2 : 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              // 👉 CHANGED: Using a Row to show both Edit and Delete
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: Colors.blueAccent),
-                                    onPressed: () => _showEditCategoryDialog(
-                                        context, ref, category),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.redAccent),
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title:
-                                                  const Text('Delete Room Type'),
-                                              content: Text(
-                                                  'Are you sure you want to delete "${category.name}" for this property?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.of(ctx)
-                                                          .pop(false),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.red),
-                                                  onPressed: () =>
-                                                      Navigator.of(ctx)
-                                                          .pop(true),
-                                                  child: const Text('Delete',
-                                                      style: TextStyle(
-                                                          color: Colors.white)),
-                                                ),
-                                              ],
-                                            ),
-                                          ) ??
-                                          false;
-
-                                      if (confirm && context.mounted) {
-                                        final success = await categoryVM
-                                            .deleteCategory(category.id);
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(success
-                                                    ? 'Room type deleted.'
-                                                    : 'Failed to delete room type (it may be in use).')),
-                                          );
+                              trailing: isCompact
+                                  ? PopupMenuButton<String>(
+                                      onSelected: (value) async {
+                                        if (value == 'edit') {
+                                          _showEditCategoryDialog(
+                                              context, ref, category);
+                                          return;
                                         }
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
+
+                                        final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text(
+                                                    'Delete Room Type'),
+                                                content: Text(
+                                                    'Are you sure you want to delete "${category.name}" for this property?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(ctx)
+                                                            .pop(false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.red),
+                                                    onPressed: () =>
+                                                        Navigator.of(ctx)
+                                                            .pop(true),
+                                                    child: const Text('Delete',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white)),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ??
+                                            false;
+
+                                        if (confirm && context.mounted) {
+                                          final success = await categoryVM
+                                              .deleteCategory(category.id);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(success
+                                                      ? 'Room type deleted.'
+                                                      : 'Failed to delete room type (it may be in use).')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      itemBuilder: (context) => const [
+                                        PopupMenuItem(
+                                            value: 'edit', child: Text('Edit')),
+                                        PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text('Delete')),
+                                      ],
+                                    )
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit,
+                                              color: Colors.blueAccent),
+                                          onPressed: () =>
+                                              _showEditCategoryDialog(
+                                                  context, ref, category),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline,
+                                              color: Colors.redAccent),
+                                          onPressed: () async {
+                                            final confirm = await showDialog<
+                                                    bool>(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                    title: const Text(
+                                                        'Delete Room Type'),
+                                                    content: Text(
+                                                        'Are you sure you want to delete "${category.name}" for this property?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.of(ctx)
+                                                                .pop(false),
+                                                        child: const Text(
+                                                            'Cancel'),
+                                                      ),
+                                                      ElevatedButton(
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.red),
+                                                        onPressed: () =>
+                                                            Navigator.of(ctx)
+                                                                .pop(true),
+                                                        child: const Text(
+                                                            'Delete',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ) ??
+                                                false;
+
+                                            if (confirm && context.mounted) {
+                                              final success = await categoryVM
+                                                  .deleteCategory(category.id);
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(success
+                                                          ? 'Room type deleted.'
+                                                          : 'Failed to delete room type (it may be in use).')),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
                             ),
                           );
                         },

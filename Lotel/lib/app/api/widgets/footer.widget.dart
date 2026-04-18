@@ -6,7 +6,8 @@ class Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final width = context.screenWidth;
+    final isCompact = context.showCompactLayout;
     return Container(
       color: Colors.grey.shade900,
       child: Column(
@@ -18,7 +19,7 @@ class Footer extends StatelessWidget {
             direction: getAxis(width),
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (width > ScreenSizes.md) const SizedBox(width: 20.0),
+              if (!isCompact) const SizedBox(width: 20.0),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -28,7 +29,8 @@ class Footer extends StatelessWidget {
                   FooterLink("Contact"),
                 ],
               ),
-              if (width > ScreenSizes.md) const Spacer(),
+              if (!isCompact) const Spacer(),
+              if (isCompact) const SizedBox(height: 12),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -37,7 +39,8 @@ class Footer extends StatelessWidget {
                   FooterLink("Join Us"),
                 ],
               ),
-              if (width > ScreenSizes.md) const Spacer(),
+              if (!isCompact) const Spacer(),
+              if (isCompact) const SizedBox(height: 12),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -45,7 +48,7 @@ class Footer extends StatelessWidget {
                   FooterLink("Privacy Policy"),
                 ],
               ),
-              if (width > ScreenSizes.md) const SizedBox(width: 20.0)
+              if (!isCompact) const SizedBox(width: 20.0)
             ],
           ),
           const SizedBox(height: 20.0),
@@ -53,9 +56,9 @@ class Footer extends StatelessWidget {
             direction: getAxis(width),
             children: [
               Padding(
-                padding: width > ScreenSizes.md
-                    ? const EdgeInsets.only(left: 30.0)
-                    : const EdgeInsets.all(0),
+                padding: isCompact
+                    ? const EdgeInsets.all(0)
+                    : const EdgeInsets.only(left: 30.0),
                 child: Text(
                   "Lotel PMS",
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -63,13 +66,11 @@ class Footer extends StatelessWidget {
                       ),
                 ),
               ),
-              width > ScreenSizes.md
-                  ? const Spacer()
-                  : const SizedBox(height: 10),
+              isCompact ? const SizedBox(height: 10) : const Spacer(),
               Padding(
-                padding: width > ScreenSizes.md
-                    ? const EdgeInsets.only(right: 30.0)
-                    : const EdgeInsets.only(bottom: 10),
+                padding: isCompact
+                    ? const EdgeInsets.only(bottom: 10)
+                    : const EdgeInsets.only(right: 30.0),
                 child: Text(
                   "© 2018 Lotel PMS",
                   style: Theme.of(context)

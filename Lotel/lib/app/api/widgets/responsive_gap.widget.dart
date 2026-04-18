@@ -11,8 +11,8 @@ class ResponsiveGap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MediaQuery.of(context).size.width > ScreenSizes.md
-        ? SizedBox(width: gap)
-        : SizedBox(height: gap);
+    return context.showCompactLayout
+        ? SizedBox(height: gap)
+        : SizedBox(width: gap);
   }
 }

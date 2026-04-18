@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/property_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/amenity_list.vm.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,7 +86,9 @@ class _NewPropertyViewState extends ConsumerState<NewPropertyView> {
   Future<void> _submitWizard() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final createdProperty = await ref.read(propertyListVM.notifier).addToProperties(
+    final createdProperty = await ref
+        .read(propertyListVM.notifier)
+        .addToProperties(
           name: _name.text,
           address: _address.text,
           phone: _phone.text,
@@ -121,247 +125,268 @@ class _NewPropertyViewState extends ConsumerState<NewPropertyView> {
   @override
   Widget build(BuildContext context) {
     final amenities = ref.watch(amenityListVM);
+    final isCompact = context.showCompactLayout;
 
-    return Center(
-      child: SizedBox(
-        width: 600, // Slightly wider to accommodate the Stepper comfortably
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "Setup New Property",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
+    return ResponsiveFormCard(
+      maxWidth: 760,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "Setup New Property",
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-              Expanded(
-                child: Stepper(
-                  type: StepperType.horizontal,
-                  currentStep: _currentStep,
-                  onStepContinue: () {
-                    if (_currentStep < 2) {
-                      setState(() => _currentStep += 1);
-                    } else {
-                      _submitWizard();
-                    }
-                  },
-                  onStepCancel: () {
-                    if (_currentStep > 0) {
-                      setState(() => _currentStep -= 1);
-                    }
-                  },
-                  steps: [
-                    Step(
-                      title: const Text('Basic Info'),
-                      isActive: _currentStep >= 0,
-                      state: _currentStep > 0
-                          ? StepState.complete
-                          : StepState.indexed,
-                      content: Column(
-                        children: [
-                          TextFormField(
-                            controller: _name,
-                            decoration: const InputDecoration(
-                                labelText: "Property Name *"),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Required'
-                                : null,
+            ),
+            Expanded(
+              child: Stepper(
+                type: isCompact ? StepperType.vertical : StepperType.horizontal,
+                currentStep: _currentStep,
+                onStepContinue: () {
+                  if (_currentStep < 2) {
+                    setState(() => _currentStep += 1);
+                  } else {
+                    _submitWizard();
+                  }
+                },
+                onStepCancel: () {
+                  if (_currentStep > 0) {
+                    setState(() => _currentStep -= 1);
+                  }
+                },
+                controlsBuilder: (context, details) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        ElevatedButton(
+                          onPressed: details.onStepContinue,
+                          child:
+                              Text(_currentStep == 2 ? 'Finish' : 'Continue'),
+                        ),
+                        if (_currentStep > 0)
+                          TextButton(
+                            onPressed: details.onStepCancel,
+                            child: const Text('Back'),
                           ),
-                          TextFormField(
-                            controller: _address,
-                            decoration:
-                                const InputDecoration(labelText: "Address *"),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Required'
-                                : null,
-                          ),
-                          TextFormField(
-                            controller: _phone,
-                            decoration: const InputDecoration(
-                                labelText: "Contact Phone"),
-                            keyboardType: TextInputType.phone,
-                          ),
-                          TextFormField(
-                            controller: _email,
-                            decoration: const InputDecoration(
-                                labelText: "Contact Email"),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return null;
-                              }
-                              return value.contains('@')
-                                  ? null
-                                  : 'Use a valid email address';
-                            },
-                          ),
-                          TextFormField(
-                            controller: _timezone,
-                            decoration: const InputDecoration(
-                                labelText: "Timezone *"),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Required'
-                                : null,
-                          ),
-                          TextFormField(
-                            controller: _currency,
-                            decoration: const InputDecoration(
-                                labelText: "Currency *"),
-                            textCapitalization: TextCapitalization.characters,
-                            validator: (value) {
-                              final trimmed = value?.trim() ?? '';
-                              if (trimmed.length != 3) {
-                                return 'Use a 3-letter code';
-                              }
-                              return null;
-                            },
-                          ),
-                          TextFormField(
-                            controller: _taxRate,
-                            decoration:
-                                const InputDecoration(labelText: "Tax Rate %"),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            validator: (value) {
-                              final parsed = double.tryParse(value ?? '');
-                              if (parsed == null || parsed < 0 || parsed > 100) {
-                                return 'Use a value between 0 and 100';
-                              }
-                              return null;
-                            },
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _checkInTime,
-                                  readOnly: true,
-                                  decoration: const InputDecoration(
-                                      labelText: "Default Check-In *"),
-                                  onTap: () => _pickTime(context, _checkInTime),
-                                  validator: (value) =>
-                                      value == null || value.isEmpty
-                                          ? 'Required'
-                                          : null,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _checkOutTime,
-                                  readOnly: true,
-                                  decoration: const InputDecoration(
-                                      labelText: "Default Check-Out *"),
-                                  onTap: () => _pickTime(context, _checkOutTime),
-                                  validator: (value) =>
-                                      value == null || value.isEmpty
-                                          ? 'Required'
-                                          : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Note: You can update these details later in settings.",
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
-                    Step(
-                      title: const Text('Floors'),
-                      isActive: _currentStep >= 1,
-                      state: _currentStep > 1
-                          ? StepState.complete
-                          : StepState.indexed,
-                      content: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _floorController,
-                                  decoration: const InputDecoration(
-                                      labelText: 'Add Floor Number (e.g. 1)'),
-                                  keyboardType: TextInputType.number,
-                                  onFieldSubmitted: _addFloor,
-                                ),
+                  );
+                },
+                steps: [
+                  Step(
+                    title: const Text('Basic Info'),
+                    isActive: _currentStep >= 0,
+                    state: _currentStep > 0
+                        ? StepState.complete
+                        : StepState.indexed,
+                    content: Column(
+                      children: [
+                        TextFormField(
+                          controller: _name,
+                          decoration: const InputDecoration(
+                              labelText: "Property Name *"),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Required'
+                              : null,
+                        ),
+                        TextFormField(
+                          controller: _address,
+                          decoration:
+                              const InputDecoration(labelText: "Address *"),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Required'
+                              : null,
+                        ),
+                        TextFormField(
+                          controller: _phone,
+                          decoration:
+                              const InputDecoration(labelText: "Contact Phone"),
+                          keyboardType: TextInputType.phone,
+                        ),
+                        TextFormField(
+                          controller: _email,
+                          decoration:
+                              const InputDecoration(labelText: "Contact Email"),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return null;
+                            }
+                            return value.contains('@')
+                                ? null
+                                : 'Use a valid email address';
+                          },
+                        ),
+                        TextFormField(
+                          controller: _timezone,
+                          decoration:
+                              const InputDecoration(labelText: "Timezone *"),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Required'
+                              : null,
+                        ),
+                        TextFormField(
+                          controller: _currency,
+                          decoration:
+                              const InputDecoration(labelText: "Currency *"),
+                          textCapitalization: TextCapitalization.characters,
+                          validator: (value) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.length != 3) {
+                              return 'Use a 3-letter code';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextFormField(
+                          controller: _taxRate,
+                          decoration:
+                              const InputDecoration(labelText: "Tax Rate %"),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: (value) {
+                            final parsed = double.tryParse(value ?? '');
+                            if (parsed == null || parsed < 0 || parsed > 100) {
+                              return 'Use a value between 0 and 100';
+                            }
+                            return null;
+                          },
+                        ),
+                        ResponsiveFormRow(
+                          children: [
+                            TextFormField(
+                              controller: _checkInTime,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: "Default Check-In *",
                               ),
-                              IconButton(
+                              onTap: () => _pickTime(context, _checkInTime),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Required'
+                                      : null,
+                            ),
+                            TextFormField(
+                              controller: _checkOutTime,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: "Default Check-Out *",
+                              ),
+                              onTap: () => _pickTime(context, _checkOutTime),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Required'
+                                      : null,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Note: You can update these details later in settings.",
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Step(
+                    title: const Text('Floors'),
+                    isActive: _currentStep >= 1,
+                    state: _currentStep > 1
+                        ? StepState.complete
+                        : StepState.indexed,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ResponsiveFormRow(
+                          children: [
+                            TextFormField(
+                              controller: _floorController,
+                              decoration: const InputDecoration(
+                                labelText: 'Add Floor Number (e.g. 1)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onFieldSubmitted: _addFloor,
+                            ),
+                            Align(
+                              alignment: Alignment.bottomLeft,
+                              child: IconButton(
                                 icon: const Icon(Icons.add_circle),
                                 color: Theme.of(context).primaryColor,
                                 onPressed: () =>
                                     _addFloor(_floorController.text),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: _floors
+                              .map((f) => Chip(
+                                    label: Text('Floor $f'),
+                                    onDeleted: () {
+                                      setState(() => _floors.remove(f));
+                                    },
+                                  ))
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Step(
+                    title: const Text('Amenities'),
+                    isActive: _currentStep >= 2,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Select basic amenities for your property:"),
+                        const SizedBox(height: 10),
+                        if (amenities.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Text(
+                              "No amenities available. You can add them later.",
+                            ),
+                          )
+                        else
                           Wrap(
                             spacing: 8.0,
-                            children: _floors
-                                .map((f) => Chip(
-                                      label: Text('Floor $f'),
-                                      onDeleted: () {
-                                        setState(() => _floors.remove(f));
-                                      },
-                                    ))
-                                .toList(),
+                            runSpacing: 8.0,
+                            children: amenities.map((amenity) {
+                              final isSelected =
+                                  _selectedAmenityIds.contains(amenity.id);
+                              return FilterChip(
+                                label: Text(amenity.name),
+                                selected: isSelected,
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedAmenityIds.add(amenity.id);
+                                    } else {
+                                      _selectedAmenityIds.remove(amenity.id);
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
-                    Step(
-                      title: const Text('Amenities'),
-                      isActive: _currentStep >= 2,
-                      content: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                              "Select basic amenities for your property:"),
-                          const SizedBox(height: 10),
-                          if (amenities.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              child: Text(
-                                  "No amenities available. You can add them later."),
-                            )
-                          else
-                            Wrap(
-                              spacing: 8.0,
-                              children: amenities.map((amenity) {
-                                final isSelected =
-                                    _selectedAmenityIds.contains(amenity.id);
-                                return FilterChip(
-                                  label: Text(amenity.name),
-                                  selected: isSelected,
-                                  onSelected: (bool selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedAmenityIds.add(amenity.id);
-                                      } else {
-                                        _selectedAmenityIds.remove(amenity.id);
-                                      }
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

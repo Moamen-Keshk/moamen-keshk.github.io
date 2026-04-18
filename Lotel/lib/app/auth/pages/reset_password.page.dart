@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/auth/views/reset_password.view.dart';
-import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/widgets/form_nav.widget.dart';
-import 'package:lotel_pms/app/api/widgets/home_drawer.widget.dart';
 
 class ResetPasswordPage extends StatelessWidget {
   const ResetPasswordPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PublicPageScaffold(
       body: ListView(
         children: const <Widget>[
           FormNav(),
@@ -17,9 +16,6 @@ class ResetPasswordPage extends StatelessWidget {
           Center(child: ResetPasswordView())
         ],
       ),
-      drawer: MediaQuery.of(context).size.width > ScreenSizes.md
-          ? null
-          : const DrawerNav(), //chaged to FormDrawerNav
     );
   }
 }

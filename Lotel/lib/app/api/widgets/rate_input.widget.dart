@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 
 class RateInputDialog extends StatefulWidget {
   final DateTime date;
@@ -38,18 +39,22 @@ class _RateInputDialogState extends State<RateInputDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = context.showCompactLayout;
     return AlertDialog(
       title: Text("Set Rate for ${DateFormat.yMMMMd().format(widget.date)}"),
-      content: TextField(
-        controller: _controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
-          labelText: "Rate",
-          prefixText: '\$',
-          errorText: _errorText,
+      content: SizedBox(
+        width: isCompact ? double.maxFinite : 320,
+        child: TextField(
+          controller: _controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: "Rate",
+            prefixText: '\$',
+            errorText: _errorText,
+          ),
+          autofocus: true,
+          onSubmitted: (_) => _onSave(),
         ),
-        autofocus: true,
-        onSubmitted: (_) => _onSave(),
       ),
       actions: [
         TextButton(
@@ -61,6 +66,7 @@ class _RateInputDialogState extends State<RateInputDialog> {
           child: const Text("Save"),
         ),
       ],
+      actionsOverflowDirection: VerticalDirection.down,
     );
   }
 }

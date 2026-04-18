@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -149,64 +150,105 @@ class TodaysView extends ConsumerWidget {
         elevation: 1.5,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          child: context.showCompactLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: Text(
-                        '${booking.firstName} ${booking.lastName}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                        overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${booking.firstName} ${booking.lastName}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (booking.booking.specialRequest != null &&
+                            booking.booking.specialRequest!.trim().isNotEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 6.0),
+                            child: Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Room: ${roomMapping[booking.roomID] ?? 'N/A'}'),
+                    Text('${booking.numberOfNights} night(s)'),
+                    const SizedBox(height: 4),
+                    Text(
+                      paymentMapping[booking.paymentStatusID] ?? 'Unknown',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.grey),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${booking.firstName} ${booking.lastName}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (booking.booking.specialRequest != null &&
+                              booking.booking.specialRequest!.trim().isNotEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 6.0),
+                              child: Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    if (booking.booking.specialRequest != null &&
-                        booking.booking.specialRequest!.trim().isNotEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 6.0),
-                        child: Icon(
-                          Icons.star, // Or Icons.speaker_notes
-                          color: Colors.amber,
-                          size: 18,
-                        ),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
+                        textAlign: TextAlign.center,
                       ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        '${booking.numberOfNights} night(s)',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        paymentMapping[booking.paymentStatusID] ?? 'Unknown',
+                        textAlign: TextAlign.right,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: Colors.grey),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  '${booking.numberOfNights} night(s)',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  paymentMapping[booking.paymentStatusID] ?? 'Unknown',
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.grey),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

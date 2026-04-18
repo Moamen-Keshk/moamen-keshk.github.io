@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
@@ -130,41 +131,34 @@ class _EditBookingFormState extends State<EditBookingForm> {
       key: _formKey,
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Row(children: [
-            Expanded(
-              child: TextFormField(
-                controller: firstNameController,
-                decoration: InputDecoration(labelText: 'First Name'),
-                validator: _requiredString,
-              ),
+          ResponsiveFormRow(children: [
+            TextFormField(
+              controller: firstNameController,
+              decoration: const InputDecoration(labelText: 'First Name'),
+              validator: _requiredString,
             ),
-            Expanded(
-              child: TextFormField(
-                controller: lastNameController,
-                decoration: InputDecoration(labelText: 'Last Name'),
-                validator: _requiredString,
-              ),
+            TextFormField(
+              controller: lastNameController,
+              decoration: const InputDecoration(labelText: 'Last Name'),
+              validator: _requiredString,
             ),
           ]),
-          Row(children: [
-            Expanded(
-              child: TextFormField(
-                controller: emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-              ),
+          const SizedBox(height: 12),
+          ResponsiveFormRow(children: [
+            TextFormField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
             ),
-            Expanded(
-              child: TextFormField(
-                controller: phoneController,
-                decoration: InputDecoration(labelText: 'Phone'),
-                keyboardType: TextInputType.phone,
-              ),
+            TextFormField(
+              controller: phoneController,
+              decoration: const InputDecoration(labelText: 'Phone'),
+              keyboardType: TextInputType.phone,
             ),
           ]),
           TextFormField(
             controller: dateRangeController,
-            decoration: InputDecoration(labelText: 'Select Dates'),
+            decoration: const InputDecoration(labelText: 'Select Dates'),
             readOnly: true,
             onTap: () async {
               final now = DateTime.now();
@@ -189,13 +183,15 @@ class _EditBookingFormState extends State<EditBookingForm> {
             },
             validator: _requiredString,
           ),
-          Row(children: [
+          const SizedBox(height: 12),
+          ResponsiveFormRow(children: [
             _buildDropdown("Adults:", _numberOfAdults,
                 (val) => setState(() => _numberOfAdults = val)),
             _buildDropdown("Children:", _numberOfChildren,
                 (val) => setState(() => _numberOfChildren = val)),
           ]),
-          Row(children: [
+          const SizedBox(height: 12),
+          ResponsiveFormRow(children: [
             Consumer(builder: (context, ref, _) {
               final rooms = ref.watch(roomListVM);
               return _buildDropdownField(
@@ -231,14 +227,14 @@ class _EditBookingFormState extends State<EditBookingForm> {
           ]),
           TextFormField(
               controller: noteController,
-              decoration: InputDecoration(labelText: 'Note')),
+              decoration: const InputDecoration(labelText: 'Note')),
           TextFormField(
               controller: specialRequestController,
               maxLines: 2,
-              decoration: InputDecoration(labelText: 'Special request')),
+              decoration: const InputDecoration(labelText: 'Special request')),
           TextFormField(
             controller: rateController,
-            decoration: InputDecoration(labelText: 'Rate'),
+            decoration: const InputDecoration(labelText: 'Rate'),
             validator: _requiredString,
             readOnly: true,
           ),
@@ -409,12 +405,13 @@ class _EditBookingFormState extends State<EditBookingForm> {
       String label, int? value, ValueChanged<int?> onChanged) {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Row(children: [
-        SizedBox(width: 90, child: Text(label, style: TextStyle(fontSize: 16))),
-        SizedBox(
-          width: 70,
-          child: DropdownButtonFormField<int>(
-            decoration: InputDecoration(border: OutlineInputBorder()),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            decoration: const InputDecoration(border: OutlineInputBorder()),
             initialValue: value,
             items: List.generate(
               5,
@@ -423,8 +420,8 @@ class _EditBookingFormState extends State<EditBookingForm> {
             onChanged: onChanged,
             validator: _requiredInt,
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -436,15 +433,14 @@ class _EditBookingFormState extends State<EditBookingForm> {
   }) {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: SizedBox(
-        width: 160,
-        child: DropdownButtonFormField<String>(
-          decoration:
-              InputDecoration(border: OutlineInputBorder(), labelText: label),
-          initialValue: value,
-          items: items,
-          onChanged: onChanged,
+      child: DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          labelText: label,
         ),
+        initialValue: value,
+        items: items,
+        onChanged: onChanged,
       ),
     );
   }

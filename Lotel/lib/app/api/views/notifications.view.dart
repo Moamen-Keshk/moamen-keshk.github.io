@@ -1,6 +1,7 @@
 import 'package:badges/badges.dart' as badges;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/lists/all_notification_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/notification_list.vm.dart';
 import 'package:lotel_pms/app/api/widgets/notification_card.widget.dart';
@@ -26,13 +27,15 @@ class NotificationsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifications = ref.watch(notificationListVM);
     final hasUnread = notifications.isNotEmpty;
+    final isCompact = context.showCompactLayout;
 
     return MenuAnchor(
       style: MenuStyle(
         backgroundColor:
             WidgetStateProperty.all(Theme.of(context).colorScheme.surface),
       ),
-      builder: (BuildContext context, MenuController controller, Widget? child) {
+      builder:
+          (BuildContext context, MenuController controller, Widget? child) {
         return IconButton(
           onPressed: () async {
             await ref.read(notificationListVM.notifier).fetchNotifications();
@@ -63,6 +66,12 @@ class NotificationsView extends ConsumerWidget {
           ),
         ...notifications.map(
           (notification) => MenuItemButton(
+            style: ButtonStyle(
+              padding: WidgetStatePropertyAll(
+                EdgeInsets.symmetric(
+                    horizontal: isCompact ? 8 : 12, vertical: 6),
+              ),
+            ),
             child: NotificationCard(
               id: notification.id,
               title: notification.title,
@@ -91,9 +100,12 @@ class NotificationsView extends ConsumerWidget {
           onPressed: () {
             ref.read(routerProvider).push('all_notifications');
           },
-          child: const Text(
-            'See all',
-            style: TextStyle(color: Colors.blue),
+          child: const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'See all',
+              style: TextStyle(color: Colors.blue),
+            ),
           ),
         ),
       ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/api/res/assets.res.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/auth/view_models/auth.vm.dart';
 import 'package:lotel_pms/app/api/view_models/watchlist.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,8 +23,9 @@ class CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = context.showCompactLayout;
     return SizedBox(
-      width: 350.0,
+      width: isCompact ? double.infinity : 350.0,
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -33,23 +35,32 @@ class CourseCard extends StatelessWidget {
             children: [
               Image.asset(
                 Assets.course,
-                height: 150,
+                height: isCompact ? 130 : 150,
                 fit: BoxFit.cover,
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(isCompact ? 14 : 16),
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: (isCompact
+                      ? Theme.of(context).textTheme.titleLarge
+                      : Theme.of(context).textTheme.headlineMedium),
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? 14 : 16,
+                    0,
+                    isCompact ? 14 : 16,
+                    isCompact ? 14 : 16,
+                  ),
                   child: Text(
                     description,
                     overflow: TextOverflow.ellipsis,
-                    maxLines: 3,
+                    maxLines: isCompact ? 4 : 3,
                   ),
                 ),
               ),

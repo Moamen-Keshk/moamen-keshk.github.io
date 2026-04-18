@@ -149,8 +149,12 @@ class AuthVM extends ChangeNotifier {
     });
   }
 
-  Future<void> syncWithBackend({int? propertyId}) async {
-    if (_auth.currentUser == null) return;
+  Future<bool> syncWithBackend({int? propertyId}) async {
+    if (_auth.currentUser == null) {
+      error = 'No authenticated user found.';
+      notifyListeners();
+      return false;
+    }
 
     try {
       String? token = await _auth.currentUser?.getIdToken();
@@ -177,11 +181,18 @@ class AuthVM extends ChangeNotifier {
           permissions: permissions,
           isSuperAdmin: data['is_super_admin'] == true,
         );
+        error = '';
         notifyListeners();
+        return true;
       }
+
+      error = 'Failed to load account status from the backend.';
+      notifyListeners();
+      return false;
     } catch (e) {
       error = "Failed to sync with backend: $e";
       notifyListeners();
+      return false;
     }
   }
 

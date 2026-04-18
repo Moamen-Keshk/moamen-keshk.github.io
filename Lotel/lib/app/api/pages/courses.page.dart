@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:lotel_pms/app/api/res/responsive.res.dart';
-import 'package:lotel_pms/app/api/widgets/dashboard_drawer.widget.dart';
-import 'package:lotel_pms/app/api/widgets/dashboard_nav.widget.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView(
-        children: const <Widget>[
-          DashboardNav(),
-        ],
+    return DashboardPageScaffold(
+      body: ResponsiveContent(
+        child: Center(
+          child: Text(
+            'Courses content is loading here.',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
       ),
-      drawer: MediaQuery.of(context).size.width > ScreenSizes.md
-          ? null
-          : const DashboardDrawer(),
     );
   }
 }

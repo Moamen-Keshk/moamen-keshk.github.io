@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
 import 'package:lotel_pms/infrastructure/api/model/room.model.dart';
 
@@ -22,10 +23,9 @@ class RoomFormRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(children: [
-        Expanded(
-          flex: 1,
-          child: TextFormField(
+      child: ResponsiveFormRow(
+        children: [
+          TextFormField(
             initialValue: room.roomNumber.toString(),
             decoration: _smallInput("Room No."),
             style: const TextStyle(fontSize: 13),
@@ -34,11 +34,7 @@ class RoomFormRow extends StatelessWidget {
             onSaved: (value) =>
                 room.roomNumber = int.tryParse(value ?? '') ?? room.roomNumber,
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: DropdownButtonFormField<String>(
+          DropdownButtonFormField<String>(
             initialValue: categoryId,
             isExpanded: true,
             decoration: _smallInput("Room Type"),
@@ -49,11 +45,15 @@ class RoomFormRow extends StatelessWidget {
             onChanged: (val) => onCategoryChanged(val!),
             validator: (val) => val == null ? "Select room type" : null,
           ),
-        ),
-        IconButton(
-            onPressed: onRoomDeleted,
-            icon: const Icon(Icons.delete_outline, size: 20)),
-      ]),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              onPressed: onRoomDeleted,
+              icon: const Icon(Icons.delete_outline, size: 20),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -84,10 +84,9 @@ class CategoryFormRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(children: [
-        Expanded(
-          flex: 2,
-          child: DropdownButtonFormField<String>(
+      child: ResponsiveFormRow(
+        children: [
+          DropdownButtonFormField<String>(
             initialValue: initialValue,
             isExpanded: true,
             decoration: _smallInput("Room Type"),
@@ -98,8 +97,8 @@ class CategoryFormRow extends StatelessWidget {
             onChanged: (val) => onCategoryChanged(val!),
             validator: (val) => val == null ? "Select room type" : null,
           ),
-        )
-      ]),
+        ],
+      ),
     );
   }
 
@@ -134,10 +133,9 @@ class NewRoomRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(children: [
-        Expanded(
-          flex: 1,
-          child: TextFormField(
+      child: ResponsiveFormRow(
+        children: [
+          TextFormField(
             decoration: _smallInput("Room No."),
             style: const TextStyle(fontSize: 13),
             validator: (val) =>
@@ -146,11 +144,7 @@ class NewRoomRow extends StatelessWidget {
               if (val != null && val.isNotEmpty) onRoomSaved(val);
             },
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: DropdownButtonFormField<String>(
+          DropdownButtonFormField<String>(
             initialValue: selectedValue,
             isExpanded: true,
             decoration: _smallInput("Room Type"),
@@ -161,8 +155,8 @@ class NewRoomRow extends StatelessWidget {
             onChanged: onCategorySelected,
             validator: (val) => val == null ? "Select room type" : null,
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 

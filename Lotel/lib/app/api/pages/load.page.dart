@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/scripts/load_courses.dart';
 
 class LoadCourses extends StatelessWidget {
@@ -7,16 +8,22 @@ class LoadCourses extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Load'),
-        ),
-        body: Center(
-          child: ElevatedButton(
-            child: const Text("Load Courses"),
-            onPressed: () {
-              loadCourses();
-            },
+      appBar: AppBar(
+        title: const Text('Load'),
+      ),
+      body: ResponsiveContent(
+        child: Center(
+          child: SizedBox(
+            width: 220,
+            child: ElevatedButton(
+              onPressed: () {
+                loadCourses();
+              },
+              child: const Text("Load Courses"),
+            ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

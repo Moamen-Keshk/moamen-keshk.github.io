@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/season.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/season_list.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
@@ -12,6 +13,7 @@ class HotelSeasonsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final seasonVM = ref.watch(seasonListVM);
     final seasonNotifier = ref.read(seasonListVM.notifier);
+    final isCompact = context.showCompactLayout;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -19,8 +21,8 @@ class HotelSeasonsView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
-            spacing: 16,
-            runSpacing: 16,
+            spacing: isCompact ? 12 : 16,
+            runSpacing: isCompact ? 12 : 16,
             children: seasonVM
                 .map(
                   (season) => _SeasonCard(
@@ -114,6 +116,7 @@ class _SeasonCardState extends State<_SeasonCard> {
   @override
   Widget build(BuildContext context) {
     final season = widget.season;
+    final isCompact = context.showCompactLayout;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -122,7 +125,7 @@ class _SeasonCardState extends State<_SeasonCard> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          width: 260,
+          width: isCompact ? MediaQuery.sizeOf(context).width - 32 : 260,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: _isHovered
@@ -158,13 +161,15 @@ class _SeasonCardState extends State<_SeasonCard> {
                 "${_format(season.startDate)} → ${_format(season.endDate)}",
               ),
               const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  tooltip: 'Delete Season',
-                  onPressed: widget.onDelete,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    tooltip: 'Delete Season',
+                    onPressed: widget.onDelete,
+                  ),
+                ],
               ),
             ],
           ),

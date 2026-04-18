@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/floor.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RoomLabelColumn extends ConsumerWidget {
+  static const double compactRoomLabelWidth = 112;
+  static const double regularRoomLabelWidth = 160;
+
   final List<FloorVM> floors;
   final Map<int, int> roomsCategoryMapping;
   final Map<int, String> categoryMapping;
@@ -18,25 +22,29 @@ class RoomLabelColumn extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final highlightedRoom = ref.watch(highlightedRoomVM);
+    final isCompact = context.showCompactLayout;
     return Column(
       children: floors.map<Widget>((floor) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 100,
-              height: 25,
+              width: isCompact ? 70 : 100,
+              height: isCompact ? 22 : 25,
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
+              padding: EdgeInsets.symmetric(
+                vertical: isCompact ? 2 : 4,
+                horizontal: isCompact ? 8 : 20,
+              ),
               decoration: BoxDecoration(
                 color: Colors.blue[300],
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 'Floor ${floor.number}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: isCompact ? 11 : 14,
                 ),
               ),
             ),
@@ -44,14 +52,19 @@ class RoomLabelColumn extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: floor.rooms.map<Widget>((room) {
                 final roomId = int.parse(room.id);
-                final isHighlighted = roomId == highlightedRoom;
+                final isHighlighted = !isCompact && roomId == highlightedRoom;
 
                 return Container(
                   alignment: Alignment.center,
-                  width: 160,
-                  height: 35,
-                  padding:
-                      EdgeInsets.only(bottom: 2, top: 6, left: 6, right: 6),
+                  width:
+                      isCompact ? compactRoomLabelWidth : regularRoomLabelWidth,
+                  height: isCompact ? 36 : 35,
+                  padding: EdgeInsets.only(
+                    bottom: isCompact ? 1 : 2,
+                    top: isCompact ? 4 : 6,
+                    left: 6,
+                    right: 6,
+                  ),
                   decoration: BoxDecoration(
                     color:
                         isHighlighted ? Colors.green[200] : Colors.orange[100],
@@ -61,11 +74,21 @@ class RoomLabelColumn extends ConsumerWidget {
                     children: [
                       Text(
                         'Room ${room.roomNumber}',
-                        style: const TextStyle(fontSize: 16, height: 1.0),
+                        style: TextStyle(
+                          fontSize: isCompact ? 11 : 16,
+                          height: 1.0,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         categoryMapping[roomsCategoryMapping[roomId]] ?? '',
-                        style: const TextStyle(fontSize: 11, height: 1.0),
+                        style: TextStyle(
+                          fontSize: isCompact ? 8.5 : 11,
+                          height: 1.0,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

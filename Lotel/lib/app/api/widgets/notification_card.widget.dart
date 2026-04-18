@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationCard extends StatelessWidget {
@@ -22,9 +23,10 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appearance = _appearanceFor(notificationType);
+    final isCompact = context.showCompactLayout;
 
     return SizedBox(
-      width: 290,
+      width: isCompact ? 240 : 290,
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -34,11 +36,14 @@ class NotificationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     Icon(appearance.icon, size: 18, color: appearance.color),
-                    const SizedBox(width: 8),
-                    Expanded(
+                    SizedBox(
+                      width: isCompact ? 180 : 220,
                       child: Text(
                         title,
                         maxLines: 2,
@@ -59,7 +64,8 @@ class NotificationCard extends StatelessWidget {
                   alignment: Alignment.bottomRight,
                   child: Text(
                     timeago.format(fireDate, allowFromNow: true),
-                    style: const TextStyle(fontSize: 11.0, color: Colors.black54),
+                    style:
+                        const TextStyle(fontSize: 11.0, color: Colors.black54),
                   ),
                 ),
               ],
@@ -73,19 +79,26 @@ class NotificationCard extends StatelessWidget {
   static _NotificationAppearance _appearanceFor(String type) {
     switch (type) {
       case 'booking_new':
-        return const _NotificationAppearance(Icons.add_box_outlined, Colors.blue);
+        return const _NotificationAppearance(
+            Icons.add_box_outlined, Colors.blue);
       case 'booking_changed':
-        return const _NotificationAppearance(Icons.edit_calendar_outlined, Colors.indigo);
+        return const _NotificationAppearance(
+            Icons.edit_calendar_outlined, Colors.indigo);
       case 'arrival_issue':
-        return const _NotificationAppearance(Icons.warning_amber_rounded, Colors.orange);
+        return const _NotificationAppearance(
+            Icons.warning_amber_rounded, Colors.orange);
       case 'guest_message':
-        return const _NotificationAppearance(Icons.mark_chat_unread_outlined, Colors.teal);
+        return const _NotificationAppearance(
+            Icons.mark_chat_unread_outlined, Colors.teal);
       case 'guest_message_failed':
-        return const _NotificationAppearance(Icons.sms_failed_outlined, Colors.red);
+        return const _NotificationAppearance(
+            Icons.sms_failed_outlined, Colors.red);
       case 'payment_failed':
-        return const _NotificationAppearance(Icons.credit_card_off_outlined, Colors.redAccent);
+        return const _NotificationAppearance(
+            Icons.credit_card_off_outlined, Colors.redAccent);
       default:
-        return const _NotificationAppearance(Icons.sync_problem_outlined, Colors.deepOrange);
+        return const _NotificationAppearance(
+            Icons.sync_problem_outlined, Colors.deepOrange);
     }
   }
 }

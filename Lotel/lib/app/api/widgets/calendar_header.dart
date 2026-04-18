@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 
 class CalendarHeader extends StatelessWidget {
+  static const double regularDayColumnWidth = 93.9;
+  static const double compactDayColumnWidth = 76.0;
   final List<DateTime> daysInMonth;
   final ScrollController scrollController;
 
@@ -18,9 +21,12 @@ class CalendarHeader extends StatelessWidget {
     return Consumer(builder: (context, ref, child) {
       final highlightedDay = ref.watch(highlightedDayVM);
       final today = DateTime.now();
+      final isCompact = context.showCompactLayout;
+      final dayColumnWidth =
+          isCompact ? compactDayColumnWidth : regularDayColumnWidth;
 
       return SizedBox(
-        height: 70,
+        height: isCompact ? 64 : 70,
         child: SingleChildScrollView(
           controller: scrollController,
           scrollDirection: Axis.horizontal,
@@ -29,10 +35,10 @@ class CalendarHeader extends StatelessWidget {
               final isToday = day.day == today.day &&
                   day.month == today.month &&
                   day.year == today.year;
-              final isHighlighted = day.day == highlightedDay;
+              final isHighlighted = !isCompact && day.day == highlightedDay;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 26.0),
+              return SizedBox(
+                width: dayColumnWidth,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -45,13 +51,17 @@ class CalendarHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     GestureDetector(
-                      onTap: () {
-                        ref.read(highlightedDayVM.notifier).updateDay(day.day);
-                      },
+                      onTap: isCompact
+                          ? null
+                          : () {
+                              ref
+                                  .read(highlightedDayVM.notifier)
+                                  .updateDay(day.day);
+                            },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        height: 42,
-                        width: 42,
+                        height: isCompact ? 32 : 42,
+                        width: isCompact ? 32 : 42,
                         decoration: BoxDecoration(
                           color: isToday
                               ? Colors.blue
@@ -60,12 +70,13 @@ class CalendarHeader extends StatelessWidget {
                                   : Colors.grey[200],
                           shape: BoxShape.circle,
                         ),
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(isCompact ? 4 : 10),
                         child: Center(
                           child: Text(
                             '${day.day}',
                             style: TextStyle(
                               color: isToday ? Colors.white : Colors.black,
+                              fontSize: isCompact ? 11 : 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

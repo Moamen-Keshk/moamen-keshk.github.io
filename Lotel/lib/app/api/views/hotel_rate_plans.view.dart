@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/app/api/view_models/rate_plan.vm.dart';
@@ -14,6 +15,7 @@ class HotelRatePlansView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ratePlans = ref.watch(ratePlanListVM);
     final categories = ref.watch(categoryListVM);
+    final isCompact = context.showCompactLayout;
 
     final groupedPlans = _groupRatePlansByCategory(ratePlans, categories);
 
@@ -23,7 +25,7 @@ class HotelRatePlansView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ...groupedPlans.entries.map((entry) {
-          final categoryName = entry.key;
+            final categoryName = entry.key;
             final plans = entry.value;
 
             return Column(
@@ -35,8 +37,8 @@ class HotelRatePlansView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
+                  spacing: isCompact ? 12 : 16,
+                  runSpacing: isCompact ? 12 : 16,
                   children: plans
                       .map((plan) => _RatePlanCard(
                             plan: plan,
@@ -112,6 +114,7 @@ class _RatePlanCardState extends State<_RatePlanCard> {
   Widget build(BuildContext context) {
     final plan = widget.plan;
     final ratePlanVM = widget.ref.read(ratePlanListVM.notifier);
+    final isCompact = context.showCompactLayout;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -120,7 +123,7 @@ class _RatePlanCardState extends State<_RatePlanCard> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          width: 260,
+          width: isCompact ? MediaQuery.sizeOf(context).width - 32 : 260,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: _isHovered
@@ -149,12 +152,19 @@ class _RatePlanCardState extends State<_RatePlanCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(plan.name,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 28),
+                    child: Text(
+                      plan.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text("Base Rate: \$${plan.baseRate.toStringAsFixed(2)}"),
                   Text("Pricing: ${plan.pricingType.toUpperCase()}"),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
                     children: [
                       Icon(plan.isActive ? Icons.check : Icons.close,
                           color: plan.isActive ? Colors.green : Colors.red,
@@ -170,7 +180,9 @@ class _RatePlanCardState extends State<_RatePlanCard> {
                     Text(
                       "LOS Restriction: ${plan.minLos ?? '-'} to ${plan.maxLos ?? '-'}",
                     ),
-                  if (plan.closed || plan.closedToArrival || plan.closedToDeparture)
+                  if (plan.closed ||
+                      plan.closedToArrival ||
+                      plan.closedToDeparture)
                     Text(
                       "Closed Flags: ${[
                         if (plan.closed) 'closed',

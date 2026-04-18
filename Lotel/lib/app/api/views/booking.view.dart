@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
 import 'package:lotel_pms/infrastructure/api/model/booking.model.dart';
@@ -94,7 +96,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
             return AlertDialog(
               title: Text('Email ${booking.firstName} ${booking.lastName}'),
               content: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 400),
+                constraints: BoxConstraints(
+                  minWidth: context.showCompactLayout ? 280 : 400,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -143,7 +147,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
                           setState(() => isSending = true);
 
                           try {
-                            await ref.read(bookingListVM.notifier).sendGuestMessage(
+                            await ref
+                                .read(bookingListVM.notifier)
+                                .sendGuestMessage(
                                   bookingId,
                                   subject,
                                   message,
@@ -334,19 +340,20 @@ class _BookingViewState extends ConsumerState<BookingView> {
                   ),
                   const SizedBox(height: 16),
                   const Divider(),
-                  Row(
+                  ResponsiveFormRow(
                     children: [
-                      Checkbox(
+                      CheckboxListTile(
                         value: isPaid,
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        title: const Text(
+                          "Guest has paid this additional amount now",
+                        ),
                         onChanged: (val) {
                           setState(() {
                             isPaid = val ?? false;
                           });
                         },
-                      ),
-                      const Expanded(
-                        child:
-                            Text("Guest has paid this additional amount now"),
                       ),
                     ],
                   ),
@@ -454,134 +461,143 @@ class _BookingViewState extends ConsumerState<BookingView> {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
             title: const Text('Record Payment'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Outstanding Balance: £${booking.balanceDue.toStringAsFixed(2)}'),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: paymentFlow,
-                  decoration: const InputDecoration(
-                    labelText: 'Entry Type',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'settled', child: Text('Settled Payment')),
-                    DropdownMenuItem(
-                        value: 'authorized', child: Text('Card Authorization')),
-                    DropdownMenuItem(
-                        value: 'ota_collected', child: Text('OTA Collected')),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() {
-                      paymentFlow = value;
-                      if (paymentFlow == 'authorized') {
-                        selectedMethod = 'card';
-                      } else if (paymentFlow == 'ota_collected') {
-                        selectedMethod = 'ota_vcc';
-                      }
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedMethod,
-                  decoration: const InputDecoration(
-                    labelText: 'Payment Method',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'cash', child: Text('Cash')),
-                    DropdownMenuItem(value: 'card', child: Text('Card')),
-                    DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
-                    DropdownMenuItem(value: 'ota_vcc', child: Text('OTA VCC')),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() {
-                      selectedMethod = value;
-                    });
-                  },
-                ),
-                if (paymentFlow == 'ota_collected') ...[
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: context.showCompactLayout ? 320 : 420,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                      'Outstanding Balance: £${booking.balanceDue.toStringAsFixed(2)}'),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    initialValue: externalChannel,
+                    initialValue: paymentFlow,
                     decoration: const InputDecoration(
-                      labelText: 'Channel',
+                      labelText: 'Entry Type',
                       border: OutlineInputBorder(),
                     ),
                     items: const [
                       DropdownMenuItem(
-                          value: 'booking_com', child: Text('Booking.com')),
+                          value: 'settled', child: Text('Settled Payment')),
                       DropdownMenuItem(
-                          value: 'expedia', child: Text('Expedia')),
+                          value: 'authorized',
+                          child: Text('Card Authorization')),
+                      DropdownMenuItem(
+                          value: 'ota_collected', child: Text('OTA Collected')),
                     ],
                     onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          externalChannel = value;
-                        });
-                      }
+                      if (value == null) return;
+                      setState(() {
+                        paymentFlow = value;
+                        if (paymentFlow == 'authorized') {
+                          selectedMethod = 'card';
+                        } else if (paymentFlow == 'ota_collected') {
+                          selectedMethod = 'ota_vcc';
+                        }
+                      });
                     },
                   ),
-                ],
-                const SizedBox(height: 16),
-                TextField(
-                  controller: amountController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Amount',
-                    prefixText: '£ ',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => amountController.text =
-                          booking.balanceDue.toStringAsFixed(2),
-                      child: const Text('Full Balance'),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedMethod,
+                    decoration: const InputDecoration(
+                      labelText: 'Payment Method',
+                      border: OutlineInputBorder(),
                     ),
-                    OutlinedButton(
-                      onPressed: () => amountController.text =
-                          (booking.balanceDue / 2).toStringAsFixed(2),
-                      child: const Text('50%'),
+                    items: const [
+                      DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                      DropdownMenuItem(value: 'card', child: Text('Card')),
+                      DropdownMenuItem(
+                          value: 'bank_transfer', child: Text('Bank Transfer')),
+                      DropdownMenuItem(
+                          value: 'ota_vcc', child: Text('OTA VCC')),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        selectedMethod = value;
+                      });
+                    },
+                  ),
+                  if (paymentFlow == 'ota_collected') ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: externalChannel,
+                      decoration: const InputDecoration(
+                        labelText: 'Channel',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'booking_com', child: Text('Booking.com')),
+                        DropdownMenuItem(
+                            value: 'expedia', child: Text('Expedia')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            externalChannel = value;
+                          });
+                        }
+                      },
                     ),
                   ],
-                ),
-                if (paymentFlow == 'authorized')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Authorization records a hold only and does not reduce the invoice balance.',
-                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount',
+                      prefixText: '£ ',
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: referenceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Reference',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => amountController.text =
+                            booking.balanceDue.toStringAsFixed(2),
+                        child: const Text('Full Balance'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => amountController.text =
+                            (booking.balanceDue / 2).toStringAsFixed(2),
+                        child: const Text('50%'),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: notesController,
-                  minLines: 2,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    border: OutlineInputBorder(),
+                  if (paymentFlow == 'authorized')
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Authorization records a hold only and does not reduce the invoice balance.',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: referenceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Reference',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: notesController,
+                    minLines: 2,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -646,33 +662,39 @@ class _BookingViewState extends ConsumerState<BookingView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Record Refund'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Refunding ${payment.paymentMethod.replaceAll('_', ' ').toUpperCase()}',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Refund Amount',
-                prefixText: '£ ',
-                border: OutlineInputBorder(),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: context.showCompactLayout ? 320 : 420,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Refunding ${payment.paymentMethod.replaceAll('_', ' ').toUpperCase()}',
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              minLines: 2,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Reason',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Refund Amount',
+                  prefixText: '£ ',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                minLines: 2,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Reason',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -730,13 +752,18 @@ class _BookingViewState extends ConsumerState<BookingView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Collect Card Payment'),
-        content: TextField(
-          controller: amountController,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Amount',
-            prefixText: '£ ',
-            border: OutlineInputBorder(),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: context.showCompactLayout ? 320 : 380,
+          ),
+          child: TextField(
+            controller: amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Amount',
+              prefixText: '£ ',
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         actions: [
@@ -886,9 +913,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                             child: FractionallySizedBox(
                                               heightFactor: 0.85,
                                               child: ClipRRect(
-                                                borderRadius:
-                                                    const BorderRadius.vertical(
-                                                        top: Radius.circular(20)),
+                                                borderRadius: const BorderRadius
+                                                    .vertical(
+                                                    top: Radius.circular(20)),
                                                 child: GuestChatView(
                                                   propertyId: propertyId,
                                                   bookingId: bookingId,
@@ -935,45 +962,48 @@ class _BookingViewState extends ConsumerState<BookingView> {
                             runSpacing: 12,
                             alignment: WrapAlignment.start,
                             children: [
-                              _section("Guest Info", {
-                                "Name": "${booking.firstName} ${booking.lastName}",
+                              _section(context, "Guest Info", {
+                                "Name":
+                                    "${booking.firstName} ${booking.lastName}",
                                 "Phone": booking.phone ?? "-",
                                 "Adults": "${booking.numberOfAdults}",
                                 "Children": "${booking.numberOfChildren}",
                               }),
-                              _section("Status & Meta", {
-                                "Payment Status":
-                                    paymentStatusMapping[booking.paymentStatusID] ??
-                                        "Unknown",
+                              _section(context, "Status & Meta", {
+                                "Payment Status": paymentStatusMapping[
+                                        booking.paymentStatusID] ??
+                                    "Unknown",
                                 "Booking Status":
                                     bookingStatusMapping[booking.statusID] ??
                                         'Unknown',
                                 "Room": roomMapping[booking.roomID] ??
                                     'Room ${booking.roomID}',
                               }),
-                              _section("Dates", {
+                              _section(context, "Dates", {
                                 "Check-in": format.format(booking.checkIn),
                                 "Check-out": format.format(booking.checkOut),
                                 "Created": format.format(booking.bookingDate),
                               }),
-                              _section("Reference", {
+                              _section(context, "Reference", {
                                 "Confirmation Number":
                                     booking.confirmationNumber.toString(),
                                 "Email": booking.email ?? "-",
                                 "Invoice Number": booking.invoiceNumber ?? "-",
                               }),
-                              _section("Notes & Requests", {
-                                "Special Request": (booking.specialRequest !=
-                                            null &&
-                                        booking.specialRequest!.trim().isNotEmpty)
-                                    ? booking.specialRequest!
-                                    : "None",
+                              _section(context, "Notes & Requests", {
+                                "Special Request":
+                                    (booking.specialRequest != null &&
+                                            booking.specialRequest!
+                                                .trim()
+                                                .isNotEmpty)
+                                        ? booking.specialRequest!
+                                        : "None",
                                 "Note": (booking.note != null &&
                                         booking.note!.trim().isNotEmpty)
                                     ? booking.note!
                                     : "None",
                               }),
-                              _section("Nightly Rates", {
+                              _section(context, "Nightly Rates", {
                                 for (var rate in booking.bookingRates)
                                   DateFormat('dd MMM').format(rate.rateDate):
                                       "£${rate.nightlyRate.toStringAsFixed(2)}"
@@ -982,6 +1012,7 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                 bookingInvoiceAsync.when(
                                   loading: () => _financeCardSkeleton(),
                                   error: (err, _) => _infoCard(
+                                    context,
                                     "Invoice",
                                     Text('Failed to load invoice: $err'),
                                   ),
@@ -996,6 +1027,7 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                 bookingPaymentsAsync.when(
                                   loading: () => _financeCardSkeleton(),
                                   error: (err, _) => _infoCard(
+                                    context,
                                     "Payments",
                                     Text('Failed to load payments: $err'),
                                   ),
@@ -1069,14 +1101,15 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                       paymentStatusMapping),
                                 ),
 
-                              // 👉 NEW: CHARGE VCC BUTTON 
+                              // 👉 NEW: CHARGE VCC BUTTON
                               if (canManageFinance && booking.balanceDue > 0)
                                 ElevatedButton.icon(
                                   onPressed: () async {
                                     final result = await showDialog<bool>(
                                       context: context,
                                       barrierDismissible: false,
-                                      builder: (context) => VccChargeDialog(booking: booking),
+                                      builder: (context) =>
+                                          VccChargeDialog(booking: booking),
                                     );
 
                                     // Refresh UI state upon successful charge
@@ -1153,9 +1186,12 @@ class _BookingViewState extends ConsumerState<BookingView> {
     );
   }
 
-  Widget _section(String title, Map<String, String> data) {
+  Widget _section(
+      BuildContext context, String title, Map<String, String> data) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 260),
+      constraints: BoxConstraints(
+        maxWidth: context.showCompactLayout ? double.infinity : 260,
+      ),
       child: Card(
         margin: EdgeInsets.zero,
         child: Padding(
@@ -1201,6 +1237,7 @@ class _BookingViewState extends ConsumerState<BookingView> {
 
   Widget _financeCardSkeleton() {
     return _infoCard(
+      null,
       "Finance",
       const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
@@ -1209,9 +1246,13 @@ class _BookingViewState extends ConsumerState<BookingView> {
     );
   }
 
-  Widget _infoCard(String title, Widget child) {
+  Widget _infoCard(BuildContext? context, String title, Widget child) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 320),
+      constraints: BoxConstraints(
+        maxWidth: context == null || !context.showCompactLayout
+            ? 320
+            : double.infinity,
+      ),
       child: Card(
         margin: EdgeInsets.zero,
         child: Padding(
@@ -1241,28 +1282,38 @@ class _BookingViewState extends ConsumerState<BookingView> {
 
     if (invoice == null) {
       return _infoCard(
+        context,
         'Invoice',
         const Text('No invoice is available for this booking yet.'),
       );
     }
 
     return _infoCard(
+      context,
       'Invoice',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _labelValue('Invoice', invoice.invoiceNumber),
-          _labelValue('Status', invoice.status.replaceAll('_', ' ').toUpperCase()),
-          _labelValue('Issued',
-              invoice.issueDate != null ? DateFormat.yMMMd().format(invoice.issueDate!) : '-'),
           _labelValue(
-              'Due', invoice.dueDate != null ? DateFormat.yMMMd().format(invoice.dueDate!) : '-'),
+              'Status', invoice.status.replaceAll('_', ' ').toUpperCase()),
+          _labelValue(
+              'Issued',
+              invoice.issueDate != null
+                  ? DateFormat.yMMMd().format(invoice.issueDate!)
+                  : '-'),
+          _labelValue(
+              'Due',
+              invoice.dueDate != null
+                  ? DateFormat.yMMMd().format(invoice.dueDate!)
+                  : '-'),
           const Divider(),
           _labelValue('Subtotal', currency.format(invoice.subtotal)),
           _labelValue('Tax', currency.format(invoice.taxAmount)),
           _labelValue('Total', currency.format(invoice.totalAmount)),
           _labelValue('Paid', currency.format(invoice.amountPaid)),
-          _labelValue('Balance', currency.format(invoice.balanceDue), bold: true),
+          _labelValue('Balance', currency.format(invoice.balanceDue),
+              bold: true),
           if (invoice.lineItems.isNotEmpty) ...[
             const SizedBox(height: 8),
             const Text(
@@ -1312,6 +1363,7 @@ class _BookingViewState extends ConsumerState<BookingView> {
     final currency = NumberFormat.currency(symbol: '£');
 
     return _infoCard(
+      context,
       'Payments',
       payments.isEmpty
           ? const Text('No payments have been posted yet.')
@@ -1337,7 +1389,8 @@ class _BookingViewState extends ConsumerState<BookingView> {
                               children: [
                                 Text(
                                   '${payment.transactionType.replaceAll('_', ' ').toUpperCase()} • ${payment.paymentMethod.replaceAll('_', ' ').toUpperCase()}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
                                 ),
                                 Text(
                                   '${payment.status.toUpperCase()} • $createdAt',

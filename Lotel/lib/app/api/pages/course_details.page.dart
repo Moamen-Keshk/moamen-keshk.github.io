@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 
 class CourseDetailsPage extends StatelessWidget {
   final int courseId;
@@ -11,11 +12,13 @@ class CourseDetailsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('title'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: <Widget>[
-          Text("Course id: $courseId"),
-        ],
+      body: ResponsiveContent(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: <Widget>[
+            Text("Course id: $courseId"),
+          ],
+        ),
       ),
     );
   }

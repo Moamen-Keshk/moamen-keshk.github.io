@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/guest_chat.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/guest_chat_list.vm.dart';
 
@@ -93,6 +94,7 @@ class _GuestChatViewState extends ConsumerState<GuestChatView> {
   Widget build(BuildContext context) {
     final state = ref.watch(guestMessageListVM);
     final messages = state.messages;
+    final isCompact = context.showCompactLayout;
 
     return Scaffold(
       appBar: AppBar(
@@ -150,10 +152,12 @@ class _GuestChatViewState extends ConsumerState<GuestChatView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       const Text('Chat via'),
-                      const SizedBox(width: 12),
                       ChoiceChip(
                         label: const Text('WhatsApp'),
                         selected: state.activeChannel == 'whatsapp',
@@ -163,57 +167,109 @@ class _GuestChatViewState extends ConsumerState<GuestChatView> {
                                 .read(guestMessageListVM.notifier)
                                 .setChannel('whatsapp'),
                       ),
-                      const SizedBox(width: 8),
                       ChoiceChip(
                         label: const Text('SMS'),
                         selected: state.activeChannel == 'sms',
                         onSelected: state.isSending
                             ? null
-                            : (_) =>
-                                ref.read(guestMessageListVM.notifier).setChannel('sms'),
+                            : (_) => ref
+                                .read(guestMessageListVM.notifier)
+                                .setChannel('sms'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          textInputAction: TextInputAction.send,
-                          enabled: !state.isSending,
-                          decoration: InputDecoration(
-                            hintText: "Type a chat message...",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                          ),
-                          onSubmitted: (_) => _sendMessage(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        child: state.isSending
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
+                  isCompact
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextField(
+                              controller: _controller,
+                              textInputAction: TextInputAction.send,
+                              enabled: !state.isSending,
+                              decoration: InputDecoration(
+                                hintText: "Type a chat message...",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none,
                                 ),
-                              )
-                            : IconButton(
-                                icon: const Icon(Icons.send, color: Colors.white),
-                                onPressed: _sendMessage,
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
                               ),
-                      ),
-                    ],
-                  ),
+                              onSubmitted: (_) => _sendMessage(),
+                            ),
+                            const SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: state.isSending
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : IconButton(
+                                        icon: const Icon(
+                                          Icons.send,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: _sendMessage,
+                                      ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _controller,
+                                textInputAction: TextInputAction.send,
+                                enabled: !state.isSending,
+                                decoration: InputDecoration(
+                                  hintText: "Type a chat message...",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  filled: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                ),
+                                onSubmitted: (_) => _sendMessage(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              backgroundColor: Colors.blue,
+                              child: state.isSending
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : IconButton(
+                                      icon: const Icon(
+                                        Icons.send,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: _sendMessage,
+                                    ),
+                            ),
+                          ],
+                        ),
                 ],
               ),
             ),
@@ -237,7 +293,8 @@ class _GuestChatViewState extends ConsumerState<GuestChatView> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: const [
           SizedBox(height: 180),
-          Center(child: Text("No communication yet. Start with chat or email.")),
+          Center(
+              child: Text("No communication yet. Start with chat or email.")),
         ],
       );
     }
@@ -264,8 +321,11 @@ class _MessageCard extends StatelessWidget {
         : isHotel
             ? Colors.blue[600]
             : Colors.grey[300];
-    final textColor = isHotel && !message.isEmail ? Colors.white : Colors.black87;
-    final timestamp = DateFormat('dd MMM, HH:mm').format(message.timestamp.toLocal());
+    final textColor =
+        isHotel && !message.isEmail ? Colors.white : Colors.black87;
+    final timestamp =
+        DateFormat('dd MMM, HH:mm').format(message.timestamp.toLocal());
+    final isCompact = context.showCompactLayout;
 
     return Align(
       alignment: isHotel ? Alignment.centerRight : Alignment.centerLeft,
@@ -273,7 +333,7 @@ class _MessageCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         padding: const EdgeInsets.all(12),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.82,
+          maxWidth: context.screenWidth * (isCompact ? 0.94 : 0.82),
         ),
         decoration: BoxDecoration(
           color: cardColor,
@@ -287,15 +347,18 @@ class _MessageCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
               children: [
                 Icon(
-                  message.isEmail ? Icons.email_outlined : Icons.chat_bubble_outline,
+                  message.isEmail
+                      ? Icons.email_outlined
+                      : Icons.chat_bubble_outline,
                   size: 16,
                   color: textColor,
                 ),
-                const SizedBox(width: 6),
                 Text(
                   message.channel.toUpperCase(),
                   style: TextStyle(
@@ -304,8 +367,7 @@ class _MessageCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (message.isOutbound) ...[
-                  const SizedBox(width: 8),
+                if (message.isOutbound)
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -323,10 +385,10 @@ class _MessageCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
               ],
             ),
-            if (message.subject != null && message.subject!.trim().isNotEmpty) ...[
+            if (message.subject != null &&
+                message.subject!.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
                 message.subject!,

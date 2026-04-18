@@ -1,5 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/api/utilities/rate_resolver.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
@@ -208,6 +210,7 @@ class _BookingFormState extends State<BookingForm> {
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
+    final isCompact = context.showCompactLayout;
 
     final maxContentWidth = 900.0;
     final contentWidth = screen.width < 600
@@ -228,48 +231,36 @@ class _BookingFormState extends State<BookingForm> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
+                    ResponsiveFormRow(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: firstNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'First Name',
-                            ),
-                            validator: _requiredString,
+                        TextFormField(
+                          controller: firstNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'First Name',
                           ),
+                          validator: _requiredString,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: lastNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Last Name',
-                            ),
-                            validator: _requiredString,
+                        TextFormField(
+                          controller: lastNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Last Name',
                           ),
+                          validator: _requiredString,
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    ResponsiveFormRow(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: emailController,
-                            decoration:
-                                const InputDecoration(labelText: 'Email'),
-                            keyboardType: TextInputType.emailAddress,
-                          ),
+                        TextFormField(
+                          controller: emailController,
+                          decoration: const InputDecoration(labelText: 'Email'),
+                          keyboardType: TextInputType.emailAddress,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: phoneController,
-                            decoration:
-                                const InputDecoration(labelText: 'Phone'),
-                            keyboardType: TextInputType.phone,
-                          ),
+                        TextFormField(
+                          controller: phoneController,
+                          decoration: const InputDecoration(labelText: 'Phone'),
+                          keyboardType: TextInputType.phone,
                         ),
                       ],
                     ),
@@ -278,7 +269,7 @@ class _BookingFormState extends State<BookingForm> {
                         ? _buildDateRangePicker()
                         : _buildDatePickers(),
                     const SizedBox(height: 8),
-                    Row(
+                    ResponsiveFormRow(
                       children: [
                         _buildDropdown(
                           "Adults:",
@@ -293,7 +284,7 @@ class _BookingFormState extends State<BookingForm> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    ResponsiveFormRow(
                       children: [
                         Consumer(
                           builder: (context, ref, _) {
@@ -384,37 +375,32 @@ class _BookingFormState extends State<BookingForm> {
                       maxLines: 4,
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    ResponsiveFormRow(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: rateController,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                                labelText: 'Total Rate (£)',
-                                border: OutlineInputBorder()),
-                            validator: _requiredString,
-                          ),
+                        TextFormField(
+                          controller: rateController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                              labelText: 'Total Rate (£)',
+                              border: OutlineInputBorder()),
+                          validator: _requiredString,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: amountPaidController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            decoration: const InputDecoration(
-                                labelText: 'Amount Paid (£)',
-                                border: OutlineInputBorder()),
-                            validator: (val) {
-                              if (val == null || val.isEmpty) {
-                                return 'Required';
-                              }
-                              if (double.tryParse(val) == null) {
-                                return 'Invalid Amount';
-                              }
-                              return null;
-                            },
-                          ),
+                        TextFormField(
+                          controller: amountPaidController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: const InputDecoration(
+                              labelText: 'Amount Paid (£)',
+                              border: OutlineInputBorder()),
+                          validator: (val) {
+                            if (val == null || val.isEmpty) {
+                              return 'Required';
+                            }
+                            if (double.tryParse(val) == null) {
+                              return 'Invalid Amount';
+                            }
+                            return null;
+                          },
                         ),
                       ],
                     ),
@@ -425,7 +411,8 @@ class _BookingFormState extends State<BookingForm> {
             ),
             const SizedBox(height: 12),
             Align(
-              alignment: Alignment.centerRight,
+              alignment:
+                  isCompact ? Alignment.centerLeft : Alignment.centerRight,
               child: Wrap(
                 spacing: 10,
                 runSpacing: 8,
@@ -544,124 +531,118 @@ class _BookingFormState extends State<BookingForm> {
   }
 
   Widget _buildDateRangePicker() {
-    return Row(
+    return ResponsiveFormRow(
       children: [
-        Expanded(
-          child: TextFormField(
-            controller: dateRangeController,
-            decoration: const InputDecoration(labelText: 'Select Dates'),
-            readOnly: true,
-            onTap: () async {
-              final picked = await showDateRangePicker(
-                context: context,
-                firstDate: DateTime.now(),
-                lastDate: DateTime(2027),
-              );
+        TextFormField(
+          controller: dateRangeController,
+          decoration: const InputDecoration(labelText: 'Select Dates'),
+          readOnly: true,
+          onTap: () async {
+            final picked = await showDateRangePicker(
+              context: context,
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2027),
+            );
 
-              if (picked != null) {
-                setState(() {
-                  checkInDate = picked.start;
-                  // 👉 FIX: The Range picker "end" date is treated as departure day
-                  checkOutDate = picked.end;
-                  dateRangeController.text =
-                      "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
-                  calculateNumberOfNights();
-                });
+            if (picked != null) {
+              setState(() {
+                checkInDate = picked.start;
+                checkOutDate = picked.end;
+                dateRangeController.text =
+                    "${_formatDate(picked.start)} to ${_formatDate(picked.end)}";
+                calculateNumberOfNights();
+              });
 
-                WidgetsBinding.instance.addPostFrameCallback((_) async {
-                  if (_roomID != null) {
-                    await _tryResolveAndSetRate();
-                  }
-                });
-              }
-            },
-            validator: _requiredString,
-          ),
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (_roomID != null) {
+                  await _tryResolveAndSetRate();
+                }
+              });
+            }
+          },
+          validator: _requiredString,
         ),
         if (_numberOfNights != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text('$_numberOfNights Nights'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text('$_numberOfNights Nights'),
+            ),
           ),
       ],
     );
   }
 
   Widget _buildDatePickers() {
-    return Row(
+    return ResponsiveFormRow(
       children: [
-        SizedBox(
-          width: 160,
-          child: TextFormField(
-            controller: checkInController,
-            decoration: const InputDecoration(labelText: 'Check in'),
-            readOnly: true,
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                firstDate: DateTime.now(),
-                lastDate: DateTime(2100),
-                initialDate: checkInDate ?? DateTime.now(),
-              );
+        TextFormField(
+          controller: checkInController,
+          decoration: const InputDecoration(labelText: 'Check in'),
+          readOnly: true,
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2100),
+              initialDate: checkInDate ?? DateTime.now(),
+            );
 
-              if (picked != null) {
-                setState(() {
-                  checkInDate = picked;
-                  checkInController.text = _formatDate(picked);
+            if (picked != null) {
+              setState(() {
+                checkInDate = picked;
+                checkInController.text = _formatDate(picked);
 
-                  // Force checkout to be at least 1 day after check-in
-                  if (checkOutDate == null || !checkOutDate!.isAfter(picked)) {
-                    checkOutDate = picked.add(const Duration(days: 1));
-                    checkOutController.text = _formatDate(checkOutDate!);
-                  }
+                if (checkOutDate == null || !checkOutDate!.isAfter(picked)) {
+                  checkOutDate = picked.add(const Duration(days: 1));
+                  checkOutController.text = _formatDate(checkOutDate!);
+                }
 
-                  calculateNumberOfNights();
-                });
+                calculateNumberOfNights();
+              });
 
-                await _tryResolveAndSetRate();
-              }
-            },
-            validator: _requiredString,
-          ),
+              await _tryResolveAndSetRate();
+            }
+          },
+          validator: _requiredString,
         ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 160,
-          child: TextFormField(
-            controller: checkOutController,
-            decoration: const InputDecoration(labelText: 'Check out'),
-            readOnly: true,
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                // Block selecting a checkout date that is before check-in
-                firstDate:
-                    checkInDate?.add(const Duration(days: 1)) ?? DateTime.now(),
-                lastDate: DateTime(2100),
-                initialDate: checkOutDate ??
-                    checkInDate?.add(const Duration(days: 1)) ??
-                    DateTime.now(),
-              );
+        TextFormField(
+          controller: checkOutController,
+          decoration: const InputDecoration(labelText: 'Check out'),
+          readOnly: true,
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              firstDate:
+                  checkInDate?.add(const Duration(days: 1)) ?? DateTime.now(),
+              lastDate: DateTime(2100),
+              initialDate: checkOutDate ??
+                  checkInDate?.add(const Duration(days: 1)) ??
+                  DateTime.now(),
+            );
 
-              if (picked != null) {
-                setState(() {
-                  checkOutDate = picked;
-                  checkOutController.text = _formatDate(picked);
-                  calculateNumberOfNights();
-                });
+            if (picked != null) {
+              setState(() {
+                checkOutDate = picked;
+                checkOutController.text = _formatDate(picked);
+                calculateNumberOfNights();
+              });
 
-                await _tryResolveAndSetRate();
-              }
-            },
-            validator: _requiredString,
-          ),
+              await _tryResolveAndSetRate();
+            }
+          },
+          validator: _requiredString,
         ),
         if (_numberOfNights != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: Text(
-              '$_numberOfNights Nights',
-              style: const TextStyle(fontSize: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Text(
+                '$_numberOfNights Nights',
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
           ),
       ],
@@ -675,23 +656,22 @@ class _BookingFormState extends State<BookingForm> {
   ) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 90, child: Text(label)),
-          SizedBox(
-            width: 70,
-            child: DropdownButtonFormField<int>(
-              initialValue: value,
-              items: List.generate(
-                5,
-                (i) => DropdownMenuItem(
-                  value: i + 1,
-                  child: Text('${i + 1}'),
-                ),
+          Text(label),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            initialValue: value,
+            items: List.generate(
+              5,
+              (i) => DropdownMenuItem(
+                value: i + 1,
+                child: Text('${i + 1}'),
               ),
-              onChanged: onChanged,
-              validator: _requiredInt,
             ),
+            onChanged: onChanged,
+            validator: _requiredInt,
           ),
         ],
       ),
@@ -706,16 +686,13 @@ class _BookingFormState extends State<BookingForm> {
   }) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: SizedBox(
-        width: 160,
-        child: DropdownButtonFormField<T>(
-          initialValue: value,
-          items: items,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            labelText: label,
-          ),
+      child: DropdownButtonFormField<T>(
+        initialValue: value,
+        items: items,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          labelText: label,
         ),
       ),
     );

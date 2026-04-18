@@ -21,10 +21,11 @@ class FeaturedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final width = context.screenWidth;
+    final isCompact = context.showCompactLayout;
     return Container(
-      height: width > ScreenSizes.md ? null : 600,
-      padding: const EdgeInsets.all(32.0),
+      height: isCompact ? null : null,
+      padding: EdgeInsets.all(isCompact ? 20.0 : 32.0),
       child: Flex(
         direction: getAxis(width),
         children: [
@@ -32,10 +33,10 @@ class FeaturedSection extends StatelessWidget {
             Expanded(
               child: Image.asset(
                 image,
-                height: 450,
+                height: isCompact ? 260 : 450,
               ),
             ),
-          const SizedBox(width: 20.0),
+          SizedBox(width: isCompact ? 0 : 20.0, height: isCompact ? 20.0 : 0),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -61,12 +62,12 @@ class FeaturedSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 20.0),
+          SizedBox(width: isCompact ? 0 : 20.0, height: isCompact ? 20.0 : 0),
           if (!imageLeft)
             Expanded(
               child: Image.asset(
                 image,
-                height: 450,
+                height: isCompact ? 260 : 450,
               ),
             ),
         ],

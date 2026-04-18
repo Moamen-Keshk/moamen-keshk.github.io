@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For formatting the last sync date
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/channel_manager/view_models/channel_connection_list.vm.dart';
 
 class ChannelConnectionsView extends ConsumerWidget {
@@ -9,6 +10,7 @@ class ChannelConnectionsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionState = ref.watch(channelConnectionListVMProvider);
+    final isCompact = context.showCompactLayout;
 
     return connectionState.when(
       data: (connections) {
@@ -40,81 +42,89 @@ class ChannelConnectionsView extends ConsumerWidget {
               return Card(
                 elevation: 2,
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blue.shade50,
-                    child: const Icon(Icons.public, color: Colors.blue),
-                  ),
-                  title: Text(
-                    conn.channelCode,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.circle, size: 10, color: statusColor),
-                          const SizedBox(width: 4),
-                          Text(
-                            conn.status.toUpperCase(),
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: statusColor,
-                                fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: isCompact
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.blue.shade50,
+                                  child: const Icon(Icons.public,
+                                      color: Colors.blue),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    conn.channelCode,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                _menuButton(context, ref, conn),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.circle,
+                                    size: 10, color: statusColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  conn.status.toUpperCase(),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: statusColor,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text('Hotel ID: ${conn.hotelIdOnChannel}',
+                                style: const TextStyle(fontSize: 12)),
+                            Text('Last Sync: $lastSyncText',
+                                style: const TextStyle(fontSize: 12)),
+                          ],
+                        )
+                      : ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blue.shade50,
+                            child: const Icon(Icons.public, color: Colors.blue),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text('Hotel ID: ${conn.hotelIdOnChannel}',
-                          style: const TextStyle(fontSize: 12)),
-                      Text('Last Sync: $lastSyncText',
-                          style: const TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                  isThreeLine: true,
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (value) async {
-                      if (value == 'sync') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Syncing channel...')),
-                        );
-                        await ref
-                            .read(channelConnectionListVMProvider.notifier)
-                            .forceSync(conn.id);
-                      } else if (value == 'disconnect') {
-                        final success = await ref
-                            .read(channelConnectionListVMProvider.notifier)
-                            .disconnectChannel(conn.id);
-                        if (!success && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Failed to disconnect channel')),
-                          );
-                        }
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'sync',
-                        child: ListTile(
-                          leading: Icon(Icons.sync),
-                          title: Text('Force Sync'),
-                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            conn.channelCode,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.circle,
+                                      size: 10, color: statusColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    conn.status.toUpperCase(),
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: statusColor,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text('Hotel ID: ${conn.hotelIdOnChannel}',
+                                  style: const TextStyle(fontSize: 12)),
+                              Text('Last Sync: $lastSyncText',
+                                  style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                          isThreeLine: true,
+                          trailing: _menuButton(context, ref, conn),
                         ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'disconnect',
-                        child: ListTile(
-                          leading: Icon(Icons.link_off, color: Colors.red),
-                          title: Text('Disconnect',
-                              style: TextStyle(color: Colors.red)),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               );
             },
@@ -137,6 +147,52 @@ class ChannelConnectionsView extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  PopupMenuButton<String> _menuButton(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic conn,
+  ) {
+    return PopupMenuButton<String>(
+      onSelected: (value) async {
+        if (value == 'sync') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Syncing channel...')),
+          );
+          await ref
+              .read(channelConnectionListVMProvider.notifier)
+              .forceSync(conn.id);
+        } else if (value == 'disconnect') {
+          final success = await ref
+              .read(channelConnectionListVMProvider.notifier)
+              .disconnectChannel(conn.id);
+          if (!success && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to disconnect channel')),
+            );
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'sync',
+          child: ListTile(
+            leading: Icon(Icons.sync),
+            title: Text('Force Sync'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'disconnect',
+          child: ListTile(
+            leading: Icon(Icons.link_off, color: Colors.red),
+            title: Text('Disconnect', style: TextStyle(color: Colors.red)),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ],
     );
   }
 }

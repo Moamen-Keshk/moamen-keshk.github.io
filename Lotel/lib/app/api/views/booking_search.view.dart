@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
@@ -107,6 +108,8 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
           orElse: () => <int, String>{},
         );
 
+    final isCompact = context.showCompactLayout;
+
     return SizedBox(
       height: MediaQuery.of(context).size.height,
       child: Column(
@@ -116,49 +119,82 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
             color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildDatePicker(
-                      label: 'Check-In After',
-                      date: checkInFrom,
-                      onPicked: (date) => setState(() => checkInFrom = date),
-                      onClear: () => setState(() => checkInFrom = null),
+              child: isCompact
+                  ? Column(
+                      children: [
+                        _buildDatePicker(
+                          label: 'Check-In After',
+                          date: checkInFrom,
+                          onPicked: (date) =>
+                              setState(() => checkInFrom = date),
+                          onClear: () => setState(() => checkInFrom = null),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildDatePicker(
+                          label: 'Check-Out Before',
+                          date: checkOutTo,
+                          onPicked: (date) => setState(() => checkOutTo = date),
+                          onClear: () => setState(() => checkOutTo = null),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: searchController,
+                          onChanged: _handleSearchChanged,
+                          decoration: const InputDecoration(
+                            hintText:
+                                'Name, email, phone, room, invoice, or confirmation #',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildDatePicker(
+                            label: 'Check-In After',
+                            date: checkInFrom,
+                            onPicked: (date) =>
+                                setState(() => checkInFrom = date),
+                            onClear: () => setState(() => checkInFrom = null),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: _buildDatePicker(
+                            label: 'Check-Out Before',
+                            date: checkOutTo,
+                            onPicked: (date) =>
+                                setState(() => checkOutTo = date),
+                            onClear: () => setState(() => checkOutTo = null),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: searchController,
+                            onChanged: _handleSearchChanged,
+                            decoration: const InputDecoration(
+                              hintText:
+                                  'Name, email, phone, room, invoice, or confirmation #',
+                              prefixIcon: Icon(Icons.search),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: _buildDatePicker(
-                      label: 'Check-Out Before',
-                      date: checkOutTo,
-                      onPicked: (date) => setState(() => checkOutTo = date),
-                      onClear: () => setState(() => checkOutTo = null),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: searchController,
-                      onChanged: _handleSearchChanged,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Name, email, phone, room, invoice, or confirmation #',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
           const Divider(height: 1),
           Expanded(
             child: selectedPropertyId == null || selectedPropertyId <= 0
-                ? const Center(child: Text('Select a property to search bookings'))
+                ? const Center(
+                    child: Text('Select a property to search bookings'))
                 : allBookingsAsync.when(
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
@@ -261,49 +297,77 @@ class _BookingSearchViewState extends ConsumerState<BookingSearchView> {
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  '${booking.firstName} ${booking.lastName}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
+          child: context.showCompactLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${booking.firstName} ${booking.lastName}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Room: ${roomMapping[booking.roomID] ?? 'N/A'}'),
+                    Text('${booking.numberOfNights} night(s)'),
+                    const SizedBox(height: 4),
+                    Text(
+                      paymentMapping[booking.paymentStatusID] ?? 'Unknown',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: Icon(Icons.chevron_right, color: Colors.grey),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        '${booking.firstName} ${booking.lastName}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        '${booking.numberOfNights} night(s)',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        paymentMapping[booking.paymentStatusID] ?? 'Unknown',
+                        textAlign: TextAlign.right,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: Colors.grey),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right, color: Colors.grey),
+                  ],
                 ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Text(
-                  '${booking.numberOfNights} night(s)',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  paymentMapping[booking.paymentStatusID] ?? 'Unknown',
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.grey),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Added an arrow icon to clearly indicate it's a clickable link
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
-          ),
         ),
       ),
     );

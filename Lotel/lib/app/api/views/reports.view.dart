@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_status_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
@@ -10,9 +11,8 @@ import 'package:lotel_pms/app/global/selected_property.global.dart';
 
 typedef ReportsQuery = ({int propertyId, DateTime fromDate, DateTime toDate});
 
-final reportsBookingsByRangeProvider =
-    FutureProvider.autoDispose.family<List<BookingVM>, ReportsQuery>(
-        (ref, query) async {
+final reportsBookingsByRangeProvider = FutureProvider.autoDispose
+    .family<List<BookingVM>, ReportsQuery>((ref, query) async {
   if (query.propertyId <= 0) {
     return const [];
   }
@@ -88,18 +88,22 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     );
     final rooms = ref.watch(roomListVM);
     final roomMapping = ref.watch(reportsRoomMappingProvider);
-    final bookingStatusMapping = ref.watch(
-      reportsBookingStatusMappingProvider,
-    ).maybeWhen(
-      data: (value) => value,
-      orElse: () => <int, String>{},
-    );
-    final paymentStatusMapping = ref.watch(
-      reportsPaymentStatusMappingProvider,
-    ).maybeWhen(
-      data: (value) => value,
-      orElse: () => <int, String>{},
-    );
+    final bookingStatusMapping = ref
+        .watch(
+          reportsBookingStatusMappingProvider,
+        )
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => <int, String>{},
+        );
+    final paymentStatusMapping = ref
+        .watch(
+          reportsPaymentStatusMappingProvider,
+        )
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => <int, String>{},
+        );
 
     if (propertyId == null || propertyId <= 0) {
       return const Center(
@@ -139,7 +143,7 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
               const SizedBox(height: 20),
               _buildFilters(context),
               const SizedBox(height: 20),
-              _buildMetricCards(report),
+              _buildMetricCards(context, report),
               const SizedBox(height: 20),
               _buildBreakdownSection(
                 title: 'Booking Status Breakdown',
@@ -221,7 +225,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       totalBookings += 1;
       matchingBookings.add(booking);
 
-      if (_isInInclusiveRange(_startOfDay(booking.checkIn), rangeStart, rangeEnd)) {
+      if (_isInInclusiveRange(
+          _startOfDay(booking.checkIn), rangeStart, rangeEnd)) {
         arrivals += 1;
       }
 
@@ -264,7 +269,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       );
     }
 
-    matchingBookings.sort((left, right) => right.checkIn.compareTo(left.checkIn));
+    matchingBookings
+        .sort((left, right) => right.checkIn.compareTo(left.checkIn));
     final occupancyRate = roomCount == 0 || daysInRange == 0
         ? 0.0
         : roomNights / (roomCount * daysInRange);
@@ -305,7 +311,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     required DateTime rangeEndExclusive,
   }) {
     final overlapStart = _laterDate(_startOfDay(booking.checkIn), rangeStart);
-    final overlapEnd = _earlierDate(_startOfDay(booking.checkOut), rangeEndExclusive);
+    final overlapEnd =
+        _earlierDate(_startOfDay(booking.checkOut), rangeEndExclusive);
     final nights = overlapEnd.difference(overlapStart).inDays;
     return nights > 0 ? nights : 0;
   }
@@ -320,7 +327,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       double sum = 0;
       for (final rate in booking.bookingRates) {
         final rateDate = _startOfDay(rate.rateDate);
-        if (!rateDate.isBefore(rangeStart) && rateDate.isBefore(rangeEndExclusive)) {
+        if (!rateDate.isBefore(rangeStart) &&
+            rateDate.isBefore(rangeEndExclusive)) {
           sum += rate.nightlyRate;
         }
       }
@@ -428,7 +436,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     );
   }
 
-  Widget _buildMetricCards(_ReportData report) {
+  Widget _buildMetricCards(BuildContext context, _ReportData report) {
+    final isCompact = context.showCompactLayout;
     final metrics = [
       _MetricTileData('Bookings', report.totalBookings.toString(), Icons.book),
       _MetricTileData('Arrivals', report.arrivals.toString(), Icons.login),
@@ -457,7 +466,7 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       children: metrics
           .map(
             (metric) => SizedBox(
-              width: 220,
+              width: isCompact ? 160 : 220,
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -588,7 +597,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              bookingStatusMapping[booking.statusID] ?? 'Unknown',
+                              bookingStatusMapping[booking.statusID] ??
+                                  'Unknown',
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -630,7 +640,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
                           Expanded(
                             flex: 2,
                             child: Text(
-                              bookingStatusMapping[booking.statusID] ?? 'Unknown',
+                              bookingStatusMapping[booking.statusID] ??
+                                  'Unknown',
                             ),
                           ),
                           Expanded(

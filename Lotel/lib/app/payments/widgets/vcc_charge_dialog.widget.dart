@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/payments/view_models/payments.vm.dart';
 import 'package:lotel_pms/app/payments/services/payment.service.dart'; // Import service
 import 'package:lotel_pms/infrastructure/api/model/booking.model.dart';
@@ -38,7 +39,8 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
     final propertyId = widget.booking.propertyID;
     final bookingId = int.tryParse(widget.booking.id);
     if (bookingId != null) {
-      final vccData = await _paymentService.fetchBookingVCC(propertyId, bookingId);
+      final vccData =
+          await _paymentService.fetchBookingVCC(propertyId, bookingId);
 
       if (vccData != null && mounted) {
         setState(() {
@@ -107,10 +109,11 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = context.showCompactLayout;
     return AlertDialog(
       title: Text('VCC Payment - Booking #${widget.booking.id}'),
       content: SizedBox(
-        width: 400,
+        width: isCompact ? double.maxFinite : 400,
         child: _isFetchingVCC
             ? const Padding(
                 padding: EdgeInsets.all(40.0),
@@ -123,77 +126,81 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
                       'No OTA virtual card details were found for this booking.',
                     ),
                   )
-            : Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _readOnlyField('Card Number', _vccData?['card_number']),
-                    const SizedBox(height: 12),
-                    Row(
+                : Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: _readOnlyField(
-                              'Exp Month', _vccData?['exp_month']),
+                        _readOnlyField('Card Number', _vccData?['card_number']),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            SizedBox(
+                              width: isCompact ? double.maxFinite : 110,
+                              child: _readOnlyField(
+                                  'Exp Month', _vccData?['exp_month']),
+                            ),
+                            SizedBox(
+                              width: isCompact ? double.maxFinite : 110,
+                              child: _readOnlyField(
+                                  'Exp Year', _vccData?['exp_year']),
+                            ),
+                            SizedBox(
+                              width: isCompact ? double.maxFinite : 110,
+                              child: _readOnlyField('CVC', _vccData?['cvc']),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child:
-                              _readOnlyField('Exp Year', _vccData?['exp_year']),
+                        if (_vccData?['activation_date'] != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Activation: ${_vccData?['activation_date']}',
+                            style: TextStyle(
+                              color: (_vccData?['can_charge_now'] ?? true)
+                                  ? Colors.black54
+                                  : Colors.red,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _amountController,
+                          decoration: const InputDecoration(
+                            labelText: 'Amount to Record',
+                            prefixIcon: Icon(Icons.attach_money),
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          validator: (val) => val == null || val.isEmpty
+                              ? 'Enter amount'
+                              : null,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _readOnlyField('CVC', _vccData?['cvc']),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _referenceController,
+                          decoration: const InputDecoration(
+                            labelText: 'Reference',
+                            prefixIcon: Icon(Icons.tag),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _notesController,
+                          decoration: const InputDecoration(
+                            labelText: 'Notes',
+                            border: OutlineInputBorder(),
+                          ),
+                          minLines: 2,
+                          maxLines: 3,
                         ),
                       ],
                     ),
-                    if (_vccData?['activation_date'] != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Activation: ${_vccData?['activation_date']}',
-                        style: TextStyle(
-                          color: (_vccData?['can_charge_now'] ?? true)
-                              ? Colors.black54
-                              : Colors.red,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _amountController,
-                      decoration: const InputDecoration(
-                        labelText: 'Amount to Record',
-                        prefixIcon: Icon(Icons.attach_money),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      validator: (val) =>
-                          val == null || val.isEmpty ? 'Enter amount' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _referenceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Reference',
-                        prefixIcon: Icon(Icons.tag),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes',
-                        border: OutlineInputBorder(),
-                      ),
-                      minLines: 2,
-                      maxLines: 3,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
       ),
       actions: [
         TextButton(
@@ -201,13 +208,12 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton.icon(
-          onPressed:
-              (_isProcessing ||
-                      _isFetchingVCC ||
-                      _vccData == null ||
-                      (_vccData?['can_charge_now'] ?? true) != true)
-                  ? null
-                  : _processCharge,
+          onPressed: (_isProcessing ||
+                  _isFetchingVCC ||
+                  _vccData == null ||
+                  (_vccData?['can_charge_now'] ?? true) != true)
+              ? null
+              : _processCharge,
           icon: _isProcessing
               ? const SizedBox(
                   width: 16,
@@ -218,6 +224,7 @@ class _VccChargeDialogState extends ConsumerState<VccChargeDialog> {
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
         ),
       ],
+      actionsOverflowDirection: VerticalDirection.down,
     );
   }
 

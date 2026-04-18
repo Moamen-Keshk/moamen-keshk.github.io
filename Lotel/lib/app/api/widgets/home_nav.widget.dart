@@ -9,11 +9,12 @@ class TopNav extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCompact = context.showCompactLayout;
     return AppBar(
       title: const Text('Lotel'),
       elevation: kIsWeb ? 0 : null,
-      centerTitle: kIsWeb ? false : null,
-      actions: (MediaQuery.of(context).size.width <= ScreenSizes.md)
+      centerTitle: isCompact ? true : (kIsWeb ? false : null),
+      actions: isCompact
           ? null
           : [
               TextButton(

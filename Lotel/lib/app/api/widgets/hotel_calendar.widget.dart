@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
+import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
 import 'package:lotel_pms/app/api/view_models/floor.vm.dart';
@@ -80,7 +81,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
 
     if (!mounted || todayIndex == -1) return;
 
-    const double dateCellWidth = 39.9;
+    final double dateCellWidth = context.showCompactLayout
+        ? CalendarHeader.compactDayColumnWidth
+        : CalendarHeader.regularDayColumnWidth;
     final offset = todayIndex * dateCellWidth;
 
     try {
@@ -148,6 +151,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
+      final isCompact = context.showCompactLayout;
       final canViewRates = hasPmsPermission(ref, PmsPermission.viewRates);
       final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
       final floors = ref.watch(floorListVM);
@@ -180,133 +184,100 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
         child: Column(
           children: [
             // Date Picker + Show Rates + Calendar Header
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 140,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: BeveledRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          minimumSize: const Size(140, 36),
-                        ),
-                        onPressed: () async {
-                          final picked = await showMonthYearPicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2027),
-                          );
-                          if (picked != null) {
-                            ref
-                                .read(selectedMonthVM.notifier)
-                                .updateMonth(picked);
-                          }
-                        },
-                        child: Text(
-                          DateFormat('MMMM yyyy').format(selectedDate),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (canViewRates || canManageRates)
-                      SizedBox(
-                        width: 140,
-                        child: Row(
-                          children: [
-                            if (canViewRates)
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _showRates
-                                        ? Colors.green[200]
-                                        : Colors.grey[300],
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8),
-                                    shape: BeveledRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(8.0),
-                                    ),
+            isCompact
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: SizedBox(
+                              width: RoomLabelColumn.compactRoomLabelWidth,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: _monthButton(
+                                        context, ref, selectedDate),
                                   ),
-                                  onPressed: () {
-                                    setState(() => _showRates = !_showRates);
-                                  },
-                                  child: Text(
-                                    _showRates ? 'Hide' : 'Rates',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.black,
+                                  if (canViewRates || canManageRates) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        if (canViewRates)
+                                          Expanded(child: _ratesToggleButton()),
+                                        if (canViewRates && canManageRates)
+                                          const SizedBox(width: 4),
+                                        if (canManageRates)
+                                          Expanded(
+                                            child: _ratesRefreshButton(
+                                                context, ref),
+                                          ),
+                                      ],
                                     ),
-                                  ),
-                                ),
+                                  ],
+                                ],
                               ),
-                            if (canViewRates && canManageRates)
-                              const SizedBox(width: 4),
-                            if (canManageRates)
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[200],
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8),
-                                    shape: BeveledRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    final propertyId =
-                                        ref.read(selectedPropertyVM);
-                                    if (propertyId == null) return;
-
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text('Refreshing rates...')),
-                                    );
-
-                                    await ref
-                                        .read(roomOnlineListVM.notifier)
-                                        .fetchRoomOnline();
-                                    await ref
-                                        .read(blockListVM.notifier)
-                                        .fetchBlocks();
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                            content: Text('Rates updated.')),
-                                      );
-                                    }
-                                  },
-                                  child: const Icon(Icons.sync,
-                                      size: 16, color: Colors.black),
+                            ),
+                          ),
+                          Expanded(
+                            child: SizedBox(
+                              height: 60,
+                              child: CalendarHeader(
+                                daysInMonth: _daysInMonth,
+                                scrollController: _calendarScrollController,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: RoomLabelColumn.regularRoomLabelWidth,
+                              child: _monthButton(context, ref, selectedDate),
+                            ),
+                            const SizedBox(height: 8),
+                            if (canViewRates || canManageRates)
+                              SizedBox(
+                                width: RoomLabelColumn.regularRoomLabelWidth,
+                                child: Row(
+                                  children: [
+                                    if (canViewRates)
+                                      Expanded(child: _ratesToggleButton()),
+                                    if (canViewRates && canManageRates)
+                                      const SizedBox(width: 4),
+                                    if (canManageRates)
+                                      Expanded(
+                                        child:
+                                            _ratesRefreshButton(context, ref),
+                                      ),
+                                  ],
                                 ),
                               ),
                           ],
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: CalendarHeader(
-                    daysInMonth: _daysInMonth,
-                    scrollController: _calendarScrollController,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: CalendarHeader(
+                          daysInMonth: _daysInMonth,
+                          scrollController: _calendarScrollController,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
             const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
@@ -348,5 +319,91 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
         ),
       );
     });
+  }
+
+  Widget _monthButton(
+    BuildContext context,
+    WidgetRef ref,
+    DateTime selectedDate,
+  ) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        minimumSize: const Size(140, 36),
+      ),
+      onPressed: () async {
+        final picked = await showMonthYearPicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2027),
+        );
+        if (picked != null) {
+          ref.read(selectedMonthVM.notifier).updateMonth(picked);
+        }
+      },
+      child: Text(
+        DateFormat('MMMM yyyy').format(selectedDate),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+        style: const TextStyle(fontSize: 14),
+      ),
+    );
+  }
+
+  Widget _ratesToggleButton() {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _showRates ? Colors.green[200] : Colors.grey[300],
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      onPressed: () {
+        setState(() => _showRates = !_showRates);
+      },
+      child: Text(
+        _showRates ? 'Hide' : 'Rates',
+        style: const TextStyle(
+          fontSize: 11,
+          color: Colors.black,
+        ),
+      ),
+    );
+  }
+
+  Widget _ratesRefreshButton(BuildContext context, WidgetRef ref) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.grey[200],
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      onPressed: () async {
+        final propertyId = ref.read(selectedPropertyVM);
+        if (propertyId == null) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Refreshing rates...')),
+        );
+
+        await ref.read(roomOnlineListVM.notifier).fetchRoomOnline();
+        await ref.read(blockListVM.notifier).fetchBlocks();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Rates updated.')),
+          );
+        }
+      },
+      child: const Icon(Icons.sync, size: 16, color: Colors.black),
+    );
   }
 }

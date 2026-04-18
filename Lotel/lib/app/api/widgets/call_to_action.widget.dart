@@ -7,34 +7,45 @@ class CallToAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = context.showCompactLayout;
     return Container(
-      margin: const EdgeInsets.only(top: 40.0),
+      margin: EdgeInsets.only(top: isCompact ? 24 : 40),
       color: Colors.grey.shade200,
-      height: 400,
+      constraints: BoxConstraints(minHeight: isCompact ? 280 : 400),
       alignment: Alignment.center,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Ready to Begin Learning",
-            style: Theme.of(context).textTheme.displayMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20.0),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              fixedSize: MediaQuery.of(context).size.width > ScreenSizes.md
-                  ? const Size(180, 50)
-                  : const Size(180, 70),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: context.responsiveHorizontalPadding,
+          vertical: isCompact ? 32 : 48,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Ready to Begin Learning",
+              style: isCompact
+                  ? Theme.of(context).textTheme.headlineMedium
+                  : Theme.of(context).textTheme.displayMedium,
+              textAlign: TextAlign.center,
             ),
-            onPressed: () {
-              if (kDebugMode) {
-                print("register");
-              }
-            },
-            child: const Text("Get Started"),
-          )
-        ],
+            const SizedBox(height: 20.0),
+            SizedBox(
+              width: isCompact ? double.infinity : 180,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(
+                      isCompact ? double.infinity : 180, isCompact ? 52 : 50),
+                ),
+                onPressed: () {
+                  if (kDebugMode) {
+                    print("register");
+                  }
+                },
+                child: const Text("Get Started"),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
