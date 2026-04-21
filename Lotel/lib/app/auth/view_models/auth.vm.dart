@@ -159,12 +159,13 @@ class AuthVM extends ChangeNotifier {
     try {
       String? token = await _auth.currentUser?.getIdToken();
 
-      final response = await sendGetWithParamsRequest(
+      final response = await sendGetWithParamsRequestOrThrow(
         token,
         "/api/v1/users",
         {
           'property_id': propertyId?.toString(),
         },
+        fallbackMessage: 'Failed to load account status from the backend.',
       );
 
       if (response != null && response['status'] == 'success') {
@@ -187,6 +188,10 @@ class AuthVM extends ChangeNotifier {
       }
 
       error = 'Failed to load account status from the backend.';
+      notifyListeners();
+      return false;
+    } on ApiRequestException catch (e) {
+      error = e.message;
       notifyListeners();
       return false;
     } catch (e) {

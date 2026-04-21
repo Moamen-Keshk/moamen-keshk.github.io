@@ -4,6 +4,7 @@ import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
 import 'package:lotel_pms/app/api/views/new_booking.view.dart';
 import 'package:lotel_pms/app/api/widgets/dashboard_drawer.widget.dart';
 import 'package:lotel_pms/app/api/widgets/dashboard_nav.widget.dart';
+import 'package:lotel_pms/app/api/widgets/hotel_calendar.widget.dart';
 import 'package:lotel_pms/app/api/widgets/home_drawer.widget.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/main.dart';
@@ -116,6 +117,47 @@ class ResponsiveFormRow extends StatelessWidget {
   }
 }
 
+class CompactViewHeader extends StatelessWidget {
+  const CompactViewHeader({
+    super.key,
+    required this.title,
+  });
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!context.showCompactLayout) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Center(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey.shade300,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class DashboardPageScaffold extends ConsumerWidget {
   const DashboardPageScaffold({
     super.key,
@@ -141,9 +183,12 @@ class DashboardPageScaffold extends ConsumerWidget {
             hasPmsPermission(ref, PmsPermission.manageBookings);
         final canViewBookings =
             hasPmsPermission(ref, PmsPermission.viewBookings);
+        final canViewRates = hasPmsPermission(ref, PmsPermission.viewRates);
         final canUpdateRoomStatus =
             hasPmsPermission(ref, PmsPermission.updateRoomStatus);
         final effectivePropertyId = ref.watch(effectivePropertyIdProvider);
+        final showRates = ref.watch(dashboardShowRatesProvider);
+        final showDashboardActions = isCompact && currentRoute == 'dashboard';
 
         final bottomItems = <_DashboardBottomNavItem>[
           const _DashboardBottomNavItem(
@@ -179,37 +224,75 @@ class DashboardPageScaffold extends ConsumerWidget {
           backgroundColor: backgroundColor,
           resizeToAvoidBottomInset: resizeToAvoidBottomInset,
           appBar: const DashboardNav(),
-          drawer: isCompact ? const DashboardDrawer() : null,
-          floatingActionButton:
-              isCompact && canManageBookings && currentRoute == 'dashboard'
-                  ? FloatingActionButton(
-                      heroTag: 'dashboard-new-booking-fab',
-                      tooltip: 'New Booking',
-                      onPressed: effectivePropertyId != null
-                          ? () => _showMobileBookingDialog(context, ref)
-                          : null,
-                      child: const Icon(Icons.add),
-                    )
-                  : null,
+          drawer: null,
+          floatingActionButton: showDashboardActions &&
+                  (canManageBookings || canViewRates)
+              ? Transform.translate(
+                  offset: const Offset(0, 18),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (canViewRates)
+                        FloatingActionButton.small(
+                          heroTag: 'dashboard-rates-toggle-fab',
+                          tooltip: showRates ? 'Hide Rates' : 'Show Rates',
+                          backgroundColor:
+                              showRates ? Colors.green[200] : Colors.grey[300],
+                          foregroundColor: Colors.black,
+                          onPressed: () {
+                            ref
+                                    .read(dashboardShowRatesProvider.notifier)
+                                    .state =
+                                !showRates;
+                          },
+                          child: const Icon(Icons.sell_outlined, size: 18),
+                        ),
+                      if (canViewRates && canManageBookings)
+                        const SizedBox(height: 8),
+                      if (canManageBookings)
+                        FloatingActionButton.small(
+                          heroTag: 'dashboard-new-booking-fab',
+                          tooltip: 'New Booking',
+                          onPressed: effectivePropertyId != null
+                              ? () => _showMobileBookingDialog(context, ref)
+                              : null,
+                          child: const Icon(Icons.add, size: 18),
+                        ),
+                    ],
+                  ),
+                )
+                )
+              : null,
           floatingActionButtonLocation:
-              isCompact && canManageBookings && currentRoute == 'dashboard'
-                  ? FloatingActionButtonLocation.endDocked
+              showDashboardActions && (canManageBookings || canViewRates)
+                  ? FloatingActionButtonLocation.endFloat
                   : null,
           bottomNavigationBar: isCompact && bottomItems.isNotEmpty
-              ? BottomAppBar(
-                  shape: canManageBookings
-                      ? const CircularNotchedRectangle()
-                      : null,
-                  notchMargin: canManageBookings ? 8 : 0,
-                  child: SizedBox(
-                    height: 64,
+              ? SafeArea(
+                  top: false,
+                  child: Container(
+                    height: 50,
+                    margin: const EdgeInsets.fromLTRB(6, 0, 6, 4),
+                    padding: EdgeInsets.zero,
+                    color: Colors.transparent,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         for (final item in bottomItems)
                           Expanded(
                             child: IconButton(
-                              tooltip: item.tooltip,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              visualDensity: const VisualDensity(
+                                horizontal: 0,
+                                vertical: -3,
+                              ),
+                              tooltip: isCompact ? null : item.tooltip,
                               onPressed: item.route == 'dashboard'
                                   ? () => router.replaceAllWith('dashboard')
                                   : effectivePropertyId != null
@@ -219,13 +302,27 @@ class DashboardPageScaffold extends ConsumerWidget {
                                 currentRoute == item.route
                                     ? item.activeIcon
                                     : item.icon,
+                                size: 22,
                                 color: currentRoute == item.route
                                     ? Theme.of(context).colorScheme.primary
                                     : Colors.grey[600],
                               ),
                             ),
                           ),
-                        if (canManageBookings) const SizedBox(width: 56),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
+                          visualDensity: const VisualDensity(
+                            horizontal: 0,
+                            vertical: -3,
+                          ),
+                          tooltip: null,
+                          onPressed: () => _showDashboardMenuSheet(context),
+                          icon: const Icon(Icons.menu, size: 22),
+                        ),
                       ],
                     ),
                   ),
@@ -261,6 +358,17 @@ class DashboardPageScaffold extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+  Future<void> _showDashboardMenuSheet(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const FractionallySizedBox(
+        heightFactor: 0.82,
+        child: DashboardMenuPanel(asSheet: true),
+      ),
     );
   }
 }

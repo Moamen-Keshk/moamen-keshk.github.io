@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -107,6 +108,9 @@ class TodaysView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const CompactViewHeader(
+                    title: "Today's",
+                  ),
                   _DatePicker(selectedDate),
                   const SizedBox(height: 8),
                   BookingSummaryCards(

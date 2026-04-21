@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/app/api/view_models/lists/housekeeping_list.vm.dart';
@@ -69,6 +70,9 @@ class HousekeepingView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const CompactViewHeader(
+                    title: 'Housekeeping',
+                  ),
                   _HousekeepingDatePicker(
                     selectedDate: selectedDate,
                     propertyId: propertyId,
@@ -235,7 +239,8 @@ class HousekeepingView extends ConsumerWidget {
     }
 
     final unknownForecasts = forecasts
-        .where((forecast) => !forecastPriority.contains(forecast.forecastStatus))
+        .where(
+            (forecast) => !forecastPriority.contains(forecast.forecastStatus))
         .toList()
       ..sort((a, b) => a.roomNumber.compareTo(b.roomNumber));
     if (unknownForecasts.isNotEmpty) {
@@ -407,8 +412,8 @@ class _InteractiveRoomRow extends ConsumerWidget {
     );
   }
 
-  void _showStatusUpdateDialog(
-      BuildContext context, WidgetRef ref, HousekeepingRoom room, int propertyId) {
+  void _showStatusUpdateDialog(BuildContext context, WidgetRef ref,
+      HousekeepingRoom room, int propertyId) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {

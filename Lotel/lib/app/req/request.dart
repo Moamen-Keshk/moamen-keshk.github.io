@@ -3,9 +3,21 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
-// 1. DYNAMIC BASE URL FIX
-// Automatically uses the correct localhost IP depending on the device running the app
+const String _configuredBaseUrl =
+    String.fromEnvironment('LOTEL_API_BASE_URL');
+
+String _normalizeBaseUrl(String url) {
+  return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+}
+
+// Automatically uses the correct localhost IP depending on the device running the app.
+// For physical devices, pass:
+// flutter run --dart-define=LOTEL_API_BASE_URL=http://YOUR-LAN-IP:5000
 String getBaseUrl() {
+  if (_configuredBaseUrl.isNotEmpty) {
+    return _normalizeBaseUrl(_configuredBaseUrl);
+  }
+
   if (kIsWeb) {
     return "http://127.0.0.1:5000";
   } else if (Platform.isAndroid) {
@@ -180,6 +192,30 @@ Future<dynamic> sendGetWithParamsRequest(
   } on Exception {
     return null;
   }
+}
+
+Future<dynamic> sendGetWithParamsRequestOrThrow(
+  String? idToken,
+  String apiURL,
+  Map<String, String?> queryParams, {
+  String fallbackMessage = 'Request failed.',
+}) async {
+  final Map<String, dynamic> cleanParams = {}..addAll(queryParams);
+  cleanParams.removeWhere((key, value) => value == null);
+
+  final Uri url = Uri.parse(baseURL + apiURL);
+  final Uri uriWithParams = url.replace(queryParameters: cleanParams);
+
+  final http.Response response = await http.get(
+    uriWithParams,
+    headers: _buildHeaders(idToken),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return _decodeResponseBody(response);
+  }
+
+  throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
 }
 
 Future<bool> sendPutRequest(

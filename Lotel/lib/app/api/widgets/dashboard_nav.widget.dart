@@ -75,12 +75,14 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
     propertiesMapping = propertyMapping(properties);
 
     return AppBar(
-      leading: useCollapsedActions && canPop
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => ref.read(routerProvider).pop(),
-              tooltip: 'Back',
-            )
+      leading: useCollapsedActions
+          ? canPop
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => ref.read(routerProvider).pop(),
+                  tooltip: null,
+                )
+              : null
           : null,
       title: useCollapsedActions
           ? _buildPropertyDropdown(
@@ -97,8 +99,8 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
           ? [
               if (canManageBookings)
                 IconButton(
-                  icon: const Icon(Icons.block_outlined),
-                  tooltip: 'Create Block',
+                  icon: const Icon(Icons.event_busy_outlined),
+                  tooltip: useCollapsedActions ? null : 'Create Block',
                   onPressed: effectivePropertyId != null
                       ? () {
                           showBlockDialog(context, ref);

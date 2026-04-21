@@ -23,53 +23,47 @@ class FeaturedSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = context.screenWidth;
     final isCompact = context.showCompactLayout;
+    final imageWidget = Image.asset(
+      image,
+      height: isCompact ? 260 : 450,
+    );
+    final contentWidget = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 20.0),
+        Text(
+          description,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontSize: 18.0,
+              ),
+        ),
+        const SizedBox(height: 20.0),
+        Center(
+          child: ElevatedButton(
+            onPressed: onActionPressed,
+            child: Text(buttonLabel),
+          ),
+        )
+      ],
+    );
+
     return Container(
-      height: isCompact ? null : null,
       padding: EdgeInsets.all(isCompact ? 20.0 : 32.0),
       child: Flex(
         direction: getAxis(width),
         children: [
           if (imageLeft)
-            Expanded(
-              child: Image.asset(
-                image,
-                height: isCompact ? 260 : 450,
-              ),
-            ),
+            isCompact ? imageWidget : Expanded(child: imageWidget),
           SizedBox(width: isCompact ? 0 : 20.0, height: isCompact ? 20.0 : 0),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 20.0),
-                Text(
-                  description,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 18.0,
-                      ),
-                ),
-                const SizedBox(height: 20.0),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: onActionPressed,
-                    child: Text(buttonLabel),
-                  ),
-                )
-              ],
-            ),
-          ),
+          isCompact ? contentWidget : Expanded(child: contentWidget),
           SizedBox(width: isCompact ? 0 : 20.0, height: isCompact ? 20.0 : 0),
           if (!imageLeft)
-            Expanded(
-              child: Image.asset(
-                image,
-                height: isCompact ? 260 : 450,
-              ),
-            ),
+            isCompact ? imageWidget : Expanded(child: imageWidget),
         ],
       ),
     );

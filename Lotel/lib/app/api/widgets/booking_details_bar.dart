@@ -39,7 +39,8 @@ class BookingDetailsBar extends ConsumerWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       height: isCompact ? null : 80,
-      padding: EdgeInsets.all(isCompact ? 6 : 8),
+      margin: EdgeInsets.only(right: isCompact ? 74 : 0),
+      padding: EdgeInsets.all(isCompact ? 6 : 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isCompact ? 14 : 18),
@@ -64,7 +65,7 @@ class BookingDetailsBar extends ConsumerWidget {
               ),
             )
           : Padding(
-              padding: EdgeInsets.all(isCompact ? 2 : 4),
+              padding: EdgeInsets.all(isCompact ? 2 : 2),
               child: isCompact
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
@@ -98,16 +99,19 @@ class BookingDetailsBar extends ConsumerWidget {
                               ),
                             ),
                             if (canManageBookings)
-                              IconButton.filledTonal(
-                                visualDensity: VisualDensity.compact,
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0xFFEAF2FF),
-                                  foregroundColor: const Color(0xFF2D6CDF),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: IconButton.filledTonal(
+                                  visualDensity: VisualDensity.compact,
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEAF2FF),
+                                    foregroundColor: const Color(0xFF2D6CDF),
+                                  ),
+                                  onPressed: () {
+                                    _showEditBookingDialog(context, booking, ref);
+                                  },
+                                  icon: const Icon(Icons.edit_outlined, size: 16),
                                 ),
-                                onPressed: () {
-                                  _showEditBookingDialog(context, booking, ref);
-                                },
-                                icon: const Icon(Icons.edit_outlined, size: 16),
                               ),
                           ],
                         ),
@@ -230,7 +234,7 @@ class BookingDetailsBar extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -260,6 +264,20 @@ class BookingDetailsBar extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (canManageBookings)
+                              SizedBox(
+                                width: 52,
+                                child: Center(
+                                  child: IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    icon: const Icon(Icons.edit, size: 18),
+                                    onPressed: () {
+                                      _showEditBookingDialog(
+                                          context, booking, ref);
+                                    },
+                                  ),
+                                ),
+                              ),
                             Expanded(
                               child: Text(
                                 'Adults: ${booking.numberOfAdults}',
@@ -291,13 +309,6 @@ class BookingDetailsBar extends ConsumerWidget {
                                 style: const TextStyle(fontSize: 13),
                               ),
                             ),
-                            if (canManageBookings)
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () {
-                                  _showEditBookingDialog(context, booking, ref);
-                                },
-                              ),
                           ],
                         ),
                       ],
@@ -371,7 +382,7 @@ class _CompactStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xFFEFF4FF),
         borderRadius: BorderRadius.circular(999),
@@ -381,12 +392,17 @@ class _CompactStatusChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: const Color(0xFF2D6CDF)),
           const SizedBox(width: 6),
-          Text(
-            label.trim().isEmpty ? 'N/A' : label,
-            style: const TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF244B9A),
+          Flexible(
+            child: Text(
+              label.trim().isEmpty ? 'N/A' : label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF244B9A),
+              ),
             ),
           ),
         ],

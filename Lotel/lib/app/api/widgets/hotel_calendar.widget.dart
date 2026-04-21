@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
@@ -14,6 +16,7 @@ import 'package:lotel_pms/app/api/view_models/lists/room_online_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/room.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:intl/intl.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 
@@ -21,6 +24,8 @@ import 'calendar_header.dart';
 import 'room_label_column.dart';
 import 'room_booking_grid.dart';
 import 'booking_details_bar.dart';
+
+final dashboardShowRatesProvider = StateProvider<bool>((ref) => false);
 
 class FloorRooms extends ConsumerStatefulWidget {
   const FloorRooms({super.key});
@@ -41,9 +46,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
   final Map<int, String> paymentStatusMapping = {};
   Map<int, String> roomMapping = {};
   Map<int, String> categoryMapping = {};
-  bool _showRates = false;
   bool _hasScrolledToToday = false;
   bool _isSyncing = false;
+  String? _lastAutoRefreshKey;
 
   @override
   void initState() {
@@ -152,8 +157,8 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
       final isCompact = context.showCompactLayout;
+      final showRates = ref.watch(dashboardShowRatesProvider);
       final canViewRates = hasPmsPermission(ref, PmsPermission.viewRates);
-      final canManageRates = hasPmsPermission(ref, PmsPermission.manageRates);
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
       final blocks = ref.watch(blockListVM); // 👈 watch blocks
@@ -164,6 +169,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
 
       final selectedMonth = selectedDate.month;
       final selectedYear = selectedDate.year;
+      final selectedPropertyId = ref.watch(selectedPropertyVM);
 
       _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
       final roomsCategoryMapping = setRoomCategory(rooms, categories);
@@ -176,6 +182,18 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
             _scrollToToday();
             _hasScrolledToToday = true;
           }
+        });
+      }
+
+      final autoRefreshKey =
+          '${selectedPropertyId ?? 0}-$selectedYear-$selectedMonth';
+      if (selectedPropertyId != null &&
+          selectedPropertyId != 0 &&
+          _lastAutoRefreshKey != autoRefreshKey) {
+        _lastAutoRefreshKey = autoRefreshKey;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(_autoRefreshDashboardData(ref));
         });
       }
 
@@ -203,22 +221,6 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                                     child: _monthButton(
                                         context, ref, selectedDate),
                                   ),
-                                  if (canViewRates || canManageRates) ...[
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        if (canViewRates)
-                                          Expanded(child: _ratesToggleButton()),
-                                        if (canViewRates && canManageRates)
-                                          const SizedBox(width: 4),
-                                        if (canManageRates)
-                                          Expanded(
-                                            child: _ratesRefreshButton(
-                                                context, ref),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),
@@ -249,22 +251,10 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                               child: _monthButton(context, ref, selectedDate),
                             ),
                             const SizedBox(height: 8),
-                            if (canViewRates || canManageRates)
+                            if (canViewRates)
                               SizedBox(
                                 width: RoomLabelColumn.regularRoomLabelWidth,
-                                child: Row(
-                                  children: [
-                                    if (canViewRates)
-                                      Expanded(child: _ratesToggleButton()),
-                                    if (canViewRates && canManageRates)
-                                      const SizedBox(width: 4),
-                                    if (canManageRates)
-                                      Expanded(
-                                        child:
-                                            _ratesRefreshButton(context, ref),
-                                      ),
-                                  ],
-                                ),
+                                child: _ratesToggleButton(ref, showRates),
                               ),
                           ],
                         ),
@@ -280,40 +270,49 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                   ),
             const SizedBox(height: 12),
             Expanded(
-              child: SingleChildScrollView(
-                controller: _verticalScrollController,
-                scrollDirection: Axis.vertical,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RoomLabelColumn(
-                      floors: floors,
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    controller: _verticalScrollController,
+                    scrollDirection: Axis.vertical,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RoomLabelColumn(
+                          floors: floors,
+                          roomsCategoryMapping: roomsCategoryMapping,
+                          categoryMapping: categoryMapping,
+                        ),
+                        Expanded(
+                          child: RoomBookingGrid(
+                            floors: floors,
+                            bookings: bookings,
+                            blocks: blocks, // 👈 pass blocks here
+                            numberOfDays: numberOfDays,
+                            currentMonth: selectedMonth,
+                            currentYear: selectedYear,
+                            tabController: _tabController,
+                            showRates: showRates,
+                            horizontalScrollController: _gridScrollController,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: BookingDetailsBar(
+                      bookings: bookingsForTabBarView,
+                      roomMapping: roomMapping,
                       roomsCategoryMapping: roomsCategoryMapping,
                       categoryMapping: categoryMapping,
+                      paymentStatusMapping: paymentStatusMapping,
                     ),
-                    Expanded(
-                      child: RoomBookingGrid(
-                        floors: floors,
-                        bookings: bookings,
-                        blocks: blocks, // 👈 pass blocks here
-                        numberOfDays: numberOfDays,
-                        currentMonth: selectedMonth,
-                        currentYear: selectedYear,
-                        tabController: _tabController,
-                        showRates: _showRates,
-                        horizontalScrollController: _gridScrollController,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-            BookingDetailsBar(
-              bookings: bookingsForTabBarView,
-              roomMapping: roomMapping,
-              roomsCategoryMapping: roomsCategoryMapping,
-              categoryMapping: categoryMapping,
-              paymentStatusMapping: paymentStatusMapping,
             ),
           ],
         ),
@@ -321,43 +320,151 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
     });
   }
 
+  Future<void> _autoRefreshDashboardData(WidgetRef ref) async {
+    await ref.read(roomOnlineListVM.notifier).fetchRoomOnline();
+    await ref.read(blockListVM.notifier).fetchBlocks();
+  }
+
   Widget _monthButton(
     BuildContext context,
     WidgetRef ref,
     DateTime selectedDate,
   ) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+    final firstMonth = DateTime(2020, 1);
+    final lastMonth = DateTime(2027, 12);
+    final canGoPrevious = !selectedDate.isBefore(firstMonth) &&
+        DateTime(selectedDate.year, selectedDate.month) != firstMonth;
+    final canGoNext = !selectedDate.isAfter(lastMonth) &&
+        DateTime(selectedDate.year, selectedDate.month) != lastMonth;
+
+    Future<void> pickMonth() async {
+      final picked = await showMonthYearPicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: firstMonth,
+        lastDate: lastMonth,
+      );
+      if (picked != null) {
+        ref.read(selectedMonthVM.notifier).updateMonth(picked);
+      }
+    }
+
+    final monthLabel = DateFormat('MMMM').format(selectedDate);
+    final yearLabel = DateFormat('yyyy').format(selectedDate);
+
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F1E8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFD8C7AD),
         ),
-        minimumSize: const Size(140, 36),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      onPressed: () async {
-        final picked = await showMonthYearPicker(
-          context: context,
-          initialDate: selectedDate,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(2027),
-        );
-        if (picked != null) {
-          ref.read(selectedMonthVM.notifier).updateMonth(picked);
-        }
-      },
-      child: Text(
-        DateFormat('MMMM yyyy').format(selectedDate),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        softWrap: false,
-        style: const TextStyle(fontSize: 14),
+      child: Row(
+        children: [
+          _monthArrowButton(
+            icon: Icons.chevron_left_rounded,
+            enabled: canGoPrevious,
+            onPressed: () {
+              final previousMonth =
+                  DateTime(selectedDate.year, selectedDate.month - 1);
+              ref.read(selectedMonthVM.notifier).updateMonth(previousMonth);
+            },
+          ),
+          Expanded(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: pickMonth,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            monthLabel,
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF3E3022),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        yearLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                          color: Color(0xFF7A6754),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _monthArrowButton(
+            icon: Icons.chevron_right_rounded,
+            enabled: canGoNext,
+            onPressed: () {
+              final nextMonth =
+                  DateTime(selectedDate.year, selectedDate.month + 1);
+              ref.read(selectedMonthVM.notifier).updateMonth(nextMonth);
+            },
+          ),
+        ],
       ),
     );
   }
 
-  Widget _ratesToggleButton() {
+  Widget _monthArrowButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: 30,
+      height: double.infinity,
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+        onPressed: enabled ? onPressed : null,
+        icon: Icon(icon, size: 20),
+        color: const Color(0xFF6D5640),
+        disabledColor: const Color(0xFFCBBCA6),
+      ),
+    );
+  }
+
+  Widget _ratesToggleButton(WidgetRef ref, bool showRates) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: _showRates ? Colors.green[200] : Colors.grey[300],
+        backgroundColor: showRates ? Colors.green[200] : Colors.grey[300],
         elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 8),
         shape: BeveledRectangleBorder(
@@ -365,45 +472,15 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
         ),
       ),
       onPressed: () {
-        setState(() => _showRates = !_showRates);
+        ref.read(dashboardShowRatesProvider.notifier).state = !showRates;
       },
       child: Text(
-        _showRates ? 'Hide' : 'Rates',
+        showRates ? 'Hide' : 'Rates',
         style: const TextStyle(
           fontSize: 11,
           color: Colors.black,
         ),
       ),
-    );
-  }
-
-  Widget _ratesRefreshButton(BuildContext context, WidgetRef ref) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.grey[200],
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-      ),
-      onPressed: () async {
-        final propertyId = ref.read(selectedPropertyVM);
-        if (propertyId == null) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Refreshing rates...')),
-        );
-
-        await ref.read(roomOnlineListVM.notifier).fetchRoomOnline();
-        await ref.read(blockListVM.notifier).fetchBlocks();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Rates updated.')),
-          );
-        }
-      },
-      child: const Icon(Icons.sync, size: 16, color: Colors.black),
     );
   }
 }
