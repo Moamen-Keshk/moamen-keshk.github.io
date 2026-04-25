@@ -5,28 +5,38 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "flutter_academy",
-            "cwd": "flutter_academy",
+            "name": "lotel_pms",
+            "cwd": "Lotel",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "flutter_academy (profile mode)",
-            "cwd": "flutter_academy",
+            "name": "lotel_pms (iPhone)",
+            "cwd": "Lotel",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "00008030-000C75660A98402E",
+            "toolArgs": [
+                "--dart-define=LOTEL_API_BASE_URL=http://192.168.1.149:5000"
+            ]
+        },
+        {
+            "name": "lotel_pms (profile mode)",
+            "cwd": "Lotel",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "flutter_academy (release mode)",
-            "cwd": "flutter_academy",
+            "name": "lotel_pms (release mode)",
+            "cwd": "Lotel",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
         },
         {
             "name": "scripts",
-            "cwd": "flutter_academy/scripts",
+            "cwd": "Lotel/scripts",
             "request": "launch",
             "type": "dart"
         }
