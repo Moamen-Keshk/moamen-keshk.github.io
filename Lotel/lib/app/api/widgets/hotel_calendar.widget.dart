@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
@@ -158,7 +157,6 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
     return Consumer(builder: (context, ref, child) {
       final isCompact = context.showCompactLayout;
       final showRates = ref.watch(dashboardShowRatesProvider);
-      final canViewRates = hasPmsPermission(ref, PmsPermission.viewRates);
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
       final blocks = ref.watch(blockListVM); // 👈 watch blocks
@@ -250,16 +248,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                               width: RoomLabelColumn.regularRoomLabelWidth,
                               child: _monthButton(context, ref, selectedDate),
                             ),
-                            const SizedBox(height: 8),
-                            if (canViewRates)
-                              SizedBox(
-                                width: RoomLabelColumn.regularRoomLabelWidth,
-                                child: _ratesToggleButton(ref, showRates),
-                              ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
                       Expanded(
                         child: CalendarHeader(
                           daysInMonth: _daysInMonth,
@@ -461,26 +452,4 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
     );
   }
 
-  Widget _ratesToggleButton(WidgetRef ref, bool showRates) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: showRates ? Colors.green[200] : Colors.grey[300],
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-      ),
-      onPressed: () {
-        ref.read(dashboardShowRatesProvider.notifier).state = !showRates;
-      },
-      child: Text(
-        showRates ? 'Hide' : 'Rates',
-        style: const TextStyle(
-          fontSize: 11,
-          color: Colors.black,
-        ),
-      ),
-    );
-  }
 }

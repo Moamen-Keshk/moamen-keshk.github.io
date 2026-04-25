@@ -11,6 +11,7 @@ import 'package:lotel_pms/app/api/views/new_block.view.dart';
 import 'package:lotel_pms/app/api/views/new_booking.view.dart';
 import 'package:lotel_pms/app/api/views/notifications.view.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
+import 'package:lotel_pms/app/api/widgets/hotel_calendar.widget.dart';
 import 'package:lotel_pms/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,12 +35,15 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
   Widget build(BuildContext context) {
     final useCollapsedActions = context.screenWidth < ScreenSizes.lg;
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final router = ref.watch(routerProvider);
+    final currentRoute = router.currentRouteName ?? 'dashboard';
     final int? currentPropertyId = ref.watch(selectedPropertyVM);
     final authState = ref.watch(authVM);
     final effectivePropertyId = ref.watch(effectivePropertyIdProvider);
     final canViewBookings = hasPmsPermission(ref, PmsPermission.viewBookings);
     final canManageBookings =
         hasPmsPermission(ref, PmsPermission.manageBookings);
+    final canViewRates = hasPmsPermission(ref, PmsPermission.viewRates);
     final canViewFinance = hasPmsPermission(ref, PmsPermission.viewFinance);
     final canManageChannels =
         hasPmsPermission(ref, PmsPermission.manageChannels);
@@ -49,6 +53,10 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
     final canManageStaff = hasPmsPermission(ref, PmsPermission.manageStaff);
     final canManageProperty =
         hasPmsPermission(ref, PmsPermission.manageProperty);
+    final showRates = ref.watch(dashboardShowRatesProvider);
+    final showDashboardRatesToggle = !useCollapsedActions &&
+        currentRoute == 'dashboard' &&
+        canViewRates;
 
     ref.listen<int?>(selectedPropertyVM, (previous, next) {
       if (next != previous) {
@@ -160,6 +168,20 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                   );
                 }),
               if (canManageBookings) const SizedBox(width: 10.0),
+              if (showDashboardRatesToggle)
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    backgroundColor:
+                        showRates ? Colors.green[200] : Colors.grey[300],
+                  ),
+                  onPressed: () {
+                    ref.read(dashboardShowRatesProvider.notifier).state =
+                        !showRates;
+                  },
+                  child: const Text('Rates'),
+                ),
+              if (showDashboardRatesToggle) const SizedBox(width: 10.0),
 
               // THE DROPDOWN FIX
               _buildPropertyDropdown(
@@ -212,19 +234,6 @@ class _DashboardNavState extends ConsumerState<DashboardNav> {
                           }
                         : null,
                     child: const Text("Housekeeping")),
-
-              if (canManageChannels)
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.blueAccent,
-                  ),
-                  onPressed: effectivePropertyId != null
-                      ? () {
-                          ref.read(routerProvider).push('channel_manager');
-                        }
-                      : null,
-                  child: const Text("Channels"),
-                ),
 
               if (canManageProperty ||
                   canManageRates ||

@@ -536,9 +536,12 @@ class _BookingFormState extends State<BookingForm> {
         );
         Navigator.of(context).pop();
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
-        _showError(context, 'Something went wrong during submission.');
+        _showError(
+          context,
+          'Something went wrong during submission: $error',
+        );
       }
     }
   }

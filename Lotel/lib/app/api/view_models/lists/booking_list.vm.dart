@@ -2,6 +2,7 @@ import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/app/req/request.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:logging/logging.dart';
 
@@ -11,6 +12,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 class BookingListVM extends StateNotifier<List<BookingVM>> {
   static final Logger _logger = Logger('BookingListVM');
 
+  final Ref _ref;
   final BookingService bookingService;
   final int propertyId;
   final int year;
@@ -19,13 +21,15 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   // 👉 NEW: Socket instance
   io.Socket? _socket;
 
-  BookingListVM(
-    this.propertyId,
-    this.year,
-    this.month,
-    this.bookingService, {
+  BookingListVM({
+    required Ref ref,
+    required this.propertyId,
+    required this.year,
+    required this.month,
+    required this.bookingService,
     bool autoFetch = true,
-  }) : super(const []) {
+  })  : _ref = ref,
+        super(const []) {
     if (autoFetch) {
       fetchBookings();
     }
@@ -87,7 +91,10 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
 
   Future<bool> addToBookings(Map<String, dynamic> booking) async {
     if (await bookingService.addBooking(propertyId, booking)) {
-      await fetchBookings();
+      await _refreshAfterMutation(
+        primaryDate: _parsePayloadDate(booking['check_in']),
+        secondaryDate: _parsePayloadDate(booking['check_out']),
+      );
       return true;
     }
     return false;
@@ -101,7 +108,10 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
       final success =
           await bookingService.editBooking(propertyId, bookingId, updatedData);
       if (success) {
-        await fetchBookings();
+        await _refreshAfterMutation(
+          primaryDate: _parsePayloadDate(updatedData['check_in']),
+          secondaryDate: _parsePayloadDate(updatedData['check_out']),
+        );
         return true;
       }
     } catch (_) {}
@@ -119,7 +129,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   Future<bool> checkInBooking(int bookingId) async {
     final success = await bookingService.checkInBooking(propertyId, bookingId);
     if (success) {
-      await fetchBookings();
+      await _refreshAfterMutation(primaryDate: DateTime.now());
     }
     return success;
   }
@@ -127,7 +137,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
   Future<bool> checkOutBooking(int bookingId) async {
     final success = await bookingService.checkOutBooking(propertyId, bookingId);
     if (success) {
-      await fetchBookings();
+      await _refreshAfterMutation(primaryDate: DateTime.now());
     }
     return success;
   }
@@ -165,7 +175,9 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     );
 
     if (success) {
-      await fetchBookings();
+      await _refreshAfterMutation(
+        primaryDate: _parsePayloadDate(newCheckOutDate),
+      );
     }
     return success;
   }
@@ -183,7 +195,7 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     });
 
     if (success) {
-      await fetchBookings();
+      await _refreshAfterMutation(primaryDate: DateTime.now());
     }
     return success;
   }
@@ -194,9 +206,54 @@ class BookingListVM extends StateNotifier<List<BookingVM>> {
     });
 
     if (success) {
-      await fetchBookings();
+      await _refreshAfterMutation(primaryDate: DateTime.now());
     }
     return success;
+  }
+
+  Future<void> _refreshAfterMutation({
+    DateTime? primaryDate,
+    DateTime? secondaryDate,
+  }) async {
+    try {
+      await fetchBookings();
+    } catch (error, stackTrace) {
+      _logger.warning('Failed to refresh bookings after mutation', error, stackTrace);
+    }
+
+    try {
+      _invalidateDateBucketsFor(primaryDate);
+      _invalidateDateBucketsFor(secondaryDate);
+    } catch (error, stackTrace) {
+      _logger.warning(
+        'Failed to invalidate today buckets after mutation',
+        error,
+        stackTrace,
+      );
+    }
+  }
+
+  void _invalidateDateBucketsFor(DateTime? date) {
+    if (date == null || propertyId == 0) {
+      return;
+    }
+
+    final normalized = DateTime(date.year, date.month, date.day);
+    for (final stateName in const ['Arrivals', 'InHouse', 'Departures']) {
+      _ref.invalidate(bookingListByDateVM((propertyId, normalized, stateName)));
+    }
+  }
+
+  DateTime? _parsePayloadDate(dynamic rawValue) {
+    if (rawValue == null) {
+      return null;
+    }
+
+    try {
+      return DateTime.parse(rawValue.toString());
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -208,25 +265,27 @@ final bookingListVM =
   final selectedMonth = ref.watch(selectedMonthVM);
 
   return BookingListVM(
-    propertyId,
-    selectedMonth.year,
-    selectedMonth.month,
-    BookingService(),
+    ref: ref,
+    propertyId: propertyId,
+    year: selectedMonth.year,
+    month: selectedMonth.month,
+    bookingService: BookingService(),
     autoFetch: true,
   );
 });
 
-final bookingListByDateVM = StateNotifierProvider.family<
+final bookingListByDateVM = StateNotifierProvider.autoDispose.family<
     BookingListVM,
     List<BookingVM>,
     (int propertyId, DateTime date, String bookingState)>((ref, args) {
   final (propertyId, date, bookingState) = args;
 
   return BookingListVM(
-    propertyId,
-    date.year,
-    date.month,
-    BookingService(),
+    ref: ref,
+    propertyId: propertyId,
+    year: date.year,
+    month: date.month,
+    bookingService: BookingService(),
     autoFetch: false,
   )..fetchBookingsByDate(date, bookingState);
 });

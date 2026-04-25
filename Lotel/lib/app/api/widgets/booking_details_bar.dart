@@ -36,9 +36,13 @@ class BookingDetailsBar extends ConsumerWidget {
       (b) => int.parse(b.booking.id) == selectedId,
     );
 
+    if (booking == null) {
+      return const SizedBox.shrink();
+    }
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      height: isCompact ? null : 80,
+      height: isCompact ? null : 88,
       margin: EdgeInsets.only(right: isCompact ? 74 : 0),
       padding: EdgeInsets.all(isCompact ? 6 : 4),
       decoration: BoxDecoration(
@@ -53,21 +57,10 @@ class BookingDetailsBar extends ConsumerWidget {
           ),
         ],
       ),
-      child: booking == null
-          ? const Center(
-              child: Text(
-                'Select a booking to see details.',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.black54,
-                ),
-              ),
-            )
-          : Padding(
-              padding: EdgeInsets.all(isCompact ? 2 : 2),
-              child: isCompact
-                  ? Column(
+      child: Padding(
+        padding: EdgeInsets.all(isCompact ? 2 : 2),
+        child: isCompact
+            ? Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -179,8 +172,9 @@ class BookingDetailsBar extends ConsumerWidget {
                         ),
                       ],
                     )
-                  : Column(
+            : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -216,25 +210,29 @@ class BookingDetailsBar extends ConsumerWidget {
                               ),
                             ),
                             Expanded(
-                              child: Text(
-                                'Room: ${roomMapping[booking.roomID] ?? 'N/A'}',
-                                style: const TextStyle(fontSize: 14),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                '(${_format.format(booking.checkIn)}) to (${_format.format(booking.checkOut)})',
+                              flex: 3,
+                              child: _EllipsisTooltipText(
+                                'Special request: ${booking.specialRequest?.trim().isNotEmpty == true ? booking.specialRequest!.trim() : 'N/A'}',
                                 style: const TextStyle(fontSize: 13),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (canManageBookings)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: IconButton.filledTonal(
+                                  visualDensity: VisualDensity.compact,
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEAF2FF),
+                                    foregroundColor: const Color(0xFF2D6CDF),
+                                  ),
+                                  onPressed: () {
+                                    _showEditBookingDialog(context, booking, ref);
+                                  },
+                                  icon: const Icon(Icons.edit_outlined, size: 18),
+                                ),
+                              ),
                           ],
                         ),
-                        const SizedBox(height: 2),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -264,20 +262,6 @@ class BookingDetailsBar extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (canManageBookings)
-                              SizedBox(
-                                width: 52,
-                                child: Center(
-                                  child: IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    icon: const Icon(Icons.edit, size: 18),
-                                    onPressed: () {
-                                      _showEditBookingDialog(
-                                          context, booking, ref);
-                                    },
-                                  ),
-                                ),
-                              ),
                             Expanded(
                               child: Text(
                                 'Adults: ${booking.numberOfAdults}',
@@ -309,11 +293,12 @@ class BookingDetailsBar extends ConsumerWidget {
                                 style: const TextStyle(fontSize: 13),
                               ),
                             ),
+                            if (canManageBookings) const SizedBox(width: 56),
                           ],
                         ),
                       ],
                     ),
-            ),
+      ),
     );
   }
 
