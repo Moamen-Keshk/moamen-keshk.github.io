@@ -36,5 +36,7 @@ class BookingVM {
   String? get invoiceStatus => booking.invoiceStatus;
   int get propertyID => booking.propertyID;
   int get roomID => booking.roomID;
+  String? get ratePlanId => booking.ratePlanId;
+  String? get pricingChannelCode => booking.pricingChannelCode;
   List<BookingRate> get bookingRates => booking.bookingRates;
 }

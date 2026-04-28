@@ -6,6 +6,7 @@ import 'package:lotel_pms/app/api/view_models/booking.vm.dart';
 import 'package:lotel_pms/app/api/view_models/category.vm.dart';
 import 'package:lotel_pms/app/api/view_models/floor.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/booking_list.vm.dart';
+import 'package:lotel_pms/app/api/view_models/lists/booking_status_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/block_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/category_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/floor_list.vm.dart';
@@ -160,6 +161,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
       final floors = ref.watch(floorListVM);
       final bookings = ref.watch(bookingListVM);
       final blocks = ref.watch(blockListVM); // 👈 watch blocks
+      final bookingStatuses = ref.watch(bookingStatusListVM);
       final selectedDate = ref.watch(selectedMonthVM);
       final numberOfDays = ref.watch(numberOfDaysVM);
       final categories = ref.watch(categoryListVM);
@@ -171,6 +173,9 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
 
       _daysInMonth = _getDaysInMonth(selectedYear, selectedMonth);
       final roomsCategoryMapping = setRoomCategory(rooms, categories);
+      final bookingStatusMapping = {
+        for (final status in bookingStatuses) status.id: status.name,
+      };
 
       _prepareTabController(floors, bookings);
 
@@ -300,6 +305,7 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
                       roomsCategoryMapping: roomsCategoryMapping,
                       categoryMapping: categoryMapping,
                       paymentStatusMapping: paymentStatusMapping,
+                      bookingStatusMapping: bookingStatusMapping,
                     ),
                   ),
                 ],
@@ -451,5 +457,4 @@ class _FloorRoomsState extends ConsumerState<FloorRooms>
       ),
     );
   }
-
 }

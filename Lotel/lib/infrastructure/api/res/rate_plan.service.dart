@@ -159,11 +159,14 @@ class RatePlanService {
     required DateTime checkOut,
     int adults = 2,
     int children = 0,
+    String? channelCode,
   }) async {
     try {
+      final channelQuery =
+          channelCode == null || channelCode.isEmpty ? '' : '&channel_code=$channelCode';
       final query = await sendGetRequest(
         await _auth.currentUser?.getIdToken(),
-        "/api/v1/properties/$propertyId/rate_plans/$ratePlanId/quote?check_in=${checkIn.toIso8601String().split('T').first}&check_out=${checkOut.toIso8601String().split('T').first}&adults=$adults&children=$children",
+        "/api/v1/properties/$propertyId/rate_plans/$ratePlanId/quote?check_in=${checkIn.toIso8601String().split('T').first}&check_out=${checkOut.toIso8601String().split('T').first}&adults=$adults&children=$children$channelQuery",
       );
       return query['data'] as Map<String, dynamic>?;
     } catch (e) {

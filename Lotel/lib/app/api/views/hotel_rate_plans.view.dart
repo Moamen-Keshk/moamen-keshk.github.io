@@ -57,14 +57,35 @@ class HotelRatePlansView extends ConsumerWidget {
             );
           }),
           Center(
-            child: ElevatedButton.icon(
-              onPressed: () => ref.read(routerProvider).push('rate_plan'),
-              icon: const Icon(Icons.add),
-              label: const Text("Add New Rate Plan"),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              ),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      ref.read(routerProvider).push('revenue_optimization'),
+                  icon: const Icon(Icons.auto_graph),
+                  label: const Text('Revenue Optimizer'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => ref.read(routerProvider).push('rate_plan'),
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add New Rate Plan"),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 40),

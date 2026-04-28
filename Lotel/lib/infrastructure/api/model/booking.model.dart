@@ -30,6 +30,8 @@ class Booking {
   final double rate;
   final int propertyID;
   final int roomID;
+  final String? ratePlanId;
+  final String? pricingChannelCode;
   final List<BookingRate> bookingRates;
   final double amountPaid;
   final double balanceDue;
@@ -63,6 +65,8 @@ class Booking {
     required this.rate,
     required this.propertyID,
     required this.roomID,
+    this.ratePlanId,
+    this.pricingChannelCode,
     required this.bookingRates,
     required this.amountPaid,
     required this.balanceDue,
@@ -97,6 +101,8 @@ class Booking {
     double? rate,
     int? propertyID,
     int? roomID,
+    String? ratePlanId,
+    String? pricingChannelCode,
     List<BookingRate>? bookingRates,
     double? amountPaid,
     double? balanceDue,
@@ -130,6 +136,8 @@ class Booking {
       rate: rate ?? this.rate,
       propertyID: propertyID ?? this.propertyID,
       roomID: roomID ?? this.roomID,
+      ratePlanId: ratePlanId ?? this.ratePlanId,
+      pricingChannelCode: pricingChannelCode ?? this.pricingChannelCode,
       bookingRates: bookingRates ?? this.bookingRates,
       amountPaid: amountPaid ?? this.amountPaid,
       balanceDue: balanceDue ?? this.balanceDue,
@@ -166,6 +174,8 @@ class Booking {
       'rate': rate,
       'property_id': propertyID,
       'room_id': roomID,
+      'rate_plan_id': ratePlanId,
+      'pricing_channel_code': pricingChannelCode,
       'booking_rates': bookingRates.map((r) => r.toMap()).toList(),
       'amount_paid': amountPaid,
       'balance_due': balanceDue,
@@ -210,6 +220,8 @@ class Booking {
       rate: (map['rate'] as num?)?.toDouble() ?? 0.0,
       propertyID: map['property_id'] ?? 0,
       roomID: map['room_id'] ?? 0,
+      ratePlanId: map['rate_plan_id']?.toString(),
+      pricingChannelCode: map['pricing_channel_code']?.toString(),
       bookingRates: (map['booking_rates'] as List<dynamic>?)
               ?.map((e) => BookingRate.fromMap(e))
               .toList() ??
@@ -233,7 +245,7 @@ class Booking {
 
   @override
   String toString() {
-    return 'Booking(id: $id, confirmationNumber: $confirmationNumber, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, numberOfAdults: $numberOfAdults, numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID, note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate, checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay, checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay, checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights, rate: $rate, propertyID: $propertyID, roomID: $roomID, bookingRates: $bookingRates, amountPaid: $amountPaid, balanceDue: $balanceDue)';
+    return 'Booking(id: $id, confirmationNumber: $confirmationNumber, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, numberOfAdults: $numberOfAdults, numberOfChildren: $numberOfChildren, paymentStatusID: $paymentStatusID, statusID: $statusID, note: $note, specialRequest: $specialRequest, bookingDate: $bookingDate, checkIn: $checkIn, checkOut: $checkOut, checkInDay: $checkInDay, checkInMonth: $checkInMonth, checkInYear: $checkInYear, checkOutDay: $checkOutDay, checkOutMonth: $checkOutMonth, checkOutYear: $checkOutYear, numberOfNights: $numberOfNights, rate: $rate, propertyID: $propertyID, roomID: $roomID, ratePlanId: $ratePlanId, pricingChannelCode: $pricingChannelCode, bookingRates: $bookingRates, amountPaid: $amountPaid, balanceDue: $balanceDue)';
   }
 
   @override
@@ -266,6 +278,8 @@ class Booking {
         other.rate == rate &&
         other.propertyID == propertyID &&
         other.roomID == roomID &&
+        other.ratePlanId == ratePlanId &&
+        other.pricingChannelCode == pricingChannelCode &&
         other.bookingRates == bookingRates &&
         other.amountPaid == amountPaid &&
         other.balanceDue == balanceDue &&
@@ -301,6 +315,8 @@ class Booking {
         rate.hashCode ^
         propertyID.hashCode ^
         roomID.hashCode ^
+        ratePlanId.hashCode ^
+        pricingChannelCode.hashCode ^
         bookingRates.hashCode ^
         amountPaid.hashCode ^
         balanceDue.hashCode ^

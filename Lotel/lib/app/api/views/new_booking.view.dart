@@ -2,12 +2,13 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
 import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
-import 'package:lotel_pms/app/api/utilities/rate_resolver.dart';
 import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart';
 import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lotel_pms/app/api/view_models/lists/rate_plan_list.vm.dart';
+import 'package:lotel_pms/infrastructure/api/res/rate_plan.service.dart';
 
 final dateFormatter = DateFormat('yyyy-MM-dd');
 
@@ -57,6 +58,7 @@ class _BookingFormState extends State<BookingForm> {
   int? _numberOfChildren;
   int? _paymentStatusID;
   int? _roomID;
+  String? _selectedRatePlanId;
   String _paymentMethod = 'cash';
 
   @override
@@ -141,30 +143,42 @@ class _BookingFormState extends State<BookingForm> {
       return;
     }
 
-    final resolver = RateResolver(widget.ref!);
-
-    double totalRate = 0.0;
-    DateTime currentDate = checkInDate!;
-    DateTime endLoop = checkOutDate!;
-
-    // Safety fallback: if same day selected, charge for at least 1 night
-    if (currentDate.isAtSameMomentAs(endLoop)) {
-      endLoop = endLoop.add(const Duration(days: 1));
-    }
-
-    // 👉 FIX: Exclusive loop (stops before the check-out day)
-    while (currentDate.isBefore(endLoop)) {
-      final nightlyRate = resolver.getRateForRoomAndDate(
-        roomId: _roomID.toString(),
-        date: currentDate,
-        categoryId: categoryId,
-      );
-      if (nightlyRate != null) {
-        totalRate += nightlyRate;
+    final ratePlans = widget.ref!.read(ratePlanListVM);
+    final availablePlans = ratePlans.where((plan) {
+      if (plan.categoryId != categoryId || !plan.isActive) {
+        return false;
       }
-      currentDate = currentDate.add(const Duration(days: 1));
+      final lastStayDate = checkOutDate!.subtract(const Duration(days: 1));
+      return !checkInDate!.isBefore(plan.startDate) &&
+          !lastStayDate.isAfter(plan.endDate);
+    }).toList();
+
+    if (availablePlans.isEmpty) {
+      setState(() {
+        _selectedRatePlanId = null;
+        rateController.text = '';
+      });
+      _updateAmountPaidBasedOnStatus();
+      return;
     }
 
+    if (_selectedRatePlanId == null ||
+        availablePlans.every((plan) => plan.id != _selectedRatePlanId)) {
+      _selectedRatePlanId = availablePlans.first.id;
+    }
+
+    final propertyId = widget.ref!.read(selectedPropertyVM) ?? 0;
+    final quote = await RatePlanService().getRatePlanQuote(
+      propertyId: propertyId,
+      ratePlanId: _selectedRatePlanId!,
+      checkIn: checkInDate!,
+      checkOut: checkOutDate!,
+      adults: _numberOfAdults ?? 2,
+      children: _numberOfChildren ?? 0,
+      channelCode: 'direct',
+    );
+
+    final totalRate = (quote?['total_amount'] as num?)?.toDouble() ?? 0.0;
     setState(() {
       rateController.text = totalRate.toStringAsFixed(2);
     });
@@ -274,12 +288,18 @@ class _BookingFormState extends State<BookingForm> {
                         _buildDropdown(
                           "Adults:",
                           _numberOfAdults,
-                          (val) => setState(() => _numberOfAdults = val),
+                          (val) {
+                            setState(() => _numberOfAdults = val);
+                            _tryResolveAndSetRate();
+                          },
                         ),
                         _buildDropdown(
                           "Children:",
                           _numberOfChildren,
-                          (val) => setState(() => _numberOfChildren = val),
+                          (val) {
+                            setState(() => _numberOfChildren = val);
+                            _tryResolveAndSetRate();
+                          },
                         ),
                       ],
                     ),
@@ -301,7 +321,10 @@ class _BookingFormState extends State<BookingForm> {
                                   )
                                   .toList(),
                               onChanged: (val) {
-                                setState(() => _roomID = int.tryParse(val!));
+                                setState(() {
+                                  _roomID = int.tryParse(val!);
+                                  _selectedRatePlanId = null;
+                                });
                                 WidgetsBinding.instance.addPostFrameCallback(
                                   (_) => _tryResolveAndSetRate(),
                                 );
@@ -357,6 +380,63 @@ class _BookingFormState extends State<BookingForm> {
                           },
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final roomVM = ref.watch(roomListVM).firstWhereOrNull(
+                              (room) => room.id == _roomID?.toString(),
+                            );
+                        final selectedCategoryId = roomVM?.categoryId.toString();
+                        final availablePlans = ref
+                            .watch(ratePlanListVM)
+                            .where((plan) {
+                              if (selectedCategoryId == null || !plan.isActive) {
+                                return false;
+                              }
+                              if (plan.categoryId != selectedCategoryId) {
+                                return false;
+                              }
+                              if (checkInDate == null || checkOutDate == null) {
+                                return true;
+                              }
+                              final lastStayDate =
+                                  checkOutDate!.subtract(const Duration(days: 1));
+                              return !checkInDate!.isBefore(plan.startDate) &&
+                                  !lastStayDate.isAfter(plan.endDate);
+                            })
+                            .toList();
+
+                        if (_selectedRatePlanId != null &&
+                            availablePlans.every(
+                                (plan) => plan.id != _selectedRatePlanId)) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            setState(() {
+                              _selectedRatePlanId = availablePlans.isEmpty
+                                  ? null
+                                  : availablePlans.first.id;
+                            });
+                            _tryResolveAndSetRate();
+                          });
+                        }
+
+                        return _buildDropdownField<String>(
+                          label: 'Rate Plan',
+                          value: _selectedRatePlanId,
+                          items: availablePlans
+                              .map(
+                                (plan) => DropdownMenuItem(
+                                  value: plan.id,
+                                  child: Text(plan.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() => _selectedRatePlanId = val);
+                            _tryResolveAndSetRate();
+                          },
+                        );
+                      },
                     ),
                     const SizedBox(height: 8),
                     _fixedHeightScrollableTextField(
@@ -504,6 +584,8 @@ class _BookingFormState extends State<BookingForm> {
             : null,
         'auto_check_in': autoCheckIn,
         'room_id': _roomID,
+        'rate_plan_id': _selectedRatePlanId,
+        'pricing_channel_code': 'direct',
         'property_id': propertyId,
       });
 

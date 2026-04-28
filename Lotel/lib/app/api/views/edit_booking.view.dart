@@ -6,45 +6,8 @@ import 'package:lotel_pms/app/api/view_models/lists/payment_status_list.vm.dart'
 import 'package:lotel_pms/app/api/view_models/lists/room_list.vm.dart';
 import 'package:lotel_pms/app/global/selected_property.global.dart';
 import 'package:lotel_pms/app/api/view_models/lists/rate_plan_list.vm.dart';
-import 'package:lotel_pms/app/api/view_models/lists/room_online_list.vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-class RateResolver {
-  final WidgetRef ref;
-  RateResolver(this.ref);
-
-  double? getRateForRoomAndDate({
-    required String roomId,
-    required DateTime date,
-    required String categoryId,
-  }) {
-    final roomOnlineIndex = ref.read(roomOnlineIndexProvider);
-    final ratePlans = ref.read(ratePlanListVM);
-
-    final match = roomOnlineIndex[roomOnlineCellKey(roomId, date)];
-    if (match != null) {
-      return match.price;
-    }
-
-    final plan = ratePlans.firstWhereOrNull(
-      (rp) =>
-          rp.categoryId == categoryId &&
-          !date.isBefore(rp.startDate) &&
-          !date.isAfter(rp.endDate) &&
-          rp.isActive,
-    );
-    if (plan == null) {
-      return null;
-    }
-
-    final isWeekend =
-        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
-
-    return isWeekend && plan.weekendRate != null
-        ? plan.weekendRate
-        : plan.baseRate;
-  }
-}
+import 'package:lotel_pms/infrastructure/api/res/rate_plan.service.dart';
 
 class EditBookingForm extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
@@ -80,6 +43,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
   int? _numberOfChildren;
   int? _paymentStatusID;
   int? _roomID;
+  String? _selectedRatePlanId;
 
   // Added state variables for handling extra cost payments
   double _extraCost = 0.0;
@@ -96,6 +60,7 @@ class _EditBookingFormState extends State<EditBookingForm> {
     _numberOfChildren = widget.booking.numberOfChildren;
     _paymentStatusID = widget.booking.paymentStatusID;
     _roomID = widget.booking.roomID;
+    _selectedRatePlanId = widget.booking.ratePlanId;
 
     firstNameController.text = widget.booking.firstName;
     lastNameController.text = widget.booking.lastName;
@@ -185,10 +150,14 @@ class _EditBookingFormState extends State<EditBookingForm> {
           ),
           const SizedBox(height: 12),
           ResponsiveFormRow(children: [
-            _buildDropdown("Adults:", _numberOfAdults,
-                (val) => setState(() => _numberOfAdults = val)),
-            _buildDropdown("Children:", _numberOfChildren,
-                (val) => setState(() => _numberOfChildren = val)),
+            _buildDropdown("Adults:", _numberOfAdults, (val) {
+              setState(() => _numberOfAdults = val);
+              _tryResolveAndSetRate();
+            }),
+            _buildDropdown("Children:", _numberOfChildren, (val) {
+              setState(() => _numberOfChildren = val);
+              _tryResolveAndSetRate();
+            }),
           ]),
           const SizedBox(height: 12),
           ResponsiveFormRow(children: [
@@ -204,7 +173,10 @@ class _EditBookingFormState extends State<EditBookingForm> {
                         ))
                     .toList(),
                 onChanged: (val) async {
-                  setState(() => _roomID = int.tryParse(val!));
+                  setState(() {
+                    _roomID = int.tryParse(val!);
+                    _selectedRatePlanId = null;
+                  });
                   await _tryResolveAndSetRate();
                 },
               );
@@ -225,6 +197,54 @@ class _EditBookingFormState extends State<EditBookingForm> {
               );
             }),
           ]),
+          const SizedBox(height: 12),
+          Consumer(builder: (context, ref, _) {
+            final roomVM = ref.watch(roomListVM).firstWhereOrNull(
+                  (room) => int.tryParse(room.id) == _roomID,
+                );
+            final categoryId = roomVM?.categoryId.toString();
+            final availablePlans = ref.watch(ratePlanListVM).where((plan) {
+              if (categoryId == null || !plan.isActive) {
+                return false;
+              }
+              if (plan.categoryId != categoryId) {
+                return false;
+              }
+              if (checkInDate == null || checkOutDate == null) {
+                return true;
+              }
+              final lastStayDate =
+                  checkOutDate!.subtract(const Duration(days: 1));
+              return !checkInDate!.isBefore(plan.startDate) &&
+                  !lastStayDate.isAfter(plan.endDate);
+            }).toList();
+
+            if (_selectedRatePlanId != null &&
+                availablePlans.every((plan) => plan.id != _selectedRatePlanId)) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() {
+                  _selectedRatePlanId =
+                      availablePlans.isEmpty ? null : availablePlans.first.id;
+                });
+                _tryResolveAndSetRate();
+              });
+            }
+
+            return _buildDropdownField(
+              label: 'Rate Plan',
+              value: _selectedRatePlanId,
+              items: availablePlans
+                  .map((plan) => DropdownMenuItem(
+                        value: plan.id,
+                        child: Text(plan.name),
+                      ))
+                  .toList(),
+              onChanged: (val) async {
+                setState(() => _selectedRatePlanId = val);
+                await _tryResolveAndSetRate();
+              },
+            );
+          }),
           TextFormField(
               controller: noteController,
               decoration: const InputDecoration(labelText: 'Note')),
@@ -297,6 +317,9 @@ class _EditBookingFormState extends State<EditBookingForm> {
                     'amount_paid': finalAmountPaid, // Pass updated amount paid
                     'property_id': widget.ref!.read(selectedPropertyVM) ?? 0,
                     'room_id': _roomID,
+                    'rate_plan_id': _selectedRatePlanId,
+                    'pricing_channel_code':
+                        widget.booking.pricingChannelCode ?? 'direct',
                   });
 
                   if (!mounted) {
@@ -373,22 +396,42 @@ class _EditBookingFormState extends State<EditBookingForm> {
     if (categoryId == null) {
       return;
     }
-
-    final resolver = RateResolver(widget.ref!);
-    double totalRate = 0.0;
-    DateTime currentDate = checkInDate!;
-
-    while (currentDate.isBefore(checkOutDate!)) {
-      final nightlyRate = resolver.getRateForRoomAndDate(
-        roomId: _roomID.toString(),
-        date: currentDate,
-        categoryId: categoryId,
-      );
-      if (nightlyRate != null) {
-        totalRate += nightlyRate;
+    final ratePlans = widget.ref!.read(ratePlanListVM);
+    final availablePlans = ratePlans.where((plan) {
+      if (plan.categoryId != categoryId || !plan.isActive) {
+        return false;
       }
-      currentDate = currentDate.add(Duration(days: 1));
+      final lastStayDate = checkOutDate!.subtract(const Duration(days: 1));
+      return !checkInDate!.isBefore(plan.startDate) &&
+          !lastStayDate.isAfter(plan.endDate);
+    }).toList();
+
+    if (availablePlans.isEmpty) {
+      setState(() {
+        _selectedRatePlanId = null;
+        rateController.text = '';
+        _extraCost = 0.0;
+        _isPaid = false;
+      });
+      return;
     }
+
+    if (_selectedRatePlanId == null ||
+        availablePlans.every((plan) => plan.id != _selectedRatePlanId)) {
+      _selectedRatePlanId = availablePlans.first.id;
+    }
+
+    final propertyId = widget.ref!.read(selectedPropertyVM) ?? 0;
+    final quote = await RatePlanService().getRatePlanQuote(
+      propertyId: propertyId,
+      ratePlanId: _selectedRatePlanId!,
+      checkIn: checkInDate!,
+      checkOut: checkOutDate!,
+      adults: _numberOfAdults ?? 2,
+      children: _numberOfChildren ?? 0,
+      channelCode: widget.booking.pricingChannelCode ?? 'direct',
+    );
+    final totalRate = (quote?['total_amount'] as num?)?.toDouble() ?? 0.0;
 
     setState(() {
       rateController.text = totalRate.toStringAsFixed(2);
