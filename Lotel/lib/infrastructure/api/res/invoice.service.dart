@@ -60,6 +60,36 @@ class InvoiceService {
     return InvoiceModel.fromMap(response['data'] as Map<String, dynamic>);
   }
 
+  Future<String> getBookingInvoicePrintHtml(int propertyId, int bookingId) async {
+    final token = await _auth.currentUser?.getIdToken();
+    return sendGetTextRequestOrThrow(
+      token,
+      '/api/v1/properties/$propertyId/bookings/$bookingId/invoice/print',
+      fallbackMessage: 'Failed to load printable invoice.',
+    );
+  }
+
+  Future<void> emailBookingInvoice({
+    required int propertyId,
+    required int bookingId,
+    required String email,
+    required String subject,
+    String? message,
+  }) async {
+    final token = await _auth.currentUser?.getIdToken();
+    await sendPostWithResponseRequestOrThrow(
+      {
+        'email': email.trim(),
+        'subject': subject.trim(),
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      },
+      token,
+      '/api/v1/properties/$propertyId/bookings/$bookingId/invoice/email',
+      fallbackMessage: 'Failed to email invoice.',
+    );
+  }
+
   Future<List<PaymentTransaction>> getBookingPayments(
       int propertyId, int bookingId) async {
     final token = await _auth.currentUser?.getIdToken();

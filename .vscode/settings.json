@@ -1,0 +1,11 @@
+{
+    "dart.analysisExcludedFolders": [
+        "flutter_academy"
+    ],
+    "files.exclude": {
+        "flutter_academy": true
+    },
+    "search.exclude": {
+        "flutter_academy": true
+    }
+}

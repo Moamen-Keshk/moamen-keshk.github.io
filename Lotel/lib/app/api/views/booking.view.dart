@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lotel_pms/app/api/res/responsive.res.dart';
+import 'package:lotel_pms/app/api/utilities/invoice_print.dart';
 import 'package:lotel_pms/app/api/widgets/adaptive_layout.widget.dart';
 import 'package:lotel_pms/app/auth/view_models/access_control.vm.dart';
 import 'package:lotel_pms/infrastructure/api/res/booking.service.dart';
@@ -81,6 +82,7 @@ class BookingView extends ConsumerStatefulWidget {
 
 class _BookingViewState extends ConsumerState<BookingView> {
   final PaymentVM _paymentVM = PaymentVM();
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   void _showSendMessageDialog(
       BuildContext context, WidgetRef ref, int bookingId, Booking booking) {
@@ -190,6 +192,185 @@ class _BookingViewState extends ConsumerState<BookingView> {
         );
       },
     );
+  }
+
+  Future<void> _showInvoiceEmailDialog(
+    BuildContext pageContext,
+    Booking booking,
+    InvoiceModel invoice,
+  ) async {
+    final bookingId = int.tryParse(booking.id);
+    if (bookingId == null) {
+      ScaffoldMessenger.of(pageContext).showSnackBar(
+        const SnackBar(content: Text('Booking ID is invalid.')),
+      );
+      return;
+    }
+
+    final emailController =
+        TextEditingController(text: booking.email?.trim() ?? '');
+    final subjectController =
+        TextEditingController(text: 'Invoice ${invoice.invoiceNumber}');
+    final messageController = TextEditingController();
+    bool isSending = false;
+
+    await showDialog(
+      context: pageContext,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Email Invoice ${invoice.invoiceNumber}'),
+              content: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: context.showCompactLayout ? 280 : 420,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: subjectController,
+                      decoration: const InputDecoration(labelText: 'Subject'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: messageController,
+                      decoration: const InputDecoration(
+                        labelText: 'Message (optional)',
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 4,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isSending ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSending
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(dialogContext);
+                          final email = emailController.text.trim();
+                          final subject = subjectController.text.trim();
+                          final message = messageController.text.trim();
+
+                          if (email.isEmpty) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Recipient email is required.'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (!_emailPattern.hasMatch(email)) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Enter a valid email address.'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (subject.isEmpty) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Subject is required.'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() => isSending = true);
+
+                          try {
+                            await InvoiceService().emailBookingInvoice(
+                              propertyId: booking.propertyID,
+                              bookingId: bookingId,
+                              email: email,
+                              subject: subject,
+                              message: message,
+                            );
+
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
+
+                            if (pageContext.mounted) {
+                              ScaffoldMessenger.of(pageContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Invoice email queued.'),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => isSending = false);
+                            messenger.showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        },
+                  child: isSending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Send'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    emailController.dispose();
+    subjectController.dispose();
+    messageController.dispose();
+  }
+
+  Future<void> _printInvoice(BuildContext context, Booking booking) async {
+    final bookingId = int.tryParse(booking.id);
+    if (bookingId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking ID is invalid.')),
+      );
+      return;
+    }
+
+    try {
+      final html = await InvoiceService()
+          .getBookingInvoicePrintHtml(booking.propertyID, bookingId);
+      await openPrintableInvoiceHtml(html);
+    } on UnsupportedError catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.message?.toString() ??
+                'Printing is not supported on this platform.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   Future<void> _showUpdatePaymentDialog(
@@ -1021,6 +1202,7 @@ class _BookingViewState extends ConsumerState<BookingView> {
                                     ref,
                                     booking,
                                     invoice,
+                                    canManageFinance: canManageFinance,
                                   ),
                                 ),
                               if (canViewFinance)
@@ -1276,8 +1458,9 @@ class _BookingViewState extends ConsumerState<BookingView> {
     BuildContext context,
     WidgetRef ref,
     Booking booking,
-    InvoiceModel? invoice,
-  ) {
+    InvoiceModel? invoice, {
+    required bool canManageFinance,
+  }) {
     final currency = NumberFormat.currency(symbol: '£');
 
     if (invoice == null) {
@@ -1349,6 +1532,25 @@ class _BookingViewState extends ConsumerState<BookingView> {
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _printInvoice(context, booking),
+                icon: const Icon(Icons.print_outlined),
+                label: const Text('Print Invoice'),
+              ),
+              if (canManageFinance)
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      _showInvoiceEmailDialog(context, booking, invoice),
+                  icon: const Icon(Icons.email_outlined),
+                  label: const Text('Email Invoice'),
+                ),
+            ],
+          ),
         ],
       ),
     );

@@ -166,6 +166,23 @@ Future<dynamic> sendGetRequestOrThrow(
   throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
 }
 
+Future<String> sendGetTextRequestOrThrow(
+  String? idToken,
+  String apiURL, {
+  String fallbackMessage = 'Request failed.',
+}) async {
+  final http.Response response = await http.get(
+    Uri.parse('$baseURL$apiURL'),
+    headers: _buildHeaders(idToken),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return response.body;
+  }
+
+  throw ApiRequestException(_extractErrorMessage(response, fallbackMessage));
+}
+
 Future<dynamic> sendGetWithParamsRequest(
   String? idToken,
   String apiURL,

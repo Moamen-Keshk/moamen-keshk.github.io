@@ -100,14 +100,15 @@ class RoomService {
 
   Future<List<HousekeepingRoom>> getTodayHousekeeping(int propertyId) async {
     final result = await getHousekeepingByDate(propertyId, DateTime.now());
-    if (result == null || result['type'] != 'today' || result['data'] is! List) {
-      debugPrint("Failed to fetch today's housekeeping data. Returning empty list.");
+    final items = extractHousekeepingItems(result);
+    if (items.isEmpty) {
+      debugPrint(
+        "Failed to fetch today's housekeeping data. Returning empty list.",
+      );
       return [];
     }
 
-    return (result['data'] as List)
-        .map((entry) => HousekeepingRoom.fromMap(entry as Map<String, dynamic>))
-        .toList();
+    return items.map(HousekeepingRoom.fromMap).toList(growable: false);
   }
 
   // Fetch Past Logs or Future Forecasts
@@ -122,9 +123,35 @@ class RoomService {
       final dynamic response = await sendGetRequest(token,
           "/api/v1/properties/$propertyId/housekeeping?date=$dateString");
 
-      if (response != null && response is Map<String, dynamic>) {
-        return response; // Should return { 'type': 'past'/'future', 'data': [...] }
+      if (response == null) {
+        return null;
       }
+
+      final today = DateTime.now();
+      final kind = inferHousekeepingPayloadKind(
+        targetDate: date,
+        today: today,
+        rawType: response is Map<String, dynamic>
+            ? response['type']?.toString()
+            : null,
+      );
+      final items = extractHousekeepingItems(response);
+
+      if (response is Map<String, dynamic>) {
+        return {
+          ...response,
+          'type': kind.name,
+          'data': items,
+        };
+      }
+
+      if (response is List) {
+        return {
+          'type': kind.name,
+          'data': items,
+        };
+      }
+
       return null;
     } catch (e) {
       debugPrint("Error fetching housekeeping data by date: $e");
